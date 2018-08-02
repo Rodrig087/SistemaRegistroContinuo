@@ -1,5 +1,5 @@
-#line 1 "E:/Milton/Github/Tesis/SensorUltrasonico/DSP/Splitter/Splitter.c"
-#line 13 "E:/Milton/Github/Tesis/SensorUltrasonico/DSP/Splitter/Splitter.c"
+#line 1 "E:/Milton/Github/RSA/InstrumentacionPresa/RedDatos/Splitter/Programa/Splitter.c"
+#line 13 "E:/Milton/Github/RSA/InstrumentacionPresa/RedDatos/Splitter/Programa/Splitter.c"
 const short Psize = 6;
 const short Rsize = 6;
 const short Hdr = 0x3A;
