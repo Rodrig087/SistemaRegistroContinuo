@@ -188,7 +188,6 @@ baudcon
 baudcon1
 baudcon2
 baudctl
-bb
 bcd2dec
 bcd2dec16
 bcl1ie
@@ -522,6 +521,7 @@ cmp2md_bit
 comfrem
 compare_double
 configuracion
+crc16
 cren
 cren_bit
 cren_rc1sta_bit
@@ -656,7 +656,6 @@ double2int
 double2longint
 double2longword
 double2word
-dst
 dt1
 dt1_bit
 dt2
@@ -977,21 +976,9 @@ latc7_bit
 lcd_chr
 lcd_chr_cp
 lcd_cmd
-lcd_d4
-lcd_d4_direction
-lcd_d5
-lcd_d5_direction
-lcd_d6
-lcd_d6_direction
-lcd_d7
-lcd_d7_direction
-lcd_en
-lcd_en_direction
 lcd_init
 lcd_out
 lcd_out_cp
-lcd_rs
-lcd_rs_direction
 lfiofs
 lfiofs_bit
 longint2double
@@ -1049,6 +1036,7 @@ mfiofs
 mfiofs_bit
 mfiosel
 mfiosel_bit
+modbusrtu_crc16
 msk0
 msk0_bit
 msk0_ssp1msk_bit
@@ -1293,6 +1281,8 @@ pdc5
 pdc5_bit
 pdc6
 pdc6_bit
+pdu
+pdusize
 peie
 peie_bit
 peie_giel
@@ -1324,6 +1314,7 @@ plusw2
 pmd0
 pmd1
 pmd2
+polmodbus
 por
 por_bit
 porta
@@ -1389,7 +1380,7 @@ pstr2con
 pstr3con
 pstrcon
 ptcn
-ptrdst
+ptrcrc16
 pvcfg0
 pvcfg0_bit
 pvcfg1
@@ -2272,8 +2263,6 @@ txreg2
 txsta
 txsta1
 txsta2
-txt1
-txt2
 ua
 ua_bit
 ua_ssp1stat_bit

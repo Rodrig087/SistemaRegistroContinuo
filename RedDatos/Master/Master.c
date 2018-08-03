@@ -1,49 +1,35 @@
 /*-------------------------------------------------------------------------------------------------------------------------
 Autor: Milton Munoz
 Fecha de creacion: 02/08/2016
-Ultima modificacion: 17/02/2017
+Ultima modificacion: 02/08/2018
 Estado: Modificando
 Configuarcion: PIC18F25k22 8MHz
 Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
 
-// LCD module connections
-sbit LCD_RS at RB5_bit;
-sbit LCD_EN at RB4_bit;
-sbit LCD_D4 at RB3_bit;
-sbit LCD_D5 at RB2_bit;
-sbit LCD_D6 at RB1_bit;
-sbit LCD_D7 at RB0_bit;
-
-sbit LCD_RS_Direction at TRISB5_bit;
-sbit LCD_EN_Direction at TRISB4_bit;
-sbit LCD_D4_Direction at TRISB3_bit;
-sbit LCD_D5_Direction at TRISB2_bit;
-sbit LCD_D6_Direction at TRISB1_bit;
-sbit LCD_D7_Direction at TRISB0_bit;
-// End LCD module connections
-
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 //Variables para la peticion y respuesta de datos
-const short Id = 0x02;                                  //Identificador de tipo de sensor
-const short Fcn = 0x02;                                  //Identificador de numero de esclavo
-const short Psize = 6;                                  //Constante de longitud de trama de Peticion
-const short Rsize = 6;                                  //Constante de longitud de trama de Respuesta
 const short Hdr = 0x3A;                                 //Constante de delimitador de inicio de trama
 const short End = 0x0D;                                 //Constante de delimitador de final de trama
-unsigned char Ptcn[Psize];
-unsigned char Rspt[Rsize];
-short ir, irr, ip, j;                                          //Subindices para las tramas de peticion y respuesta
+const short Id = 0x02;                                  //Identificador de tipo de sensor
+const short Fcn = 0x01;                                 //Identificador de numero de esclavo
+
+const short PDUSize = 4;                                //Constante de longitud de trama PDU
+const short Psize = 6;                                  //Constante de longitud de trama de Peticion
+const short Rsize = 6;                                  //Constante de longitud de trama de Respuesta
+
+unsigned char PDU[PDUSize];                             //Trama PDU
+unsigned char Ptcn[Psize];                              //Trama de peticion
+unsigned char Rspt[Rsize];                              //Trama de respuesta
+
+short ir, irr, ip, j;                                   //Subindices para las tramas de peticion y respuesta
 unsigned short BanP, BanT;
 unsigned short Dato;
 
-//Variables para visualizar el dato en la LCD
-short Bb;
-char txt1[16];
-char txt2[] = "Distancia: ";
-unsigned short  *ptrDst;
-unsigned int Dst;
+const unsigned int PolModbus = 0xA001;                  //Polinomio para el calculo del CRC
+unsigned int CRC16;                                     //Variable para almacenar el valor del CRC calculado
+unsigned short *ptrCRC16;                               //Puntero para almacenar el valor del CRC
 
 void interrupt(void){
      if(PIR1.F5==1){
@@ -71,6 +57,25 @@ void interrupt(void){
      }
 }
 
+//Funcion para calcular el CRC16 de una trama de datos
+unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
+{
+   unsigned char ucCounter;
+   unsigned int uiCRCResult;
+   for(uiCRCResult=0xFFFF; uiLen!=0; uiLen --)
+   {
+      uiCRCResult ^=*ptucBuffer ++;
+      for(ucCounter =0; ucCounter <8; ucCounter ++)
+      {
+         if(uiCRCResult & 0x0001)
+            uiCRCResult =( uiCRCResult >>1)^PolModbus;
+         else
+            uiCRCResult >>=1;
+      }
+   }
+   return uiCRCResult;
+}
+
 // Configuracion //
 void Configuracion(){
 
@@ -92,9 +97,6 @@ void Configuracion(){
      UART1_Init(9600);                                 //Inicializa el UART a 9600 bps
      Delay_ms(100);                                    //Espera para que el modulo UART se estabilice
 
-     Lcd_Init();                                       // Initialize LCD
-     Lcd_Cmd(_LCD_CLEAR);                              // Clear display
-     Lcd_Cmd(_LCD_CURSOR_OFF);                         // Cursor off
 }
 
 void main() {
@@ -102,62 +104,38 @@ void main() {
      Configuracion();
      RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
 
-     ptrDst = &Dst;
+     //ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
 
-     Ptcn[0]=Hdr;
-     Ptcn[1]=Id;
-     Ptcn[2]=Fcn;
-     Ptcn[3]=0x00;
-     Ptcn[4]=0x02;
-     Ptcn[5]=End;
-
-     Bb=0;
-     Dst=0;
-
+     //PDU = 0x01020304  CRC=0x2BA1
+     PDU[0]=0x01;
+     PDU[1]=0x02;
+     PDU[2]=0x03;
+     PDU[3]=0x04;
+     
+     //Ptcn = 0x010203040506  CRC=0xDDBA
+     Ptcn[0]=0x01;
+     Ptcn[1]=0x02;
+     Ptcn[2]=0x03;
+     Ptcn[3]=0x04;
+     Ptcn[4]=0x05;
+     Ptcn[5]=0x09;
+     
+     
      while (1){
 
-           if ((RA0_bit==1)&&(Bb==0)){
-               Bb = 1;
-               RC5_bit = 1;                                         //Establece el Max485 en modo de escritura
-               for (ip=0;ip<Psize;ip++){
-                    UART1_WRITE(Ptcn[ip]);                          //Manda por Uart la trama de peticion
-               }
-               Dst = 0;
-               while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
-               RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
-            } else if (RA0_bit==0){
-               Bb = 0;
+            CRC16 = ModbusRTU_CRC16(PDU, 4);               //Calcula el CRC de la trama de peticion y la almacena en la variable CRC16
+            
+            
+            if (CRC16==0x2BA1){
+               UART1_WRITE(0xAA);
+            } else {
+               UART1_WRITE(CRC16);
             }
 
-            if (BanP==1){
-               if ((Rspt[1]==Id)&&(Rspt[Rsize-1]==End)){
-
-                    *ptrDst = Rspt[4];
-                    *(ptrDst+1) = Rspt[3];
-
-                    for (irr=0;irr<(Rsize-1);irr++){
-                         Rspt[irr]=0;;                            //Limpia los bits de datos de la trama de respuesta
-                    }
-                    BanP = 0;
-
-
-               } else {
-
-                      for (irr=0;irr<(Rsize-1);irr++){
-                           Rspt[irr]=0;;                            //Limpia los bits de datos de la trama de respuesta
-                      }
-                      BanP = 0;
-
-               }
-            }
-
-
-           IntToStr(Dst,txt1);
-
-           Lcd_Out(1,1,"Distancia:");
-           Lcd_Out(2,1,txt1);
-
-           Delay_ms(20);
+            
+            while(UART_Tx_Idle()==0);                           //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+            
+            Delay_ms(20);
 
      }
 }
