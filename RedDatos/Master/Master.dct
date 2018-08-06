@@ -73,6 +73,7 @@ adcs1
 adcs1_bit
 adcs2
 adcs2_bit
+add
 add_32x32_fp
 adden
 adden_bit
@@ -723,7 +724,8 @@ eeip
 eeip_bit
 eepgd
 eepgd_bit
-end
+end1
+end2
 equals_double
 f
 fast
@@ -804,7 +806,6 @@ hlvdl3
 hlvdl3_bit
 ics_auto
 ics_off
-id
 idissen
 idissen_bit
 idlen

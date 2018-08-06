@@ -1,13 +1,14 @@
 #line 1 "E:/Milton/Github/RSA/InstrumentacionPresa/RedDatos/Master/Master.c"
 #line 13 "E:/Milton/Github/RSA/InstrumentacionPresa/RedDatos/Master/Master.c"
 const short Hdr = 0x3A;
-const short End = 0x0D;
-const short Id = 0x02;
-const short Fcn = 0x01;
+const short End1 = 0x0D;
+const short End2 = 0x0A;
+const short Add = 0x01;
+const short Fcn = 0x02;
 
 const short PDUSize = 4;
-const short Psize = 6;
-const short Rsize = 6;
+const short Psize = 9;
+const short Rsize = 9;
 
 unsigned char PDU[PDUSize];
 unsigned char Ptcn[Psize];
@@ -84,7 +85,7 @@ void Configuracion(){
  PIE1.RC1IE = 1;
  PIR1.F5 = 0;
 
- UART1_Init(9600);
+ UART1_Init(57600);
  Delay_ms(100);
 
 }
@@ -94,35 +95,36 @@ void main() {
  Configuracion();
  RC5_bit = 0;
 
+ ptrCRC16 = &CRC16;
 
 
-
- PDU[0]=0x01;
- PDU[1]=0x02;
+ PDU[0]=Add;
+ PDU[1]=Fcn;
  PDU[2]=0x03;
  PDU[3]=0x04;
 
 
- Ptcn[0]=0x01;
- Ptcn[1]=0x02;
- Ptcn[2]=0x03;
- Ptcn[3]=0x04;
- Ptcn[4]=0x05;
- Ptcn[5]=0x09;
+
+
+
+ Ptcn[0]=Hdr;
+ Ptcn[Psize-2]=End1;
+ Ptcn[Psize-1]=End2;
 
 
  while (1){
 
- CRC16 = ModbusRTU_CRC16(PDU, 4);
+ CRC16 = ModbusRTU_CRC16(PDU, PDUSize);
+ Ptcn[6] = *ptrCRC16;
+ Ptcn[5] = *(ptrCRC16+1);
 
-
- if (CRC16==0x2BA1){
- UART1_WRITE(0xAA);
- } else {
- UART1_WRITE(CRC16);
+ for (ip=1;ip<=4;ip++){
+ Ptcn[ip] = PDU[ip-1];
  }
 
-
+ for (ip=0;ip<Psize;ip++){
+ UART1_WRITE(Ptcn[ip]);
+ }
  while(UART_Tx_Idle()==0);
 
  Delay_ms(20);

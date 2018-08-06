@@ -11,13 +11,14 @@ Descripcion:
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 //Variables para la peticion y respuesta de datos
 const short Hdr = 0x3A;                                 //Constante de delimitador de inicio de trama
-const short End = 0x0D;                                 //Constante de delimitador de final de trama
-const short Id = 0x02;                                  //Identificador de tipo de sensor
-const short Fcn = 0x01;                                 //Identificador de numero de esclavo
+const short End1 = 0x0D;                                //Constantes de delimitador de final de trama:
+const short End2 = 0x0A;                                //El delimitador de final de trama es del tipo CR+LF
+const short Add = 0x01;                                  //Identificador de tipo de sensor
+const short Fcn = 0x02;                                 //Identificador de numero de esclavo
 
 const short PDUSize = 4;                                //Constante de longitud de trama PDU
-const short Psize = 6;                                  //Constante de longitud de trama de Peticion
-const short Rsize = 6;                                  //Constante de longitud de trama de Respuesta
+const short Psize = 9;                                  //Constante de longitud de trama de Peticion
+const short Rsize = 9;                                  //Constante de longitud de trama de Respuesta
 
 unsigned char PDU[PDUSize];                             //Trama PDU
 unsigned char Ptcn[Psize];                              //Trama de peticion
@@ -94,7 +95,7 @@ void Configuracion(){
      PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
      PIR1.F5 = 0;                                      //Limpia la bandera de interrupcion
 
-     UART1_Init(9600);                                 //Inicializa el UART a 9600 bps
+     UART1_Init(57600);                                 //Inicializa el UART a 9600 bps
      Delay_ms(100);                                    //Espera para que el modulo UART se estabilice
 
 }
@@ -104,37 +105,38 @@ void main() {
      Configuracion();
      RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
 
-     //ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
+     ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
 
      //PDU = 0x01020304  CRC=0x2BA1
-     PDU[0]=0x01;
-     PDU[1]=0x02;
+     PDU[0]=Add;
+     PDU[1]=Fcn;
      PDU[2]=0x03;
      PDU[3]=0x04;
      
-     //Ptcn = 0x010203040506  CRC=0xDDBA
-     Ptcn[0]=0x01;
-     Ptcn[1]=0x02;
-     Ptcn[2]=0x03;
-     Ptcn[3]=0x04;
-     Ptcn[4]=0x05;
-     Ptcn[5]=0x09;
+     //Trama de peticion
+     // | Hdr |              PDU          |     CRC     |     End     |
+     // |  :  | Add | Fcn | Data1 | Data2 | CRC1 | CRC2 |  CR  |  LF  |
      
+     Ptcn[0]=Hdr;
+     Ptcn[Psize-2]=End1;
+     Ptcn[Psize-1]=End2;
+
      
      while (1){
 
-            CRC16 = ModbusRTU_CRC16(PDU, 4);               //Calcula el CRC de la trama de peticion y la almacena en la variable CRC16
+            CRC16 = ModbusRTU_CRC16(PDU, PDUSize);               //Calcula el CRC de la trama de peticion y la almacena en la variable CRC16
+            Ptcn[6] = *ptrCRC16;                                 //Asigna el MSB de CRC al espacio 6 de la trama de peticion
+            Ptcn[5] = *(ptrCRC16+1);                             //Asigna el LSB del CRC al espacio 5 de la trama de peticion
             
-            
-            if (CRC16==0x2BA1){
-               UART1_WRITE(0xAA);
-            } else {
-               UART1_WRITE(CRC16);
+            for (ip=1;ip<=4;ip++){                               //Rellena la trama de peticion con los datos de la trama PDU
+                Ptcn[ip] = PDU[ip-1];
             }
 
-            
-            while(UART_Tx_Idle()==0);                           //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
-            
+            for (ip=0;ip<Psize;ip++){
+                UART1_WRITE(Ptcn[ip]);                           //Manda por Uart la trama de peticion
+            }
+            while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+
             Delay_ms(20);
 
      }

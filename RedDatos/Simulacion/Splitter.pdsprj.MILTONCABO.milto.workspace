@@ -72,7 +72,7 @@
      <ITEM name="TopLineAddress">00000000</ITEM>
     </PROPERTIES>
    </POPUP>
-   <POPUP w="8" x="228" flags="80000002" y="289" h="16" pid="12" iid="6">
+   <POPUP w="8" x="228" flags="00000002" y="289" h="16" pid="12" iid="6">
     <PROPERTIES>
      <ITEM name="DataType">2</ITEM>
      <ITEM name="DispChars">Yes</ITEM>
@@ -115,7 +115,7 @@
    <POPUP w="18" x="308" flags="00000008" y="369" h="32" pid="10" iid="6">
     <PROPERTIES/>
    </POPUP>
-   <POPUP w="8" x="328" flags="80000002" y="389" h="8" pid="13" iid="6">
+   <POPUP w="8" x="328" flags="00000002" y="389" h="8" pid="13" iid="6">
     <PROPERTIES>
      <ITEM name="DataType">2</ITEM>
      <ITEM name="DispChars">Yes</ITEM>
@@ -148,7 +148,7 @@
      <ITEM name="TopLineAddress">00000000</ITEM>
     </PROPERTIES>
    </POPUP>
-   <POPUP w="8" x="408" flags="80000002" y="469" h="16" pid="12" iid="4">
+   <POPUP w="8" x="408" flags="00000002" y="469" h="16" pid="12" iid="4">
     <PROPERTIES>
      <ITEM name="DataType">2</ITEM>
      <ITEM name="DispChars">Yes</ITEM>
@@ -191,7 +191,7 @@
    <POPUP w="18" x="488" flags="00000008" y="549" h="32" pid="10" iid="4">
     <PROPERTIES/>
    </POPUP>
-   <POPUP w="8" x="508" flags="80000002" y="569" h="8" pid="13" iid="4">
+   <POPUP w="8" x="508" flags="00000002" y="569" h="8" pid="13" iid="4">
     <PROPERTIES>
      <ITEM name="DataType">2</ITEM>
      <ITEM name="DispChars">Yes</ITEM>
@@ -224,7 +224,7 @@
      <ITEM name="TopLineAddress">00000000</ITEM>
     </PROPERTIES>
    </POPUP>
-   <POPUP w="8" x="588" flags="80000002" y="649" h="16" pid="12" iid="1">
+   <POPUP w="8" x="588" flags="00000002" y="649" h="16" pid="12" iid="1">
     <PROPERTIES>
      <ITEM name="DataType">2</ITEM>
      <ITEM name="DispChars">Yes</ITEM>
@@ -267,7 +267,7 @@
    <POPUP w="18" x="668" flags="00000008" y="696" h="32" pid="10" iid="1">
     <PROPERTIES/>
    </POPUP>
-   <POPUP w="8" x="688" flags="80000002" y="720" h="8" pid="13" iid="1">
+   <POPUP w="8" x="688" flags="00000002" y="720" h="8" pid="13" iid="1">
     <PROPERTIES>
      <ITEM name="DataType">2</ITEM>
      <ITEM name="DispChars">Yes</ITEM>
