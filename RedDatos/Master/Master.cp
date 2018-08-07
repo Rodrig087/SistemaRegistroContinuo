@@ -3,50 +3,71 @@
 const short Hdr = 0x3A;
 const short End1 = 0x0D;
 const short End2 = 0x0A;
-const short Add = 0x01;
-const short Fcn = 0x02;
 
-const short PDUSize = 4;
-const short Psize = 9;
-const short Rsize = 9;
+unsigned short PDUSize;
+unsigned short Psize;
+unsigned short Rsize;
 
-unsigned char PDU[PDUSize];
-unsigned char Ptcn[Psize];
-unsigned char Rspt[Rsize];
+unsigned short Add;
+unsigned short Fcn;
 
-short ir, irr, ip, j;
-unsigned short BanP, BanT;
+
+
+unsigned char PDU[100];
+unsigned char Ptcn[100];
+unsigned char Rspt[100];
+
+unsigned short it, ir, ip, i, j;
+unsigned short BanTC, BanTI, BanTF;
 unsigned short Dato;
 
 const unsigned int PolModbus = 0xA001;
-unsigned int CRC16;
-unsigned short *ptrCRC16;
+unsigned int CRC16, CRCPDU;
+unsigned short *ptrCRC16, *ptrCRCPDU;
+
+unsigned short Bb;
+
+
 
 void interrupt(void){
  if(PIR1.F5==1){
 
  Dato = UART1_Read();
 
- if ((Dato==Hdr)&&(ir==0)){
- BanT = 1;
- Rspt[ir] = Dato;
- }
- if ((Dato!=Hdr)&&(ir==0)){
- ir=-1;
- }
- if ((BanT==1)&&(ir!=0)){
- Rspt[ir] = Dato;
+
+
+
+ if (Dato==Hdr){
+ BanTI = 1;
+ it = 0;
+
  }
 
- ir++;
- if (ir==Rsize){
- BanP = 1;
- ir=0;
+ if (BanTI==1){
+
+ if ((BanTF==1)&&(Dato==End2)){
+ Rspt[it] = 0;
+ RSize = it;
+ BanTI = 0;
+ BanTC = 1;
+ }
+
+ if (Dato!=End1){
+ Rspt[it] = Dato;
+ it++;
+ BanTF = 0;
+ } else {
+ Rspt[it] = Dato;
+ it++;
+ BanTF = 1;
+ }
+
  }
 
  PIR1.F5 = 0;
  }
 }
+
 
 
 unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
@@ -85,49 +106,93 @@ void Configuracion(){
  PIE1.RC1IE = 1;
  PIR1.F5 = 0;
 
- UART1_Init(57600);
- Delay_ms(100);
+ UART1_Init(19200);
+
+ Delay_ms(10);
 
 }
 
 void main() {
 
  Configuracion();
+
+ BanTI = 0;
+ BanTC = 0;
+ BanTF = 0;
+
+ Bb = 0;
+
+
  RC5_bit = 0;
 
  ptrCRC16 = &CRC16;
+ ptrCRCPDU = &CRCPDU;
 
-
- PDU[0]=Add;
- PDU[1]=Fcn;
- PDU[2]=0x03;
- PDU[3]=0x04;
+ Add = 0x01;
+ Fcn = 0x02;
+ Psize = 9;
 
 
 
 
 
  Ptcn[0]=Hdr;
- Ptcn[Psize-2]=End1;
- Ptcn[Psize-1]=End2;
+ Ptcn[1]=Add;
+ Ptcn[2]=Fcn;
+ Ptcn[3]=0x03;
+ Ptcn[4]=0x04;
+ Ptcn[7]=End1;
+ Ptcn[8]=End2;
+
 
 
  while (1){
 
- CRC16 = ModbusRTU_CRC16(PDU, PDUSize);
+
+ if ((RA0_bit==0)&&(Bb==0)){
+ Bb = 1;
+ for (i=1;i<=4;i++){
+ PDU[ip-1] = Ptcn[i];
+ }
+
+ CRC16 = ModbusRTU_CRC16(PDU, 4);
  Ptcn[6] = *ptrCRC16;
  Ptcn[5] = *(ptrCRC16+1);
 
- for (ip=1;ip<=4;ip++){
- Ptcn[ip] = PDU[ip-1];
- }
-
- for (ip=0;ip<Psize;ip++){
- UART1_WRITE(Ptcn[ip]);
+ RC5_bit = 1;
+ for (i=0;i<Psize;i++){
+ UART1_WRITE(Ptcn[i]);
  }
  while(UART_Tx_Idle()==0);
+ RC5_bit = 0;
 
- Delay_ms(20);
+ } else if (RA0_bit==1){
+ Bb = 0;
+ }
+
+
+ if (BanTC==5){
+
+ if (Rspt[0]==Add){
+
+ for (i=0;i<=(Rsize-3);i++){
+ PDU[ip] = Rspt[ip];
+ }
+
+ CRC16 = ModbusRTU_CRC16(PDU, PDUSize);
+ *ptrCRCPDU = Rspt[Rsize-1];
+ *(ptrCRCPDU+1) = Rspt[Rsize-2];
+
+ if (CRC16==CRCPDU) {
+
+ }
+
+ BanTC = 0;
+
+ }
+ }
+
+ Delay_ms(10);
 
  }
 }

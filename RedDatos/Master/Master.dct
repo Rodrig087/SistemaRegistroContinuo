@@ -181,14 +181,16 @@ b5
 b6
 b7
 banked
-banp
-bant
+bantc
+bantf
+banti
 baud1con
 baud2con
 baudcon
 baudcon1
 baudcon2
 baudctl
+bb
 bcd2dec
 bcd2dec16
 bcl1ie
@@ -523,6 +525,7 @@ comfrem
 compare_double
 configuracion
 crc16
+crcpdu
 cren
 cren_bit
 cren_rc1sta_bit
@@ -804,6 +807,7 @@ hlvdl2
 hlvdl2_bit
 hlvdl3
 hlvdl3_bit
+i
 ics_auto
 ics_off
 idissen
@@ -897,9 +901,9 @@ irng0
 irng0_bit
 irng1
 irng1_bit
-irr
 irvst
 irvst_bit
+it
 itrim0
 itrim0_bit
 itrim1
@@ -1382,6 +1386,7 @@ pstr3con
 pstrcon
 ptcn
 ptrcrc16
+ptrcrcpdu
 pvcfg0
 pvcfg0_bit
 pvcfg1

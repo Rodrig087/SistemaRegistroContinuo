@@ -13,50 +13,71 @@ Descripcion:
 const short Hdr = 0x3A;                                 //Constante de delimitador de inicio de trama
 const short End1 = 0x0D;                                //Constantes de delimitador de final de trama:
 const short End2 = 0x0A;                                //El delimitador de final de trama es del tipo CR+LF
-const short Add = 0x01;                                  //Identificador de tipo de sensor
-const short Fcn = 0x02;                                 //Identificador de numero de esclavo
 
-const short PDUSize = 4;                                //Constante de longitud de trama PDU
-const short Psize = 9;                                  //Constante de longitud de trama de Peticion
-const short Rsize = 9;                                  //Constante de longitud de trama de Respuesta
+unsigned short PDUSize;                                 //Variable de longitud de trama PDU
+unsigned short Psize;                                   //Variable de longitud de trama de Peticion
+unsigned short Rsize;                                   //Variable de longitud de trama de Respuesta
 
-unsigned char PDU[PDUSize];                             //Trama PDU
-unsigned char Ptcn[Psize];                              //Trama de peticion
-unsigned char Rspt[Rsize];                              //Trama de respuesta
+unsigned short Add;                                     //Variable de codigo de direccion de esclavo
+unsigned short Fcn;                                     //Variable de funcion
 
-short ir, irr, ip, j;                                   //Subindices para las tramas de peticion y respuesta
-unsigned short BanP, BanT;
+//Segun el protolo Modbus RTU, la carga util de la trama PDU puede ser de hasta 252 bytes. Aqui se ha fijado un limite de hasta 98 bytes.
+//Si se requiere mas espacio para datos se puede extender mas, siempre y cuando no sobrepase la capacidad de memoria del microcontrolador
+unsigned char PDU[100];                                 //Trama PDU.
+unsigned char Ptcn[100];                                //Trama de peticion
+unsigned char Rspt[100];                                //Trama de respuesta
+
+unsigned short it, ir, ip, i, j;                       //Subindices para las tramas de peticion y respuesta
+unsigned short BanTC, BanTI, BanTF;                     //Banderas de trama completa, inicio de trama y final de trama
 unsigned short Dato;
 
 const unsigned int PolModbus = 0xA001;                  //Polinomio para el calculo del CRC
-unsigned int CRC16;                                     //Variable para almacenar el valor del CRC calculado
-unsigned short *ptrCRC16;                               //Puntero para almacenar el valor del CRC
+unsigned int CRC16, CRCPDU;                             //Variables para almacenar el CRC calculado, y el CRC de la trama PDU recibida
+unsigned short *ptrCRC16, *ptrCRCPDU;                   //Puntero para almacenar los valores del CRC calculado y el de la trama PDU recibida
 
+unsigned short Bb;                                      //Bandera de boton, sirve solo para hacer pruebas
+
+
+//Interrupcion por Uart
 void interrupt(void){
      if(PIR1.F5==1){
 
-        Dato = UART1_Read();
-
-        if ((Dato==Hdr)&&(ir==0)){                   //Verifica que el primer dato en llegar sea el identificador de inicio de trama
-           BanT = 1;                                 //Activa una bandera de trama
-           Rspt[ir] = Dato;                          //Almacena el Dato en la trama de respuesta
+        Dato = UART1_Read();                            //Recibe el byte por el Uart1 y lo almacena en la variable Dato
+        
+        //Verifica que el dato recibido sea el identificador de inicio de trama, de ser asi inicializa el subindice y el Time Out y activa una bandera
+        //de inicio de trama para permitir almacenar los datos en la trama de respuesta. Si se vuelve a recibir el identificador de inicio de trama y no a
+        //terminado de llenar la primera trama de respuesta, inicializa de nuevo el subindice y el Time Out para sobreescribir la trama.
+        if (Dato==Hdr){
+           BanTI = 1;
+           it = 0;
+           //Inicializa el TimeOut
         }
-        if ((Dato!=Hdr)&&(ir==0)){                   //Verifica si el primer dato en llegar es diferente al identificador del inicio de trama
-           ir=-1;                                    //Si es asi, reduce el subindice en una unidad
-        }
-        if ((BanT==1)&&(ir!=0)){
-           Rspt[ir] = Dato;                          //Almacena el resto de datos en la trama de respuesta si la bandera de trama esta activada
-        }
-
-        ir++;                                        //Aumenta el subindice una unidad
-        if (ir==Rsize){                              //Verifica que se haya terminado de llenar la trama de datos
-           BanP = 1;                                 //Habilita la bandera de lectura de datos
-           ir=0;                                     //Limpia el subindice de la trama de peticion para permitir una nueva secuencia de recepcion de datos
+        
+        if (BanTI==1){                                  //Verifica que la bandera de inicio de trama este activa
+           
+           if ((BanTF==1)&&(Dato==End2)){               //Verifica que se cumpla la condicion de final de trama
+              Rspt[it] = 0;                             //Borrar el ultimo elemento de la trama de respuesta, por que corresponde al primer byte del delimitador de final de trama
+              RSize = it;                               //Establece la longitud de la trama de respuesta sin considerar el ultimo elemento
+              BanTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
+              BanTC = 1;                                //Activa la bandera de trama completa
+           }
+           
+           if (Dato!=End1){                             //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
+              Rspt[it] = Dato;                          //Almacena el dato en la trama de respuesta
+              it++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+              BanTF = 0;                                //Limpia la bandera de final de trama
+           } else {
+              Rspt[it] = Dato;                          //Almacena el dato en la trama de respuesta
+              it++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+              BanTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
+           }
+           
         }
 
         PIR1.F5 = 0;                                 //Limpia la bandera de interrupcion
      }
 }
+
 
 //Funcion para calcular el CRC16 de una trama de datos
 unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
@@ -95,49 +116,93 @@ void Configuracion(){
      PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
      PIR1.F5 = 0;                                      //Limpia la bandera de interrupcion
 
-     UART1_Init(57600);                                 //Inicializa el UART a 9600 bps
-     Delay_ms(100);                                    //Espera para que el modulo UART se estabilice
+     UART1_Init(19200);                                //Inicializa el UART a 9600 bps
+     
+     Delay_ms(10);                                     //Espera para que el modulo UART se estabilice
 
 }
 
 void main() {
 
      Configuracion();
+     
+     BanTI = 0;                                                     //Inicializa las banderas de trama
+     BanTC = 0;
+     BanTF = 0;
+     
+     Bb = 0;                                                        //Inicializa la bandera del boton, es solo para el ejemplo del dispositivo maestro
+
+     
      RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
 
      ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
-
-     //PDU = 0x01020304  CRC=0x2BA1
-     PDU[0]=Add;
-     PDU[1]=Fcn;
-     PDU[2]=0x03;
-     PDU[3]=0x04;
+     ptrCRCPDU = &CRCPDU;                                           //Asociacion del puntero CRCPDU
+     
+     Add = 0x01;                                                    //Direccion del esclavo a quien se realiza la peticion (Ejemplo)
+     Fcn = 0x02;                                                    //Funcion solicitada al esclavo (Ejemplo)
+     Psize = 9;                                                     //Longitu de la trama de peticion (Ejemplo)
      
      //Trama de peticion
-     // | Hdr |              PDU          |     CRC     |     End     |
-     // |  :  | Add | Fcn | Data1 | Data2 | CRC1 | CRC2 |  CR  |  LF  |
+     // | Hdr |              PDU          |        CRC        |     End     |
+     // |  :  | Add | Fcn | Data1 | Data2 | CRC_MSB | CRC_LSB |  CR  |  LF  |
      
      Ptcn[0]=Hdr;
-     Ptcn[Psize-2]=End1;
-     Ptcn[Psize-1]=End2;
-
+     Ptcn[1]=Add;
+     Ptcn[2]=Fcn;
+     Ptcn[3]=0x03;
+     Ptcn[4]=0x04;
+     Ptcn[7]=End1;
+     Ptcn[8]=End2;
+     
+     //Ptc[] = 3A010203042BA10D0A
      
      while (1){
-
-            CRC16 = ModbusRTU_CRC16(PDU, PDUSize);               //Calcula el CRC de la trama de peticion y la almacena en la variable CRC16
-            Ptcn[6] = *ptrCRC16;                                 //Asigna el MSB de CRC al espacio 6 de la trama de peticion
-            Ptcn[5] = *(ptrCRC16+1);                             //Asigna el LSB del CRC al espacio 5 de la trama de peticion
+     
+            //Rutina de ejemplo del dispositivo maestro. Cada vez que se pulsa un boton se envia una peticion a un esclavo especifico.
+            if ((RA0_bit==0)&&(Bb==0)){
+               Bb = 1;
+               for (i=1;i<=4;i++){                                  //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
+                   PDU[ip-1] = Ptcn[i];
+               }
+               
+               CRC16 = ModbusRTU_CRC16(PDU, 4);                     //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+               Ptcn[6] = *ptrCRC16;                                 //Asigna el LSB del CRC al espacio 6 de la trama de peticion
+               Ptcn[5] = *(ptrCRC16+1);                             //Asigna el MSB del CRC al espacio 5 de la trama de peticion
+               
+               RC5_bit = 1;                                         //Establece el Max485 en modo de escritura
+               for (i=0;i<Psize;i++){
+                    UART1_WRITE(Ptcn[i]);                           //Manda por Uart la trama de peticion
+               }
+               while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+               RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
+               
+            } else if (RA0_bit==1){
+               Bb = 0;                                              //Esta rutina sirve para evitar rebotes en el boton
+            }
+     
+            //Ojo condicion inexistente para hacer pruebas
+            if (BanTC==5){                                          //Verifica que la bandera de trama completa este activa
             
-            for (ip=1;ip<=4;ip++){                               //Rellena la trama de peticion con los datos de la trama PDU
-                Ptcn[ip] = PDU[ip-1];
+               if (Rspt[0]==Add){                                   //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
+
+                  for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
+                      PDU[ip] = Rspt[ip];
+                  }
+
+                  CRC16 = ModbusRTU_CRC16(PDU, PDUSize);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+                  *ptrCRCPDU = Rspt[Rsize-1];                       //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
+                  *(ptrCRCPDU+1) = Rspt[Rsize-2];                   //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
+                  
+                  if (CRC16==CRCPDU) {                              //Verifica si el CRC calculado es igual al CRC obtenido de la trama de peticion
+
+                  }
+
+                  BanTC = 0;                                        //Limpia la bandera de trama completa
+               
+               }
             }
 
-            for (ip=0;ip<Psize;ip++){
-                UART1_WRITE(Ptcn[ip]);                           //Manda por Uart la trama de peticion
-            }
-            while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
-
-            Delay_ms(20);
+            Delay_ms(10);
 
      }
 }
