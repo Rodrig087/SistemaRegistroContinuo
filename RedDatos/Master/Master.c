@@ -162,7 +162,7 @@ void main() {
             if ((RA0_bit==0)&&(Bb==0)){
                Bb = 1;
                for (i=1;i<=4;i++){                                  //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
-                   PDU[ip-1] = Ptcn[i];
+                   PDU[i-1] = Ptcn[i];
                }
                
                CRC16 = ModbusRTU_CRC16(PDU, 4);                     //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
@@ -171,8 +171,9 @@ void main() {
                
                RC5_bit = 1;                                         //Establece el Max485 en modo de escritura
                for (i=0;i<Psize;i++){
-                    UART1_WRITE(Ptcn[i]);                           //Manda por Uart la trama de peticion
+                   UART1_WRITE(Ptcn[i]);                           //Manda por Uart la trama de peticion
                }
+
                while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
                RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
                
@@ -186,7 +187,7 @@ void main() {
                if (Rspt[0]==Add){                                   //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
 
                   for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
-                      PDU[ip] = Rspt[ip];
+                      PDU[i] = Rspt[i];
                   }
 
                   CRC16 = ModbusRTU_CRC16(PDU, PDUSize);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16

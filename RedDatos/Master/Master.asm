@@ -308,8 +308,8 @@ L_main22:
 	SUBLW       4
 	BTFSS       STATUS+0, 0 
 	GOTO        L_main23
-;Master.c,165 :: 		PDU[ip-1] = Ptcn[i];
-	DECF        _ip+0, 0 
+;Master.c,165 :: 		PDU[i-1] = Ptcn[i];
+	DECF        _i+0, 0 
 	MOVWF       R0 
 	CLRF        R1 
 	MOVLW       0
@@ -389,7 +389,7 @@ L_main25:
 ;Master.c,175 :: 		}
 	GOTO        L_main25
 L_main26:
-;Master.c,176 :: 		while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+;Master.c,177 :: 		while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
 L_main28:
 	CALL        _UART_Tx_Idle+0, 0
 	MOVF        R0, 0 
@@ -398,29 +398,29 @@ L_main28:
 	GOTO        L_main29
 	GOTO        L_main28
 L_main29:
-;Master.c,177 :: 		RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
+;Master.c,178 :: 		RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
 	BCF         RC5_bit+0, BitPos(RC5_bit+0) 
-;Master.c,179 :: 		} else if (RA0_bit==1){
+;Master.c,180 :: 		} else if (RA0_bit==1){
 	GOTO        L_main30
 L_main21:
 	BTFSS       RA0_bit+0, BitPos(RA0_bit+0) 
 	GOTO        L_main31
-;Master.c,180 :: 		Bb = 0;                                              //Esta rutina sirve para evitar rebotes en el boton
+;Master.c,181 :: 		Bb = 0;                                              //Esta rutina sirve para evitar rebotes en el boton
 	CLRF        _Bb+0 
-;Master.c,181 :: 		}
+;Master.c,182 :: 		}
 L_main31:
 L_main30:
-;Master.c,184 :: 		if (BanTC==5){                                          //Verifica que la bandera de trama completa este activa
+;Master.c,185 :: 		if (BanTC==5){                                          //Verifica que la bandera de trama completa este activa
 	MOVF        _BanTC+0, 0 
 	XORLW       5
 	BTFSS       STATUS+0, 2 
 	GOTO        L_main32
-;Master.c,186 :: 		if (Rspt[0]==Add){                                   //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
+;Master.c,187 :: 		if (Rspt[0]==Add){                                   //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
 	MOVF        _Rspt+0, 0 
 	XORWF       _Add+0, 0 
 	BTFSS       STATUS+0, 2 
 	GOTO        L_main33
-;Master.c,188 :: 		for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
+;Master.c,189 :: 		for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
 	CLRF        _i+0 
 L_main34:
 	MOVLW       3
@@ -441,7 +441,7 @@ L_main34:
 L__main47:
 	BTFSS       STATUS+0, 0 
 	GOTO        L_main35
-;Master.c,189 :: 		PDU[ip] = Rspt[ip];
+;Master.c,190 :: 		PDU[ip] = Rspt[ip];
 	MOVLW       _PDU+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_PDU+0)
@@ -460,12 +460,12 @@ L__main47:
 	INCF        FSR0H, 1 
 	MOVF        POSTINC0+0, 0 
 	MOVWF       POSTINC1+0 
-;Master.c,188 :: 		for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
+;Master.c,189 :: 		for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
 	INCF        _i+0, 1 
-;Master.c,190 :: 		}
+;Master.c,191 :: 		}
 	GOTO        L_main34
 L_main35:
-;Master.c,192 :: 		CRC16 = ModbusRTU_CRC16(PDU, PDUSize);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+;Master.c,193 :: 		CRC16 = ModbusRTU_CRC16(PDU, PDUSize);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
 	MOVLW       _PDU+0
 	MOVWF       FARG_ModbusRTU_CRC16_ptucBuffer+0 
 	MOVLW       hi_addr(_PDU+0)
@@ -479,7 +479,7 @@ L_main35:
 	MOVWF       _CRC16+0 
 	MOVF        R1, 0 
 	MOVWF       _CRC16+1 
-;Master.c,193 :: 		*ptrCRCPDU = Rspt[Rsize-1];                       //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
+;Master.c,194 :: 		*ptrCRCPDU = Rspt[Rsize-1];                       //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
 	DECF        _Rsize+0, 0 
 	MOVWF       R0 
 	CLRF        R1 
@@ -495,7 +495,7 @@ L_main35:
 	MOVFF       _ptrCRCPDU+1, FSR1H
 	MOVF        POSTINC0+0, 0 
 	MOVWF       POSTINC1+0 
-;Master.c,194 :: 		*(ptrCRCPDU+1) = Rspt[Rsize-2];                   //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
+;Master.c,195 :: 		*(ptrCRCPDU+1) = Rspt[Rsize-2];                   //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
 	MOVLW       1
 	ADDWF       _ptrCRCPDU+0, 0 
 	MOVWF       FSR1 
@@ -516,7 +516,7 @@ L_main35:
 	MOVWF       FSR0H 
 	MOVF        POSTINC0+0, 0 
 	MOVWF       POSTINC1+0 
-;Master.c,196 :: 		if (CRC16==CRCPDU) {                              //Verifica si el CRC calculado es igual al CRC obtenido de la trama de peticion
+;Master.c,197 :: 		if (CRC16==CRCPDU) {                              //Verifica si el CRC calculado es igual al CRC obtenido de la trama de peticion
 	MOVF        _CRC16+1, 0 
 	XORWF       _CRCPDU+1, 0 
 	BTFSS       STATUS+0, 2 
@@ -526,15 +526,15 @@ L_main35:
 L__main48:
 	BTFSS       STATUS+0, 2 
 	GOTO        L_main37
-;Master.c,198 :: 		}
+;Master.c,199 :: 		}
 L_main37:
-;Master.c,200 :: 		BanTC = 0;                                        //Limpia la bandera de trama completa
+;Master.c,201 :: 		BanTC = 0;                                        //Limpia la bandera de trama completa
 	CLRF        _BanTC+0 
-;Master.c,202 :: 		}
-L_main33:
 ;Master.c,203 :: 		}
+L_main33:
+;Master.c,204 :: 		}
 L_main32:
-;Master.c,205 :: 		Delay_ms(10);
+;Master.c,206 :: 		Delay_ms(10);
 	MOVLW       26
 	MOVWF       R12, 0
 	MOVLW       248
@@ -545,9 +545,9 @@ L_main38:
 	DECFSZ      R12, 1, 1
 	BRA         L_main38
 	NOP
-;Master.c,207 :: 		}
-	GOTO        L_main17
 ;Master.c,208 :: 		}
+	GOTO        L_main17
+;Master.c,209 :: 		}
 L_end_main:
 	GOTO        $+0
 ; end of _main

@@ -1,501 +1,136 @@
 
 _interrupt:
 
-;Esclavo.c,33 :: 		void interrupt(void){
-;Esclavo.c,35 :: 		if(PIR1.F5==1){
+;Esclavo.c,50 :: 		void interrupt(void){
+;Esclavo.c,51 :: 		if(PIR1.F5==1){
 	BTFSS       PIR1+0, 5 
 	GOTO        L_interrupt0
-;Esclavo.c,37 :: 		if (UART1_Data_Ready()==1){
-	CALL        _UART1_Data_Ready+0, 0
-	MOVF        R0, 0 
-	XORLW       1
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt1
-;Esclavo.c,38 :: 		Dato = UART1_Read();
+;Esclavo.c,53 :: 		Dato = UART1_Read();                            //Recibe el byte por el Uart1 y lo almacena en la variable Dato
 	CALL        _UART1_Read+0, 0
 	MOVF        R0, 0 
 	MOVWF       _Dato+0 
-;Esclavo.c,39 :: 		}
-L_interrupt1:
-;Esclavo.c,40 :: 		if ((Dato==Hdr)&&(ip==0)){                       //Verifica que el primer dato en llegar sea el identificador de inicio de trama
-	MOVF        _Dato+0, 0 
+;Esclavo.c,58 :: 		if (Dato==Hdr){
+	MOVF        R0, 0 
 	XORLW       58
 	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt4
-	MOVF        _ip+0, 0 
-	XORLW       0
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt4
-L__interrupt68:
-;Esclavo.c,41 :: 		BanT = 1;                                     //Activa la bandera de trama
+	GOTO        L_interrupt1
+;Esclavo.c,59 :: 		BanTI = 1;
 	MOVLW       1
-	MOVWF       _BanT+0 
-;Esclavo.c,42 :: 		Ptcn[ip] = Dato;                              //Almacena el Dato en la trama de peticion
-	MOVLW       _Ptcn+0
-	MOVWF       FSR1 
-	MOVLW       hi_addr(_Ptcn+0)
-	MOVWF       FSR1H 
-	MOVF        _ip+0, 0 
-	ADDWF       FSR1, 1 
-	BTFSC       STATUS+0, 0 
-	INCF        FSR1H, 1 
-	MOVF        _Dato+0, 0 
-	MOVWF       POSTINC1+0 
-;Esclavo.c,43 :: 		}
-L_interrupt4:
-;Esclavo.c,44 :: 		if ((Dato!=Hdr)&&(ip==0)){                       //Verifica si el primer dato en llegar es diferente al identificador del inicio de trama
-	MOVF        _Dato+0, 0 
-	XORLW       58
-	BTFSC       STATUS+0, 2 
-	GOTO        L_interrupt7
-	MOVF        _ip+0, 0 
-	XORLW       0
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt7
-L__interrupt67:
-;Esclavo.c,45 :: 		ip=-1;                                        //Si es asi: reduce el subindice en una unidad
-	MOVLW       255
-	MOVWF       _ip+0 
-;Esclavo.c,46 :: 		}
-L_interrupt7:
-;Esclavo.c,47 :: 		if ((BanT==1)&&(ip!=0)){
-	MOVF        _BanT+0, 0 
+	MOVWF       _BanTI+0 
+;Esclavo.c,60 :: 		it = 0;
+	CLRF        _it+0 
+;Esclavo.c,62 :: 		}
+L_interrupt1:
+;Esclavo.c,64 :: 		if (BanTI==1){                                  //Verifica que la bandera de inicio de trama este activa
+	MOVF        _BanTI+0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt10
-	MOVF        _ip+0, 0 
-	XORLW       0
-	BTFSC       STATUS+0, 2 
-	GOTO        L_interrupt10
-L__interrupt66:
-;Esclavo.c,48 :: 		Ptcn[ip] = Dato;                              //Almacena el resto de datos en la trama de peticion si la bandera de trama esta activada
+	GOTO        L_interrupt2
+;Esclavo.c,66 :: 		if ((BanTF==1)&&(Dato==End2)){               //Verifica que se cumpla la condicion de final de trama
+	MOVF        _BanTF+0, 0 
+	XORLW       1
+	BTFSS       STATUS+0, 2 
+	GOTO        L_interrupt5
+	MOVF        _Dato+0, 0 
+	XORLW       10
+	BTFSS       STATUS+0, 2 
+	GOTO        L_interrupt5
+L__interrupt50:
+;Esclavo.c,67 :: 		Ptcn[it] = 0;                             //Borrar el ultimo elemento de la trama de respuesta, por que corresponde al primer byte del delimitador de final de trama
 	MOVLW       _Ptcn+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_Ptcn+0)
 	MOVWF       FSR1H 
-	MOVF        _ip+0, 0 
+	MOVF        _it+0, 0 
+	ADDWF       FSR1, 1 
+	BTFSC       STATUS+0, 0 
+	INCF        FSR1H, 1 
+	CLRF        POSTINC1+0 
+;Esclavo.c,68 :: 		PSize = it;                               //Establece la longitud de la trama de respuesta sin considerar el ultimo elemento
+	MOVF        _it+0, 0 
+	MOVWF       _Psize+0 
+;Esclavo.c,69 :: 		BanTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
+	CLRF        _BanTI+0 
+;Esclavo.c,70 :: 		BanTC = 1;                                //Activa la bandera de trama completa
+	MOVLW       1
+	MOVWF       _BanTC+0 
+;Esclavo.c,71 :: 		}
+L_interrupt5:
+;Esclavo.c,73 :: 		if (Dato!=End1){                             //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
+	MOVF        _Dato+0, 0 
+	XORLW       13
+	BTFSC       STATUS+0, 2 
+	GOTO        L_interrupt6
+;Esclavo.c,74 :: 		Ptcn[it] = Dato;                          //Almacena el dato en la trama de respuesta
+	MOVLW       _Ptcn+0
+	MOVWF       FSR1 
+	MOVLW       hi_addr(_Ptcn+0)
+	MOVWF       FSR1H 
+	MOVF        _it+0, 0 
 	ADDWF       FSR1, 1 
 	BTFSC       STATUS+0, 0 
 	INCF        FSR1H, 1 
 	MOVF        _Dato+0, 0 
 	MOVWF       POSTINC1+0 
-;Esclavo.c,49 :: 		}
-L_interrupt10:
-;Esclavo.c,50 :: 		ip++;                                            //Aumenta el subindice una unidad
-	INCF        _ip+0, 1 
-;Esclavo.c,51 :: 		if (ip==Psize){                                  //Verifica que se haya terminado de llenar la trama de datos
-	MOVF        _ip+0, 0 
-	XORLW       6
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt11
-;Esclavo.c,52 :: 		BanP = 1;                                     //Habilita la bandera de lectura de datos
+;Esclavo.c,75 :: 		it++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+	INCF        _it+0, 1 
+;Esclavo.c,76 :: 		BanTF = 0;                                //Limpia la bandera de final de trama
+	CLRF        _BanTF+0 
+;Esclavo.c,77 :: 		} else {
+	GOTO        L_interrupt7
+L_interrupt6:
+;Esclavo.c,78 :: 		Ptcn[it] = Dato;                          //Almacena el dato en la trama de respuesta
+	MOVLW       _Ptcn+0
+	MOVWF       FSR1 
+	MOVLW       hi_addr(_Ptcn+0)
+	MOVWF       FSR1H 
+	MOVF        _it+0, 0 
+	ADDWF       FSR1, 1 
+	BTFSC       STATUS+0, 0 
+	INCF        FSR1H, 1 
+	MOVF        _Dato+0, 0 
+	MOVWF       POSTINC1+0 
+;Esclavo.c,79 :: 		it++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+	INCF        _it+0, 1 
+;Esclavo.c,80 :: 		BanTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
 	MOVLW       1
-	MOVWF       _BanP+0 
-;Esclavo.c,53 :: 		BanT = 0;
-	CLRF        _BanT+0 
-;Esclavo.c,54 :: 		ip=0;                                         //Limpia el subindice de la trama de peticion para permitir una nueva secuencia de recepcion de datos
-	CLRF        _ip+0 
-;Esclavo.c,55 :: 		}
-L_interrupt11:
-;Esclavo.c,57 :: 		PIR1.F5 = 0;                                     //Limpia la bandera de interrupcion de UART1
+	MOVWF       _BanTF+0 
+;Esclavo.c,81 :: 		}
+L_interrupt7:
+;Esclavo.c,83 :: 		}
+L_interrupt2:
+;Esclavo.c,85 :: 		PIR1.F5 = 0;                                 //Limpia la bandera de interrupcion
 	BCF         PIR1+0, 5 
-;Esclavo.c,58 :: 		}
+;Esclavo.c,86 :: 		}
 L_interrupt0:
-;Esclavo.c,59 :: 		}
+;Esclavo.c,87 :: 		}
 L_end_interrupt:
-L__interrupt71:
+L__interrupt52:
 	RETFIE      1
 ; end of _interrupt
 
-_StartSignal:
-
-;Esclavo.c,63 :: 		void StartSignal(){
-;Esclavo.c,64 :: 		TRISB4_bit = 0;                                     //Configure RD0 as output
-	BCF         TRISB4_bit+0, BitPos(TRISB4_bit+0) 
-;Esclavo.c,65 :: 		RB4_bit = 0;                                        //RD0 sends 0 to the sensor
-	BCF         RB4_bit+0, BitPos(RB4_bit+0) 
-;Esclavo.c,66 :: 		delay_ms(18);
-	MOVLW       47
-	MOVWF       R12, 0
-	MOVLW       191
-	MOVWF       R13, 0
-L_StartSignal12:
-	DECFSZ      R13, 1, 1
-	BRA         L_StartSignal12
-	DECFSZ      R12, 1, 1
-	BRA         L_StartSignal12
-	NOP
-	NOP
-;Esclavo.c,67 :: 		RB4_bit = 1;                                        //RD0 sends 1 to the sensor
-	BSF         RB4_bit+0, BitPos(RB4_bit+0) 
-;Esclavo.c,68 :: 		delay_us(30);
-	MOVLW       19
-	MOVWF       R13, 0
-L_StartSignal13:
-	DECFSZ      R13, 1, 1
-	BRA         L_StartSignal13
-	NOP
-	NOP
-;Esclavo.c,69 :: 		TRISB4_bit = 1;                                     //Configure RD0 as input
-	BSF         TRISB4_bit+0, BitPos(TRISB4_bit+0) 
-;Esclavo.c,70 :: 		}
-L_end_StartSignal:
-	RETURN      0
-; end of _StartSignal
-
-_CheckResponse:
-
-;Esclavo.c,72 :: 		void CheckResponse(){
-;Esclavo.c,73 :: 		Check = 0;
-	CLRF        _Check+0 
-;Esclavo.c,74 :: 		delay_us(40);
-	MOVLW       26
-	MOVWF       R13, 0
-L_CheckResponse14:
-	DECFSZ      R13, 1, 1
-	BRA         L_CheckResponse14
-	NOP
-;Esclavo.c,75 :: 		if (RB4_bit == 0){
-	BTFSC       RB4_bit+0, BitPos(RB4_bit+0) 
-	GOTO        L_CheckResponse15
-;Esclavo.c,76 :: 		delay_us(80);
-	MOVLW       53
-	MOVWF       R13, 0
-L_CheckResponse16:
-	DECFSZ      R13, 1, 1
-	BRA         L_CheckResponse16
-;Esclavo.c,77 :: 		if (RB4_bit == 1){
-	BTFSS       RB4_bit+0, BitPos(RB4_bit+0) 
-	GOTO        L_CheckResponse17
-;Esclavo.c,78 :: 		Check = 1;
-	MOVLW       1
-	MOVWF       _Check+0 
-;Esclavo.c,79 :: 		delay_us(40);
-	MOVLW       26
-	MOVWF       R13, 0
-L_CheckResponse18:
-	DECFSZ      R13, 1, 1
-	BRA         L_CheckResponse18
-	NOP
-;Esclavo.c,80 :: 		}
-L_CheckResponse17:
-;Esclavo.c,81 :: 		}
-L_CheckResponse15:
-;Esclavo.c,82 :: 		}
-L_end_CheckResponse:
-	RETURN      0
-; end of _CheckResponse
-
-_ReadData:
-
-;Esclavo.c,84 :: 		char ReadData(){
-;Esclavo.c,86 :: 		for(j = 0; j < 8; j++){
-	CLRF        R3 
-L_ReadData19:
-	MOVLW       8
-	SUBWF       R3, 0 
-	BTFSC       STATUS+0, 0 
-	GOTO        L_ReadData20
-;Esclavo.c,87 :: 		while(!RB4_bit);                              //Espera hasta RB4 pase a alto
-L_ReadData22:
-	BTFSC       RB4_bit+0, BitPos(RB4_bit+0) 
-	GOTO        L_ReadData23
-	GOTO        L_ReadData22
-L_ReadData23:
-;Esclavo.c,88 :: 		delay_us(30);
-	MOVLW       19
-	MOVWF       R13, 0
-L_ReadData24:
-	DECFSZ      R13, 1, 1
-	BRA         L_ReadData24
-	NOP
-	NOP
-;Esclavo.c,89 :: 		if(RB4_bit == 0){
-	BTFSC       RB4_bit+0, BitPos(RB4_bit+0) 
-	GOTO        L_ReadData25
-;Esclavo.c,90 :: 		i&= ~(1<<(7 - j));                       //Clear bit (7-b)
-	MOVF        R3, 0 
-	SUBLW       7
-	MOVWF       R0 
-	MOVF        R0, 0 
-	MOVWF       R1 
-	MOVLW       1
-	MOVWF       R0 
-	MOVF        R1, 0 
-L__ReadData75:
-	BZ          L__ReadData76
-	RLCF        R0, 1 
-	BCF         R0, 0 
-	ADDLW       255
-	GOTO        L__ReadData75
-L__ReadData76:
-	COMF        R0, 1 
-	MOVF        R0, 0 
-	ANDWF       R2, 1 
-;Esclavo.c,91 :: 		}else {
-	GOTO        L_ReadData26
-L_ReadData25:
-;Esclavo.c,92 :: 		i|= (1 << (7 - j));                      //Set bit (7-b)
-	MOVF        R3, 0 
-	SUBLW       7
-	MOVWF       R0 
-	MOVF        R0, 0 
-	MOVWF       R1 
-	MOVLW       1
-	MOVWF       R0 
-	MOVF        R1, 0 
-L__ReadData77:
-	BZ          L__ReadData78
-	RLCF        R0, 1 
-	BCF         R0, 0 
-	ADDLW       255
-	GOTO        L__ReadData77
-L__ReadData78:
-	MOVF        R0, 0 
-	IORWF       R2, 1 
-;Esclavo.c,93 :: 		while(RB4_bit);                          //Espera hasta RB4 pase a bajo
-L_ReadData27:
-	BTFSS       RB4_bit+0, BitPos(RB4_bit+0) 
-	GOTO        L_ReadData28
-	GOTO        L_ReadData27
-L_ReadData28:
-;Esclavo.c,94 :: 		}
-L_ReadData26:
-;Esclavo.c,86 :: 		for(j = 0; j < 8; j++){
-	INCF        R3, 1 
-;Esclavo.c,95 :: 		}
-	GOTO        L_ReadData19
-L_ReadData20:
-;Esclavo.c,96 :: 		return i;
-	MOVF        R2, 0 
-	MOVWF       R0 
-;Esclavo.c,97 :: 		}
-L_end_ReadData:
-	RETURN      0
-; end of _ReadData
-
-_Calcular:
-
-;Esclavo.c,99 :: 		void Calcular(){
-;Esclavo.c,101 :: 		StartSignal();
-	CALL        _StartSignal+0, 0
-;Esclavo.c,102 :: 		CheckResponse();
-	CALL        _CheckResponse+0, 0
-;Esclavo.c,103 :: 		if(Check == 1){
-	MOVF        _Check+0, 0 
-	XORLW       1
-	BTFSS       STATUS+0, 2 
-	GOTO        L_Calcular29
-;Esclavo.c,104 :: 		RH_byte1 = ReadData();
-	CALL        _ReadData+0, 0
-	MOVF        R0, 0 
-	MOVWF       _RH_byte1+0 
-;Esclavo.c,105 :: 		RH_byte2 = ReadData();
-	CALL        _ReadData+0, 0
-	MOVF        R0, 0 
-	MOVWF       _RH_byte2+0 
-;Esclavo.c,106 :: 		T_byte1 = ReadData();
-	CALL        _ReadData+0, 0
-	MOVF        R0, 0 
-	MOVWF       _T_byte1+0 
-;Esclavo.c,107 :: 		T_byte2 = ReadData();
-	CALL        _ReadData+0, 0
-	MOVF        R0, 0 
-	MOVWF       _T_byte2+0 
-;Esclavo.c,108 :: 		Sum = ReadData();
-	CALL        _ReadData+0, 0
-	MOVF        R0, 0 
-	MOVWF       _Sum+0 
-	MOVLW       0
-	MOVWF       _Sum+1 
-;Esclavo.c,109 :: 		if(Sum == ((RH_byte1+RH_byte2+T_byte1+T_byte2) & 0XFF)){
-	MOVF        _RH_byte2+0, 0 
-	ADDWF       _RH_byte1+0, 0 
-	MOVWF       R0 
-	CLRF        R1 
-	MOVLW       0
-	ADDWFC      R1, 1 
-	MOVF        _T_byte1+0, 0 
-	ADDWF       R0, 1 
-	MOVLW       0
-	ADDWFC      R1, 1 
-	MOVF        _T_byte2+0, 0 
-	ADDWF       R0, 1 
-	MOVLW       0
-	ADDWFC      R1, 1 
-	MOVLW       255
-	ANDWF       R0, 0 
-	MOVWF       R2 
-	MOVF        R1, 0 
-	MOVWF       R3 
-	MOVLW       0
-	ANDWF       R3, 1 
-	MOVF        _Sum+1, 0 
-	XORWF       R3, 0 
-	BTFSS       STATUS+0, 2 
-	GOTO        L__Calcular80
-	MOVF        R2, 0 
-	XORWF       _Sum+0, 0 
-L__Calcular80:
-	BTFSS       STATUS+0, 2 
-	GOTO        L_Calcular30
-;Esclavo.c,110 :: 		ITemp = T_byte1;
-	MOVF        _T_byte1+0, 0 
-	MOVWF       _ITemp+0 
-	MOVLW       0
-	MOVWF       _ITemp+1 
-;Esclavo.c,111 :: 		ITemp = (ITemp << 8) | T_byte2;
-	MOVF        _ITemp+0, 0 
-	MOVWF       R1 
-	CLRF        R0 
-	MOVF        _T_byte2+0, 0 
-	IORWF       R0, 0 
-	MOVWF       R3 
-	MOVF        R1, 0 
-	MOVWF       R4 
-	MOVLW       0
-	IORWF       R4, 1 
-	MOVF        R3, 0 
-	MOVWF       _ITemp+0 
-	MOVF        R4, 0 
-	MOVWF       _ITemp+1 
-;Esclavo.c,112 :: 		IHmd = RH_byte1;
-	MOVF        _RH_byte1+0, 0 
-	MOVWF       _IHmd+0 
-	MOVLW       0
-	MOVWF       _IHmd+1 
-;Esclavo.c,113 :: 		IHmd = (IHmd << 8) | RH_byte2;
-	MOVF        _IHmd+0, 0 
-	MOVWF       R1 
-	CLRF        R0 
-	MOVF        _RH_byte2+0, 0 
-	IORWF       R0, 0 
-	MOVWF       FLOC__Calcular+2 
-	MOVF        R1, 0 
-	MOVWF       FLOC__Calcular+3 
-	MOVLW       0
-	IORWF       FLOC__Calcular+3, 1 
-	MOVF        FLOC__Calcular+2, 0 
-	MOVWF       _IHmd+0 
-	MOVF        FLOC__Calcular+3, 0 
-	MOVWF       _IHmd+1 
-;Esclavo.c,114 :: 		ITemp = ITemp/10;
-	MOVF        R3, 0 
-	MOVWF       R0 
-	MOVF        R4, 0 
-	MOVWF       R1 
-	MOVLW       10
-	MOVWF       R4 
-	MOVLW       0
-	MOVWF       R5 
-	CALL        _Div_16X16_U+0, 0
-	MOVF        R0, 0 
-	MOVWF       FLOC__Calcular+0 
-	MOVF        R1, 0 
-	MOVWF       FLOC__Calcular+1 
-	MOVF        FLOC__Calcular+0, 0 
-	MOVWF       _ITemp+0 
-	MOVF        FLOC__Calcular+1, 0 
-	MOVWF       _ITemp+1 
-;Esclavo.c,115 :: 		IHmd = IHmd/10;
-	MOVLW       10
-	MOVWF       R4 
-	MOVLW       0
-	MOVWF       R5 
-	MOVF        FLOC__Calcular+2, 0 
-	MOVWF       R0 
-	MOVF        FLOC__Calcular+3, 0 
-	MOVWF       R1 
-	CALL        _Div_16X16_U+0, 0
-	MOVF        R0, 0 
-	MOVWF       _IHmd+0 
-	MOVF        R1, 0 
-	MOVWF       _IHmd+1 
-;Esclavo.c,117 :: 		if (ITemp > 0X8000){                //Temperatura negativa
-	MOVF        FLOC__Calcular+1, 0 
-	SUBLW       128
-	BTFSS       STATUS+0, 2 
-	GOTO        L__Calcular81
-	MOVF        FLOC__Calcular+0, 0 
-	SUBLW       0
-L__Calcular81:
-	BTFSC       STATUS+0, 0 
-	GOTO        L_Calcular31
-;Esclavo.c,118 :: 		ITemp = 0;
-	CLRF        _ITemp+0 
-	CLRF        _ITemp+1 
-;Esclavo.c,119 :: 		IHmd = 0;
-	CLRF        _IHmd+0 
-	CLRF        _IHmd+1 
-;Esclavo.c,120 :: 		}
-L_Calcular31:
-;Esclavo.c,122 :: 		} else {
-	GOTO        L_Calcular32
-L_Calcular30:
-;Esclavo.c,123 :: 		ITemp = 100;
-	MOVLW       100
-	MOVWF       _ITemp+0 
-	MOVLW       0
-	MOVWF       _ITemp+1 
-;Esclavo.c,124 :: 		IHmd = 100;
-	MOVLW       100
-	MOVWF       _IHmd+0 
-	MOVLW       0
-	MOVWF       _IHmd+1 
-;Esclavo.c,125 :: 		}
-L_Calcular32:
-;Esclavo.c,126 :: 		} else {
-	GOTO        L_Calcular33
-L_Calcular29:
-;Esclavo.c,127 :: 		ITemp = 200;
-	MOVLW       200
-	MOVWF       _ITemp+0 
-	MOVLW       0
-	MOVWF       _ITemp+1 
-;Esclavo.c,128 :: 		IHmd = 200;
-	MOVLW       200
-	MOVWF       _IHmd+0 
-	MOVLW       0
-	MOVWF       _IHmd+1 
-;Esclavo.c,129 :: 		}
-L_Calcular33:
-;Esclavo.c,131 :: 		chTemp = (unsigned char *) & ITemp;                 //Asocia el valor calculado de Temperatura al puntero chTemp
-	MOVLW       _ITemp+0
-	MOVWF       _chTemp+0 
-	MOVLW       hi_addr(_ITemp+0)
-	MOVWF       _chTemp+1 
-;Esclavo.c,132 :: 		chHmd = (unsigned char *) & IHmd;                   //Asocia el valor calculado de Temperatura al puntero chTemp
-	MOVLW       _IHmd+0
-	MOVWF       _chHmd+0 
-	MOVLW       hi_addr(_IHmd+0)
-	MOVWF       _chHmd+1 
-;Esclavo.c,134 :: 		}
-L_end_Calcular:
-	RETURN      0
-; end of _Calcular
-
 _Responder:
 
-;Esclavo.c,136 :: 		void Responder(unsigned int Reg){
-;Esclavo.c,138 :: 		if (Reg==0x01){
+;Esclavo.c,91 :: 		void Responder(unsigned int Reg){
+;Esclavo.c,93 :: 		if (Reg==0x01){
 	MOVLW       0
 	XORWF       FARG_Responder_Reg+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__Responder83
+	GOTO        L__Responder54
 	MOVLW       1
 	XORWF       FARG_Responder_Reg+0, 0 
-L__Responder83:
+L__Responder54:
 	BTFSS       STATUS+0, 2 
-	GOTO        L_Responder34
-;Esclavo.c,139 :: 		for (ir=4;ir>=3;ir--){
+	GOTO        L_Responder8
+;Esclavo.c,94 :: 		for (ir=4;ir>=3;ir--){
 	MOVLW       4
 	MOVWF       _ir+0 
-L_Responder35:
+L_Responder9:
 	MOVLW       3
 	SUBWF       _ir+0, 0 
 	BTFSS       STATUS+0, 0 
-	GOTO        L_Responder36
-;Esclavo.c,140 :: 		Rspt[ir]=(*chTemp++);                        //Rellena los bytes 3 y 4 de la trama de respuesta con el dato de la Temperatura calculada
+	GOTO        L_Responder10
+;Esclavo.c,95 :: 		Rspt[ir]=(*chTemp++);                        //Rellena los bytes 3 y 4 de la trama de respuesta con el dato de la Temperatura calculada
 	MOVLW       _Rspt+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_Rspt+0)
@@ -510,32 +145,32 @@ L_Responder35:
 	MOVWF       POSTINC1+0 
 	INFSNZ      _chTemp+0, 1 
 	INCF        _chTemp+1, 1 
-;Esclavo.c,139 :: 		for (ir=4;ir>=3;ir--){
+;Esclavo.c,94 :: 		for (ir=4;ir>=3;ir--){
 	DECF        _ir+0, 1 
-;Esclavo.c,141 :: 		}
-	GOTO        L_Responder35
-L_Responder36:
-;Esclavo.c,142 :: 		}
-L_Responder34:
-;Esclavo.c,144 :: 		if (Reg==0x02){
+;Esclavo.c,96 :: 		}
+	GOTO        L_Responder9
+L_Responder10:
+;Esclavo.c,97 :: 		}
+L_Responder8:
+;Esclavo.c,99 :: 		if (Reg==0x02){
 	MOVLW       0
 	XORWF       FARG_Responder_Reg+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__Responder84
+	GOTO        L__Responder55
 	MOVLW       2
 	XORWF       FARG_Responder_Reg+0, 0 
-L__Responder84:
+L__Responder55:
 	BTFSS       STATUS+0, 2 
-	GOTO        L_Responder38
-;Esclavo.c,145 :: 		for (ir=4;ir>=3;ir--){
+	GOTO        L_Responder12
+;Esclavo.c,100 :: 		for (ir=4;ir>=3;ir--){
 	MOVLW       4
 	MOVWF       _ir+0 
-L_Responder39:
+L_Responder13:
 	MOVLW       3
 	SUBWF       _ir+0, 0 
 	BTFSS       STATUS+0, 0 
-	GOTO        L_Responder40
-;Esclavo.c,146 :: 		Rspt[ir]=(*chHmd++);                         //Rellena los bytes 3 y 4 de la trama de respuesta con el dato de la Humedad calculada
+	GOTO        L_Responder14
+;Esclavo.c,101 :: 		Rspt[ir]=(*chHmd++);                         //Rellena los bytes 3 y 4 de la trama de respuesta con el dato de la Humedad calculada
 	MOVLW       _Rspt+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_Rspt+0)
@@ -550,26 +185,26 @@ L_Responder39:
 	MOVWF       POSTINC1+0 
 	INFSNZ      _chHmd+0, 1 
 	INCF        _chHmd+1, 1 
-;Esclavo.c,145 :: 		for (ir=4;ir>=3;ir--){
+;Esclavo.c,100 :: 		for (ir=4;ir>=3;ir--){
 	DECF        _ir+0, 1 
-;Esclavo.c,147 :: 		}
-	GOTO        L_Responder39
-L_Responder40:
-;Esclavo.c,148 :: 		}
-L_Responder38:
-;Esclavo.c,150 :: 		Rspt[2]=Ptcn[2];                                    //Rellena el byte 2 con el tipo de funcion de la trama de peticion
+;Esclavo.c,102 :: 		}
+	GOTO        L_Responder13
+L_Responder14:
+;Esclavo.c,103 :: 		}
+L_Responder12:
+;Esclavo.c,105 :: 		Rspt[2]=Ptcn[2];                                    //Rellena el byte 2 con el tipo de funcion de la trama de peticion
 	MOVF        _Ptcn+2, 0 
 	MOVWF       _Rspt+2 
-;Esclavo.c,152 :: 		RC5_bit = 1;                                        //Establece el Max485 en modo de escritura
+;Esclavo.c,107 :: 		RC5_bit = 1;                                        //Establece el Max485 en modo de escritura
 	BSF         RC5_bit+0, BitPos(RC5_bit+0) 
-;Esclavo.c,154 :: 		for (ir=0;ir<Rsize;ir++){
+;Esclavo.c,109 :: 		for (ir=0;ir<Rsize;ir++){
 	CLRF        _ir+0 
-L_Responder42:
-	MOVLW       6
+L_Responder16:
+	MOVF        _Rsize+0, 0 
 	SUBWF       _ir+0, 0 
 	BTFSC       STATUS+0, 0 
-	GOTO        L_Responder43
-;Esclavo.c,155 :: 		UART1_Write(Rspt[ir]);                          //Envia la trama de respuesta
+	GOTO        L_Responder17
+;Esclavo.c,110 :: 		UART1_Write(Rspt[ir]);                          //Envia la trama de respuesta
 	MOVLW       _Rspt+0
 	MOVWF       FSR0 
 	MOVLW       hi_addr(_Rspt+0)
@@ -581,31 +216,31 @@ L_Responder42:
 	MOVF        POSTINC0+0, 0 
 	MOVWF       FARG_UART1_Write_data_+0 
 	CALL        _UART1_Write+0, 0
-;Esclavo.c,154 :: 		for (ir=0;ir<Rsize;ir++){
+;Esclavo.c,109 :: 		for (ir=0;ir<Rsize;ir++){
 	INCF        _ir+0, 1 
-;Esclavo.c,156 :: 		}
-	GOTO        L_Responder42
-L_Responder43:
-;Esclavo.c,157 :: 		while(UART1_Tx_Idle()==0);                          //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
-L_Responder45:
+;Esclavo.c,111 :: 		}
+	GOTO        L_Responder16
+L_Responder17:
+;Esclavo.c,112 :: 		while(UART1_Tx_Idle()==0);                          //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+L_Responder19:
 	CALL        _UART1_Tx_Idle+0, 0
 	MOVF        R0, 0 
 	XORLW       0
 	BTFSS       STATUS+0, 2 
-	GOTO        L_Responder46
-	GOTO        L_Responder45
-L_Responder46:
-;Esclavo.c,159 :: 		RC5_bit = 0;                                        //Establece el Max485 en modo de lectura
+	GOTO        L_Responder20
+	GOTO        L_Responder19
+L_Responder20:
+;Esclavo.c,114 :: 		RC5_bit = 0;                                        //Establece el Max485 en modo de lectura
 	BCF         RC5_bit+0, BitPos(RC5_bit+0) 
-;Esclavo.c,161 :: 		for (ir=3;ir<5;ir++){
+;Esclavo.c,116 :: 		for (ir=3;ir<5;ir++){
 	MOVLW       3
 	MOVWF       _ir+0 
-L_Responder47:
+L_Responder21:
 	MOVLW       5
 	SUBWF       _ir+0, 0 
 	BTFSC       STATUS+0, 0 
-	GOTO        L_Responder48
-;Esclavo.c,162 :: 		Rspt[ir]=0;;                                    //Limpia la trama de respuesta
+	GOTO        L_Responder22
+;Esclavo.c,117 :: 		Rspt[ir]=0;;                                    //Limpia la trama de respuesta
 	MOVLW       _Rspt+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_Rspt+0)
@@ -615,230 +250,450 @@ L_Responder47:
 	BTFSC       STATUS+0, 0 
 	INCF        FSR1H, 1 
 	CLRF        POSTINC1+0 
-;Esclavo.c,161 :: 		for (ir=3;ir<5;ir++){
+;Esclavo.c,116 :: 		for (ir=3;ir<5;ir++){
 	INCF        _ir+0, 1 
-;Esclavo.c,163 :: 		}
-	GOTO        L_Responder47
-L_Responder48:
-;Esclavo.c,165 :: 		}
+;Esclavo.c,118 :: 		}
+	GOTO        L_Responder21
+L_Responder22:
+;Esclavo.c,120 :: 		}
 L_end_Responder:
 	RETURN      0
 ; end of _Responder
 
+_ModbusRTU_CRC16:
+
+;Esclavo.c,123 :: 		unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
+;Esclavo.c,127 :: 		for(uiCRCResult=0xFFFF; uiLen!=0; uiLen --)
+	MOVLW       255
+	MOVWF       R3 
+	MOVLW       255
+	MOVWF       R4 
+L_ModbusRTU_CRC1624:
+	MOVLW       0
+	XORWF       FARG_ModbusRTU_CRC16_uiLen+1, 0 
+	BTFSS       STATUS+0, 2 
+	GOTO        L__ModbusRTU_CRC1657
+	MOVLW       0
+	XORWF       FARG_ModbusRTU_CRC16_uiLen+0, 0 
+L__ModbusRTU_CRC1657:
+	BTFSC       STATUS+0, 2 
+	GOTO        L_ModbusRTU_CRC1625
+;Esclavo.c,129 :: 		uiCRCResult ^=*ptucBuffer ++;
+	MOVFF       FARG_ModbusRTU_CRC16_ptucBuffer+0, FSR2
+	MOVFF       FARG_ModbusRTU_CRC16_ptucBuffer+1, FSR2H
+	MOVF        POSTINC2+0, 0 
+	XORWF       R3, 1 
+	MOVLW       0
+	XORWF       R4, 1 
+	INFSNZ      FARG_ModbusRTU_CRC16_ptucBuffer+0, 1 
+	INCF        FARG_ModbusRTU_CRC16_ptucBuffer+1, 1 
+;Esclavo.c,130 :: 		for(ucCounter =0; ucCounter <8; ucCounter ++)
+	CLRF        R2 
+L_ModbusRTU_CRC1627:
+	MOVLW       8
+	SUBWF       R2, 0 
+	BTFSC       STATUS+0, 0 
+	GOTO        L_ModbusRTU_CRC1628
+;Esclavo.c,132 :: 		if(uiCRCResult & 0x0001)
+	BTFSS       R3, 0 
+	GOTO        L_ModbusRTU_CRC1630
+;Esclavo.c,133 :: 		uiCRCResult =( uiCRCResult >>1)^PolModbus;
+	RRCF        R4, 1 
+	RRCF        R3, 1 
+	BCF         R4, 7 
+	MOVLW       1
+	XORWF       R3, 1 
+	MOVLW       160
+	XORWF       R4, 1 
+	GOTO        L_ModbusRTU_CRC1631
+L_ModbusRTU_CRC1630:
+;Esclavo.c,135 :: 		uiCRCResult >>=1;
+	RRCF        R4, 1 
+	RRCF        R3, 1 
+	BCF         R4, 7 
+L_ModbusRTU_CRC1631:
+;Esclavo.c,130 :: 		for(ucCounter =0; ucCounter <8; ucCounter ++)
+	INCF        R2, 1 
+;Esclavo.c,136 :: 		}
+	GOTO        L_ModbusRTU_CRC1627
+L_ModbusRTU_CRC1628:
+;Esclavo.c,127 :: 		for(uiCRCResult=0xFFFF; uiLen!=0; uiLen --)
+	MOVLW       1
+	SUBWF       FARG_ModbusRTU_CRC16_uiLen+0, 1 
+	MOVLW       0
+	SUBWFB      FARG_ModbusRTU_CRC16_uiLen+1, 1 
+;Esclavo.c,137 :: 		}
+	GOTO        L_ModbusRTU_CRC1624
+L_ModbusRTU_CRC1625:
+;Esclavo.c,138 :: 		return uiCRCResult;
+	MOVF        R3, 0 
+	MOVWF       R0 
+	MOVF        R4, 0 
+	MOVWF       R1 
+;Esclavo.c,139 :: 		}
+L_end_ModbusRTU_CRC16:
+	RETURN      0
+; end of _ModbusRTU_CRC16
+
 _Configuracion:
 
-;Esclavo.c,168 :: 		void Configuracion(){
-;Esclavo.c,170 :: 		ANSELA = 0;                                       //Configura PORTA como digital
+;Esclavo.c,143 :: 		void Configuracion(){
+;Esclavo.c,145 :: 		ANSELA = 0;                                       //Configura PORTA como digital
 	CLRF        ANSELA+0 
-;Esclavo.c,171 :: 		ANSELB = 0;                                       //Configura PORTB como digital
+;Esclavo.c,146 :: 		ANSELB = 0;                                       //Configura PORTB como digital
 	CLRF        ANSELB+0 
-;Esclavo.c,172 :: 		ANSELC = 0;                                       //Configura PORTC como digital
+;Esclavo.c,147 :: 		ANSELC = 0;                                       //Configura PORTC como digital
 	CLRF        ANSELC+0 
-;Esclavo.c,174 :: 		TRISA = 1;                                        //Configura el puerto A como entrada
+;Esclavo.c,149 :: 		TRISA = 1;                                        //Configura el puerto A como entrada
 	MOVLW       1
 	MOVWF       TRISA+0 
-;Esclavo.c,175 :: 		TRISC4_bit = 0;                                   //Configura el pin C4 como salida
+;Esclavo.c,150 :: 		TRISC4_bit = 0;                                   //Configura el pin C4 como salida
 	BCF         TRISC4_bit+0, BitPos(TRISC4_bit+0) 
-;Esclavo.c,176 :: 		TRISC5_bit = 0;                                   //Configura el pin C5 como salida
+;Esclavo.c,151 :: 		TRISC5_bit = 0;                                   //Configura el pin C5 como salida
 	BCF         TRISC5_bit+0, BitPos(TRISC5_bit+0) 
-;Esclavo.c,177 :: 		TRISC0_bit = 1;                                   //Configura el pin C0 como entrada
+;Esclavo.c,152 :: 		TRISC0_bit = 1;                                   //Configura el pin C0 como entrada
 	BSF         TRISC0_bit+0, BitPos(TRISC0_bit+0) 
-;Esclavo.c,178 :: 		TRISC1_bit = 1;                                   //Configura el pin C1 como entrada
+;Esclavo.c,153 :: 		TRISC1_bit = 1;                                   //Configura el pin C1 como entrada
 	BSF         TRISC1_bit+0, BitPos(TRISC1_bit+0) 
-;Esclavo.c,181 :: 		INTCON.GIE = 1;                                   //Habilita las interrupciones globales
+;Esclavo.c,156 :: 		INTCON.GIE = 1;                                   //Habilita las interrupciones globales
 	BSF         INTCON+0, 7 
-;Esclavo.c,182 :: 		INTCON.PEIE = 1;                                  //Habilita las interrupciones perifericas
+;Esclavo.c,157 :: 		INTCON.PEIE = 1;                                  //Habilita las interrupciones perifericas
 	BSF         INTCON+0, 6 
-;Esclavo.c,184 :: 		PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
+;Esclavo.c,159 :: 		PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
 	BSF         PIE1+0, 5 
-;Esclavo.c,185 :: 		PIR1.F5 = 0;                                      //Limpia la bandera de interrupcion
+;Esclavo.c,160 :: 		PIR1.F5 = 0;                                      //Limpia la bandera de interrupcion
 	BCF         PIR1+0, 5 
-;Esclavo.c,187 :: 		UART1_Init(9600);                                 //Inicializa el UART1 a 9600 bps
+;Esclavo.c,162 :: 		UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
 	BSF         BAUDCON+0, 3, 0
 	CLRF        SPBRGH+0 
-	MOVLW       207
+	MOVLW       103
 	MOVWF       SPBRG+0 
 	BSF         TXSTA+0, 2, 0
 	CALL        _UART1_Init+0, 0
-;Esclavo.c,188 :: 		Delay_ms(100);                                    //Espera para que el modulo UART se estabilice
-	MOVLW       2
-	MOVWF       R11, 0
-	MOVLW       4
+;Esclavo.c,163 :: 		Delay_ms(10);                                    //Espera para que el modulo UART se estabilice
+	MOVLW       26
 	MOVWF       R12, 0
-	MOVLW       186
+	MOVLW       248
 	MOVWF       R13, 0
-L_Configuracion50:
+L_Configuracion32:
 	DECFSZ      R13, 1, 1
-	BRA         L_Configuracion50
+	BRA         L_Configuracion32
 	DECFSZ      R12, 1, 1
-	BRA         L_Configuracion50
-	DECFSZ      R11, 1, 1
-	BRA         L_Configuracion50
+	BRA         L_Configuracion32
 	NOP
-;Esclavo.c,190 :: 		}
+;Esclavo.c,165 :: 		}
 L_end_Configuracion:
 	RETURN      0
 ; end of _Configuracion
 
 _main:
 
-;Esclavo.c,193 :: 		void main() {
-;Esclavo.c,195 :: 		Configuracion();
+;Esclavo.c,168 :: 		void main() {
+;Esclavo.c,170 :: 		Configuracion();
 	CALL        _Configuracion+0, 0
-;Esclavo.c,196 :: 		RC5_bit = 0;                                             //Inicia el Max 485 en modo lectura
+;Esclavo.c,172 :: 		BanTI = 0;                                                     //Inicializa las banderas de trama
+	CLRF        _BanTI+0 
+;Esclavo.c,173 :: 		BanTC = 0;
+	CLRF        _BanTC+0 
+;Esclavo.c,174 :: 		BanTF = 0;
+	CLRF        _BanTF+0 
+;Esclavo.c,176 :: 		RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
 	BCF         RC5_bit+0, BitPos(RC5_bit+0) 
-;Esclavo.c,199 :: 		Id=0x02;
-	MOVLW       2
-	MOVWF       _Id+0 
+;Esclavo.c,177 :: 		RC4_bit = 0;
+	BCF         RC4_bit+0, BitPos(RC4_bit+0) 
+;Esclavo.c,179 :: 		CRC16 = 0;                                                     //Inicializa los valores del CRC obtenido y calculado con valores diferentes
+	CLRF        _CRC16+0 
+	CLRF        _CRC16+1 
+;Esclavo.c,180 :: 		CRCPDU = 1;
+	MOVLW       1
+	MOVWF       _CRCPDU+0 
 	MOVLW       0
-	MOVWF       _Id+1 
-;Esclavo.c,201 :: 		chDP = &DatoPtcn;                                        //Asocia el valor de DatoPtcn al puntero chDP
-	MOVLW       _DatoPtcn+0
-	MOVWF       _chDP+0 
-	MOVLW       hi_addr(_DatoPtcn+0)
-	MOVWF       _chDP+1 
-;Esclavo.c,202 :: 		ip=0;
-	CLRF        _ip+0 
-;Esclavo.c,204 :: 		Rspt[0] = Hdr;                                           //Se rellena el primer byte de la trama de respuesta con el delimitador de inicio de trama
+	MOVWF       _CRCPDU+1 
+;Esclavo.c,182 :: 		ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
+	MOVLW       _CRC16+0
+	MOVWF       _ptrCRC16+0 
+	MOVLW       hi_addr(_CRC16+0)
+	MOVWF       _ptrCRC16+1 
+;Esclavo.c,183 :: 		ptrCRCPDU = &CRCPDU;                                           //Asociacion del puntero CRCPDU
+	MOVLW       _CRCPDU+0
+	MOVWF       _ptrCRCPDU+0 
+	MOVLW       hi_addr(_CRCPDU+0)
+	MOVWF       _ptrCRCPDU+1 
+;Esclavo.c,185 :: 		Add = 0x01;                                                    //Direccion del esclavo a quien se realiza la peticion (Ejemplo)
+	MOVLW       1
+	MOVWF       _Add+0 
+;Esclavo.c,186 :: 		Fcn = 0x02;                                                    //Funcion solicitada al esclavo (Ejemplo)
+	MOVLW       2
+	MOVWF       _Fcn+0 
+;Esclavo.c,187 :: 		Rsize = 9;
+	MOVLW       9
+	MOVWF       _Rsize+0 
+;Esclavo.c,194 :: 		Rspt[0] = Hdr;                                           //Se rellena el primer byte de la trama de respuesta con el delimitador de inicio de trama
 	MOVLW       58
 	MOVWF       _Rspt+0 
-;Esclavo.c,205 :: 		Rspt[1] = Id;                                            //Se rellena el segundo byte de la trama de repuesta con el Id del tipo de sensor
-	MOVLW       2
+;Esclavo.c,195 :: 		Rspt[1] = Add;                                           //Se rellena el segundo byte de la trama de repuesta con la Add del sensor
+	MOVLW       1
 	MOVWF       _Rspt+1 
-;Esclavo.c,206 :: 		Rspt[Rsize-1] = End;                                     //Se rellena el ultimo byte de la trama de repuesta con el delimitador de final de trama
+;Esclavo.c,196 :: 		Rspt[7] = End1;                                          //Se rellena el penultimo byte de la trama de repuesta con el primer byte del delimitador de final de trama
 	MOVLW       13
-	MOVWF       _Rspt+5 
-;Esclavo.c,208 :: 		while (1){
-L_main51:
-;Esclavo.c,214 :: 		if (BanP==1){                                      //Verifica si se realizo una peticion
-	MOVF        _BanP+0, 0 
+	MOVWF       _Rspt+7 
+;Esclavo.c,197 :: 		Rspt[8] = End2;                                          //Se rellena el penultimo byte de la trama de repuesta con el segundo byte del delimitador de final de trama
+	MOVLW       10
+	MOVWF       _Rspt+8 
+;Esclavo.c,199 :: 		while (1){
+L_main33:
+;Esclavo.c,201 :: 		if (BanTC==1){                                     //Verifica si se realizo una peticion comprobando el estado de la bandera de trama completa
+	MOVF        _BanTC+0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
-	GOTO        L_main53
-;Esclavo.c,215 :: 		RC4_bit = 1;
-	BSF         RC4_bit+0, BitPos(RC4_bit+0) 
-;Esclavo.c,216 :: 		if ((Ptcn[1]==Id)&&(Ptcn[Psize-1]==End)){    //Verifica el identificador de esclavo y el byte de final de trama
+	GOTO        L_main35
+;Esclavo.c,203 :: 		if (Ptcn[1]==Add){                              //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
+	MOVF        _Ptcn+1, 0 
+	XORWF       _Add+0, 0 
+	BTFSS       STATUS+0, 2 
+	GOTO        L_main36
+;Esclavo.c,205 :: 		for (i=0;i<=(Psize-5);i++){                 //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+	CLRF        _i+0 
+L_main37:
+	MOVLW       5
+	SUBWF       _Psize+0, 0 
+	MOVWF       R1 
+	CLRF        R2 
 	MOVLW       0
-	XORWF       _Id+1, 0 
+	SUBWFB      R2, 1 
+	MOVLW       128
+	XORWF       R2, 0 
+	MOVWF       R0 
+	MOVLW       128
+	SUBWF       R0, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__main87
-	MOVF        _Id+0, 0 
-	XORWF       _Ptcn+1, 0 
-L__main87:
-	BTFSS       STATUS+0, 2 
-	GOTO        L_main56
-	MOVF        _Ptcn+5, 0 
-	XORLW       13
-	BTFSS       STATUS+0, 2 
-	GOTO        L_main56
-L__main69:
-;Esclavo.c,218 :: 		Fcn = Ptcn[2];
-	MOVF        _Ptcn+2, 0 
-	MOVWF       _Fcn+0 
-;Esclavo.c,220 :: 		if (Fcn==0x02){                           //02: Lee un registro especicfico (01:Temperatura, 02:Humedad)
-	MOVF        _Ptcn+2, 0 
-	XORLW       2
-	BTFSS       STATUS+0, 2 
-	GOTO        L_main57
-;Esclavo.c,221 :: 		Calcular();                            //Realiza una secuencia de calculo
-	CALL        _Calcular+0, 0
-;Esclavo.c,222 :: 		*chDP = Ptcn[4];                       //Almacena el byte 4 de la trama de peticion en el LSB de la variable DatoPtcn
-	MOVFF       _chDP+0, FSR1
-	MOVFF       _chDP+1, FSR1H
-	MOVF        _Ptcn+4, 0 
+	GOTO        L__main60
+	MOVF        _i+0, 0 
+	SUBWF       R1, 0 
+L__main60:
+	BTFSS       STATUS+0, 0 
+	GOTO        L_main38
+;Esclavo.c,206 :: 		PDU[i] = Ptcn[i+1];
+	MOVLW       _PDU+0
+	MOVWF       FSR1 
+	MOVLW       hi_addr(_PDU+0)
+	MOVWF       FSR1H 
+	MOVF        _i+0, 0 
+	ADDWF       FSR1, 1 
+	BTFSC       STATUS+0, 0 
+	INCF        FSR1H, 1 
+	MOVF        _i+0, 0 
+	ADDLW       1
+	MOVWF       R0 
+	CLRF        R1 
+	MOVLW       0
+	ADDWFC      R1, 1 
+	MOVLW       _Ptcn+0
+	ADDWF       R0, 0 
+	MOVWF       FSR0 
+	MOVLW       hi_addr(_Ptcn+0)
+	ADDWFC      R1, 0 
+	MOVWF       FSR0H 
+	MOVF        POSTINC0+0, 0 
 	MOVWF       POSTINC1+0 
-;Esclavo.c,223 :: 		*(chDP+1) = Ptcn[3];                   //Almacena el byte 3 de la trama de peticion en el MSB de la variable DatoPtcn
+;Esclavo.c,205 :: 		for (i=0;i<=(Psize-5);i++){                 //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+	INCF        _i+0, 1 
+;Esclavo.c,207 :: 		}
+	GOTO        L_main37
+L_main38:
+;Esclavo.c,209 :: 		CRC16 = ModbusRTU_CRC16(PDU, 4);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+	MOVLW       _PDU+0
+	MOVWF       FARG_ModbusRTU_CRC16_ptucBuffer+0 
+	MOVLW       hi_addr(_PDU+0)
+	MOVWF       FARG_ModbusRTU_CRC16_ptucBuffer+1 
+	MOVLW       4
+	MOVWF       FARG_ModbusRTU_CRC16_uiLen+0 
+	MOVLW       0
+	MOVWF       FARG_ModbusRTU_CRC16_uiLen+1 
+	CALL        _ModbusRTU_CRC16+0, 0
+	MOVF        R0, 0 
+	MOVWF       _CRC16+0 
+	MOVF        R1, 0 
+	MOVWF       _CRC16+1 
+;Esclavo.c,210 :: 		*ptrCRCPDU = Ptcn[Psize-2];                 //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
+	MOVLW       2
+	SUBWF       _Psize+0, 0 
+	MOVWF       R0 
+	CLRF        R1 
+	MOVLW       0
+	SUBWFB      R1, 1 
+	MOVLW       _Ptcn+0
+	ADDWF       R0, 0 
+	MOVWF       FSR0 
+	MOVLW       hi_addr(_Ptcn+0)
+	ADDWFC      R1, 0 
+	MOVWF       FSR0H 
+	MOVFF       _ptrCRCPDU+0, FSR1
+	MOVFF       _ptrCRCPDU+1, FSR1H
+	MOVF        POSTINC0+0, 0 
+	MOVWF       POSTINC1+0 
+;Esclavo.c,211 :: 		*(ptrCRCPDU+1) = Ptcn[Psize-3];             //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
 	MOVLW       1
-	ADDWF       _chDP+0, 0 
+	ADDWF       _ptrCRCPDU+0, 0 
 	MOVWF       FSR1 
 	MOVLW       0
-	ADDWFC      _chDP+1, 0 
+	ADDWFC      _ptrCRCPDU+1, 0 
 	MOVWF       FSR1H 
-	MOVF        _Ptcn+3, 0 
+	MOVLW       3
+	SUBWF       _Psize+0, 0 
+	MOVWF       R0 
+	CLRF        R1 
+	MOVLW       0
+	SUBWFB      R1, 1 
+	MOVLW       _Ptcn+0
+	ADDWF       R0, 0 
+	MOVWF       FSR0 
+	MOVLW       hi_addr(_Ptcn+0)
+	ADDWFC      R1, 0 
+	MOVWF       FSR0H 
+	MOVF        POSTINC0+0, 0 
 	MOVWF       POSTINC1+0 
-;Esclavo.c,224 :: 		Responder(DatoPtcn);                   //Envia la trama de repuesta con el valor del registro requerido
-	MOVF        _DatoPtcn+0, 0 
-	MOVWF       FARG_Responder_Reg+0 
-	MOVF        _DatoPtcn+1, 0 
-	MOVWF       FARG_Responder_Reg+1 
-	CALL        _Responder+0, 0
+;Esclavo.c,213 :: 		if (CRC16==CRCPDU) {                        //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
+	MOVF        _CRC16+1, 0 
+	XORWF       _CRCPDU+1, 0 
+	BTFSS       STATUS+0, 2 
+	GOTO        L__main61
+	MOVF        _CRCPDU+0, 0 
+	XORWF       _CRC16+0, 0 
+L__main61:
+	BTFSS       STATUS+0, 2 
+	GOTO        L_main40
+;Esclavo.c,218 :: 		RC4_bit = ~RC4_bit;                      //Indicador
+	BTG         RC4_bit+0, BitPos(RC4_bit+0) 
+;Esclavo.c,219 :: 		Rspt[2] = Ptcn[2];                       //Rellena el campo de funcion con la funcion requerida en la trama de peticion
+	MOVF        _Ptcn+2, 0 
+	MOVWF       _Rspt+2 
+;Esclavo.c,220 :: 		Rspt[3] = 0xAA;                          //Rellena el campo de datos con los valores 0xAAFF
+	MOVLW       170
+	MOVWF       _Rspt+3 
+;Esclavo.c,221 :: 		Rspt[4] = 0xFF;
+	MOVLW       255
+	MOVWF       _Rspt+4 
+;Esclavo.c,223 :: 		for (i=0;i<=3;i++){                      //Rellena la trama de PDU con los datos de interes de la trama de respuesta
+	CLRF        _i+0 
+L_main41:
+	MOVF        _i+0, 0 
+	SUBLW       3
+	BTFSS       STATUS+0, 0 
+	GOTO        L_main42
+;Esclavo.c,224 :: 		PDU[i] = Rspt[i+1];
+	MOVLW       _PDU+0
+	MOVWF       FSR1 
+	MOVLW       hi_addr(_PDU+0)
+	MOVWF       FSR1H 
+	MOVF        _i+0, 0 
+	ADDWF       FSR1, 1 
+	BTFSC       STATUS+0, 0 
+	INCF        FSR1H, 1 
+	MOVF        _i+0, 0 
+	ADDLW       1
+	MOVWF       R0 
+	CLRF        R1 
+	MOVLW       0
+	ADDWFC      R1, 1 
+	MOVLW       _Rspt+0
+	ADDWF       R0, 0 
+	MOVWF       FSR0 
+	MOVLW       hi_addr(_Rspt+0)
+	ADDWFC      R1, 0 
+	MOVWF       FSR0H 
+	MOVF        POSTINC0+0, 0 
+	MOVWF       POSTINC1+0 
+;Esclavo.c,223 :: 		for (i=0;i<=3;i++){                      //Rellena la trama de PDU con los datos de interes de la trama de respuesta
+	INCF        _i+0, 1 
 ;Esclavo.c,225 :: 		}
-L_main57:
-;Esclavo.c,227 :: 		DatoPtcn = 0;                             //Limpia la variable
-	CLRF        _DatoPtcn+0 
-	CLRF        _DatoPtcn+1 
-;Esclavo.c,228 :: 		for (ipp=0;ipp<Psize;ipp++){
-	CLRF        _ipp+0 
-L_main58:
-	MOVLW       6
-	SUBWF       _ipp+0, 0 
+	GOTO        L_main41
+L_main42:
+;Esclavo.c,227 :: 		CRC16 = ModbusRTU_CRC16(PDU, 4);         //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+	MOVLW       _PDU+0
+	MOVWF       FARG_ModbusRTU_CRC16_ptucBuffer+0 
+	MOVLW       hi_addr(_PDU+0)
+	MOVWF       FARG_ModbusRTU_CRC16_ptucBuffer+1 
+	MOVLW       4
+	MOVWF       FARG_ModbusRTU_CRC16_uiLen+0 
+	MOVLW       0
+	MOVWF       FARG_ModbusRTU_CRC16_uiLen+1 
+	CALL        _ModbusRTU_CRC16+0, 0
+	MOVF        R0, 0 
+	MOVWF       _CRC16+0 
+	MOVF        R1, 0 
+	MOVWF       _CRC16+1 
+;Esclavo.c,228 :: 		Rspt[6] = *ptrCRC16;                     //CRC_LSB
+	MOVFF       _ptrCRC16+0, FSR0
+	MOVFF       _ptrCRC16+1, FSR0H
+	MOVF        POSTINC0+0, 0 
+	MOVWF       _Rspt+6 
+;Esclavo.c,229 :: 		Rspt[5] = *(ptrCRC16+1);                 //CRC_MSB
+	MOVLW       1
+	ADDWF       _ptrCRC16+0, 0 
+	MOVWF       FSR0 
+	MOVLW       0
+	ADDWFC      _ptrCRC16+1, 0 
+	MOVWF       FSR0H 
+	MOVF        POSTINC0+0, 0 
+	MOVWF       _Rspt+5 
+;Esclavo.c,231 :: 		for (i=0;i<=8;i++){
+	CLRF        _i+0 
+L_main44:
+	MOVF        _i+0, 0 
+	SUBLW       8
+	BTFSS       STATUS+0, 0 
+	GOTO        L_main45
+;Esclavo.c,232 :: 		UART1_Write(Rspt[i]);                //Envia la trama de respuesta
+	MOVLW       _Rspt+0
+	MOVWF       FSR0 
+	MOVLW       hi_addr(_Rspt+0)
+	MOVWF       FSR0H 
+	MOVF        _i+0, 0 
+	ADDWF       FSR0, 1 
 	BTFSC       STATUS+0, 0 
-	GOTO        L_main59
-;Esclavo.c,229 :: 		Ptcn[ipp]=0;                          //Limpia la trama de peticion
-	MOVLW       _Ptcn+0
-	MOVWF       FSR1 
-	MOVLW       hi_addr(_Ptcn+0)
-	MOVWF       FSR1H 
-	MOVF        _ipp+0, 0 
-	ADDWF       FSR1, 1 
-	BTFSC       STATUS+0, 0 
-	INCF        FSR1H, 1 
-	CLRF        POSTINC1+0 
-;Esclavo.c,228 :: 		for (ipp=0;ipp<Psize;ipp++){
-	INCF        _ipp+0, 1 
-;Esclavo.c,230 :: 		}
-	GOTO        L_main58
-L_main59:
-;Esclavo.c,231 :: 		BanP = 0;                                 //Limpia la bandera de lectura de datos
-	CLRF        _BanP+0 
-;Esclavo.c,233 :: 		} else{
-	GOTO        L_main61
-L_main56:
-;Esclavo.c,234 :: 		for (ipp=0;ipp<Psize;ipp++){
-	CLRF        _ipp+0 
-L_main62:
-	MOVLW       6
-	SUBWF       _ipp+0, 0 
-	BTFSC       STATUS+0, 0 
-	GOTO        L_main63
-;Esclavo.c,235 :: 		Ptcn[ipp]=0;                       //Limpia la trama de peticion
-	MOVLW       _Ptcn+0
-	MOVWF       FSR1 
-	MOVLW       hi_addr(_Ptcn+0)
-	MOVWF       FSR1H 
-	MOVF        _ipp+0, 0 
-	ADDWF       FSR1, 1 
-	BTFSC       STATUS+0, 0 
-	INCF        FSR1H, 1 
-	CLRF        POSTINC1+0 
-;Esclavo.c,234 :: 		for (ipp=0;ipp<Psize;ipp++){
-	INCF        _ipp+0, 1 
+	INCF        FSR0H, 1 
+	MOVF        POSTINC0+0, 0 
+	MOVWF       FARG_UART1_Write_data_+0 
+	CALL        _UART1_Write+0, 0
+;Esclavo.c,231 :: 		for (i=0;i<=8;i++){
+	INCF        _i+0, 1 
+;Esclavo.c,233 :: 		}
+	GOTO        L_main44
+L_main45:
+;Esclavo.c,234 :: 		while(UART1_Tx_Idle()==0);
+L_main47:
+	CALL        _UART1_Tx_Idle+0, 0
+	MOVF        R0, 0 
+	XORLW       0
+	BTFSS       STATUS+0, 2 
+	GOTO        L_main48
+	GOTO        L_main47
+L_main48:
 ;Esclavo.c,236 :: 		}
-	GOTO        L_main62
-L_main63:
-;Esclavo.c,237 :: 		BanP = 0;                              //Limpia la bandera de lectura de datos
-	CLRF        _BanP+0 
+L_main40:
+;Esclavo.c,237 :: 		BanTC = 0;
+	CLRF        _BanTC+0 
 ;Esclavo.c,238 :: 		}
-L_main61:
-;Esclavo.c,239 :: 		RC4_bit = 0;
-	BCF         RC4_bit+0, BitPos(RC4_bit+0) 
-;Esclavo.c,240 :: 		}
-L_main53:
-;Esclavo.c,241 :: 		Delay_ms(50);                                      //Retraso necesario para que la Rpi tenga tiempo de recibir la trama de respuesta
-	MOVLW       130
+L_main36:
+;Esclavo.c,240 :: 		BanTC = 0;                                      //Limpia la bandera de trama completa
+	CLRF        _BanTC+0 
+;Esclavo.c,242 :: 		}
+L_main35:
+;Esclavo.c,244 :: 		Delay_ms(10);
+	MOVLW       26
 	MOVWF       R12, 0
-	MOVLW       221
+	MOVLW       248
 	MOVWF       R13, 0
-L_main65:
+L_main49:
 	DECFSZ      R13, 1, 1
-	BRA         L_main65
+	BRA         L_main49
 	DECFSZ      R12, 1, 1
-	BRA         L_main65
+	BRA         L_main49
 	NOP
-	NOP
-;Esclavo.c,243 :: 		}
-	GOTO        L_main51
-;Esclavo.c,245 :: 		}
+;Esclavo.c,247 :: 		}
+	GOTO        L_main33
+;Esclavo.c,249 :: 		}
 L_end_main:
 	GOTO        $+0
 ; end of _main

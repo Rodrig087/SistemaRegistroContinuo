@@ -152,7 +152,7 @@ void main() {
  if ((RA0_bit==0)&&(Bb==0)){
  Bb = 1;
  for (i=1;i<=4;i++){
- PDU[ip-1] = Ptcn[i];
+ PDU[i-1] = Ptcn[i];
  }
 
  CRC16 = ModbusRTU_CRC16(PDU, 4);
@@ -163,6 +163,7 @@ void main() {
  for (i=0;i<Psize;i++){
  UART1_WRITE(Ptcn[i]);
  }
+
  while(UART_Tx_Idle()==0);
  RC5_bit = 0;
 
