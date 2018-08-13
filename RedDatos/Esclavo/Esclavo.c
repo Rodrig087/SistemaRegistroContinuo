@@ -13,7 +13,7 @@ const short Hdr = 0x3A;                                 //Constante de delimitad
 const short End1 = 0x0D;                                //Constantes de delimitador de final de trama:
 const short End2 = 0x0A;                                //El delimitador de final de trama es del tipo CR+LF
 
-unsigned short PDUSize;                                 //Variable de longitud de trama PDU
+unsigned short DataSize;                                //Variable de longitud del campo de datos en la trama de respuesta
 unsigned short Psize;                                   //Variable de longitud de trama de Peticion
 unsigned short Rsize;                                   //Variable de longitud de trama de Respuesta
 
@@ -64,8 +64,7 @@ void interrupt(void){
         if (BanTI==1){                                  //Verifica que la bandera de inicio de trama este activa
 
            if ((BanTF==1)&&(Dato==End2)){               //Verifica que se cumpla la condicion de final de trama
-              Ptcn[it] = 0;                             //Borrar el ultimo elemento de la trama de respuesta, por que corresponde al primer byte del delimitador de final de trama
-              PSize = it;                               //Establece la longitud de la trama de respuesta sin considerar el ultimo elemento
+              PSize = it+1;                             //Establece la longitud total de la trama de peticion
               BanTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               BanTC = 1;                                //Activa la bandera de trama completa
            }
@@ -82,7 +81,7 @@ void interrupt(void){
 
         }
 
-        PIR1.F5 = 0;                                 //Limpia la bandera de interrupcion
+        PIR1.F5 = 0;                                    //Limpia la bandera de interrupcion
      }
 }
 
@@ -159,8 +158,8 @@ void Configuracion(){
      PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
      PIR1.F5 = 0;                                      //Limpia la bandera de interrupcion
 
-     UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
-     Delay_ms(10);                                    //Espera para que el modulo UART se estabilice
+     UART1_Init(19200);                                //Inicializa el UART1 a 19200 bps
+     Delay_ms(10);                                     //Espera para que el modulo UART se estabilice
 
 }
 
@@ -169,22 +168,23 @@ void main() {
     
      Configuracion();
 
-     BanTI = 0;                                                     //Inicializa las banderas de trama
+     BanTI = 0;                                               //Inicializa las banderas de trama
      BanTC = 0;
      BanTF = 0;
 
-     RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
+     RC5_bit = 0;                                             //Establece el Max485 en modo de lectura;
      RC4_bit = 0;
      
-     CRC16 = 0;                                                     //Inicializa los valores del CRC obtenido y calculado con valores diferentes
+     CRC16 = 0;                                               //Inicializa los valores del CRC obtenido y calculado con valores diferentes
      CRCPDU = 1;
 
-     ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
-     ptrCRCPDU = &CRCPDU;                                           //Asociacion del puntero CRCPDU
+     ptrCRC16 = &CRC16;                                       //Asociacion del puntero CRC16
+     ptrCRCPDU = &CRCPDU;                                     //Asociacion del puntero CRCPDU
 
-     Add = 0x01;                                                    //Direccion del esclavo a quien se realiza la peticion (Ejemplo)
-     Fcn = 0x02;                                                    //Funcion solicitada al esclavo (Ejemplo)
-     Rsize = 9;
+     Add = 0x01;                                              //Direccion del esclavo a quien se realiza la peticion (Ejemplo)
+     Fcn = 0x02;                                              //Funcion solicitada al esclavo (Ejemplo)
+     DataSize = 2;
+     Rsize = Datasize + 7;
 
      //Trama de respuesta
      // | Hdr |              PDU          |        CRC        |     End     |
@@ -206,28 +206,27 @@ void main() {
                       PDU[i] = Ptcn[i+1];
                   }
 
-                  CRC16 = ModbusRTU_CRC16(PDU, 4);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
-                  *ptrCRCPDU = Ptcn[Psize-2];                 //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
-                  *(ptrCRCPDU+1) = Ptcn[Psize-3];             //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
+                  CRC16 = ModbusRTU_CRC16(PDU, Psize-5);      //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+                  *ptrCRCPDU = Ptcn[Psize-3];                 //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
+                  *(ptrCRCPDU+1) = Ptcn[Psize-4];             //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
 
                   if (CRC16==CRCPDU) {                        //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
 
                      //Aqui se ejecuta lo que respondera el esclavo una vez que ha validado el CRC de la trama de peticion
                      //Por ejemplo, aqui se envia la trama de respuesta con valores impuestos
                      
-                     RC4_bit = ~RC4_bit;                      //Indicador
                      Rspt[2] = Ptcn[2];                       //Rellena el campo de funcion con la funcion requerida en la trama de peticion
                      Rspt[3] = 0xAA;                          //Rellena el campo de datos con los valores 0xAAFF
                      Rspt[4] = 0xFF;
-                     
-                     for (i=0;i<=3;i++){                      //Rellena la trama de PDU con los datos de interes de la trama de respuesta
-                         PDU[i] = Rspt[i+1];
+
+                     for (i=1;i<=(DataSize+2);i++){           //Rellena la trama de PDU con los datos de interes de la trama de respuesta
+                         PDU[i-1] = Rspt[i];
                      }
-                     
+
                      CRC16 = ModbusRTU_CRC16(PDU, 4);         //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
                      Rspt[6] = *ptrCRC16;                     //CRC_LSB
                      Rspt[5] = *(ptrCRC16+1);                 //CRC_MSB
-                     
+
                      for (i=0;i<=8;i++){
                          UART1_Write(Rspt[i]);                //Envia la trama de respuesta
                      }

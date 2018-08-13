@@ -4,7 +4,7 @@ const short Hdr = 0x3A;
 const short End1 = 0x0D;
 const short End2 = 0x0A;
 
-unsigned short PDUSize;
+unsigned short DataSize;
 unsigned short Psize;
 unsigned short Rsize;
 
@@ -55,8 +55,7 @@ void interrupt(void){
  if (BanTI==1){
 
  if ((BanTF==1)&&(Dato==End2)){
- Ptcn[it] = 0;
- PSize = it;
+ PSize = it+1;
  BanTI = 0;
  BanTC = 1;
  }
@@ -175,7 +174,8 @@ void main() {
 
  Add = 0x01;
  Fcn = 0x02;
- Rsize = 9;
+ DataSize = 2;
+ Rsize = Datasize + 7;
 
 
 
@@ -197,22 +197,21 @@ void main() {
  PDU[i] = Ptcn[i+1];
  }
 
- CRC16 = ModbusRTU_CRC16(PDU, 4);
- *ptrCRCPDU = Ptcn[Psize-2];
- *(ptrCRCPDU+1) = Ptcn[Psize-3];
+ CRC16 = ModbusRTU_CRC16(PDU, Psize-5);
+ *ptrCRCPDU = Ptcn[Psize-3];
+ *(ptrCRCPDU+1) = Ptcn[Psize-4];
 
  if (CRC16==CRCPDU) {
 
 
 
 
- RC4_bit = ~RC4_bit;
  Rspt[2] = Ptcn[2];
  Rspt[3] = 0xAA;
  Rspt[4] = 0xFF;
 
- for (i=0;i<=3;i++){
- PDU[i] = Rspt[i+1];
+ for (i=1;i<=(DataSize+2);i++){
+ PDU[i-1] = Rspt[i];
  }
 
  CRC16 = ModbusRTU_CRC16(PDU, 4);

@@ -4,7 +4,7 @@ const short Hdr = 0x3A;
 const short End1 = 0x0D;
 const short End2 = 0x0A;
 
-unsigned short PDUSize;
+unsigned short DataSize;
 unsigned short Psize;
 unsigned short Rsize;
 
@@ -46,8 +46,7 @@ void interrupt(void){
  if (BanTI==1){
 
  if ((BanTF==1)&&(Dato==End2)){
- Rspt[it] = 0;
- RSize = it;
+ RSize = it+1;
  BanTI = 0;
  BanTC = 1;
  }
@@ -74,15 +73,16 @@ unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
 {
  unsigned char ucCounter;
  unsigned int uiCRCResult;
+
  for(uiCRCResult=0xFFFF; uiLen!=0; uiLen --)
  {
- uiCRCResult ^=*ptucBuffer ++;
+ uiCRCResult ^= *ptucBuffer ++;
  for(ucCounter =0; ucCounter <8; ucCounter ++)
  {
  if(uiCRCResult & 0x0001)
- uiCRCResult =( uiCRCResult >>1)^PolModbus;
+ uiCRCResult =(uiCRCResult>>1)^PolModbus;
  else
- uiCRCResult >>=1;
+ uiCRCResult >>= 1;
  }
  }
  return uiCRCResult;
@@ -96,6 +96,7 @@ void Configuracion(){
  ANSELC = 0;
 
  TRISC5_bit = 0;
+ TRISC4_bit = 0;
  TRISA0_bit = 1;
  TRISA1_bit = 0;
 
@@ -124,13 +125,17 @@ void main() {
 
 
  RC5_bit = 0;
+ RC4_bit = 0;
 
  ptrCRC16 = &CRC16;
  ptrCRCPDU = &CRCPDU;
 
  Add = 0x01;
  Fcn = 0x02;
- Psize = 9;
+ DataSize = 2;
+
+ Psize = DataSize+7;
+
 
 
 
@@ -151,11 +156,12 @@ void main() {
 
  if ((RA0_bit==0)&&(Bb==0)){
  Bb = 1;
- for (i=1;i<=4;i++){
+
+ for (i=1;i<=(DataSize+2);i++){
  PDU[i-1] = Ptcn[i];
  }
 
- CRC16 = ModbusRTU_CRC16(PDU, 4);
+ CRC16 = ModbusRTU_CRC16(PDU, DataSize+2);
  Ptcn[6] = *ptrCRC16;
  Ptcn[5] = *(ptrCRC16+1);
 
@@ -171,26 +177,30 @@ void main() {
  Bb = 0;
  }
 
+ if (BanTC==1){
 
- if (BanTC==5){
+ if (Rspt[1]==Add){
 
- if (Rspt[0]==Add){
-
- for (i=0;i<=(Rsize-3);i++){
- PDU[ip] = Rspt[ip];
+ for (i=0;i<=(Rsize-5);i++){
+ PDU[i] = Rspt[i+1];
  }
 
- CRC16 = ModbusRTU_CRC16(PDU, PDUSize);
- *ptrCRCPDU = Rspt[Rsize-1];
- *(ptrCRCPDU+1) = Rspt[Rsize-2];
+ CRC16 = ModbusRTU_CRC16(PDU, Rsize-5);
+ *ptrCRCPDU = Rspt[Rsize-3];
+ *(ptrCRCPDU+1) = Rspt[Rsize-4];
 
  if (CRC16==CRCPDU) {
+
+
+
+ RC4_bit = ~RC4_bit;
+
+ }
 
  }
 
  BanTC = 0;
 
- }
  }
 
  Delay_ms(10);

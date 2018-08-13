@@ -603,6 +603,7 @@ dacr3
 dacr3_bit
 dacr4
 dacr4_bit
+datasize
 dato
 dc
 dc_bit
@@ -1287,7 +1288,6 @@ pdc5_bit
 pdc6
 pdc6_bit
 pdu
-pdusize
 peie
 peie_bit
 peie_giel

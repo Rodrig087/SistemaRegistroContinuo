@@ -1,14 +1,14 @@
 0	1	mikroCPIC1618.exe -MSF -DBG -pP18F25K22 -DL -O11111114 -fo8 -N"E:\Milton\Github\RSA\InstrumentacionPresa\RedDatos\Master\Master.mcppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\uses\P18\" -SP"E:\Milton\Github\RSA\InstrumentacionPresa\RedDatos\Master\" -SP"E:\Milton\Github\Tesis\SensorUltrasonico\DSP\Master\" "Master.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_CString.mcl" "__Lib_Conversions.mcl" "__Lib_UART_c67b67.mcl" "__Lib_LcdConsts.mcl" "__Lib_Lcd.mcl"	 
 hint: 0	1139	Available RAM: 1515 [bytes], Available ROM: 32768 [bytes]	 
 diagnostics: 0	122	Compilation Started	Master.c
-warning: 119	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Master.c
-warning: 138	1505	Suspicious pointer conversion	Master.c
-warning: 139	1505	Suspicious pointer conversion	Master.c
-diagnostics: 209	123	Compiled Successfully	Master.c
-diagnostics: 0	127	All files Compiled in 94 ms	 
-hint: 0	1144	Used RAM (bytes): 341 (23%)  Free RAM (bytes): 1174 (77%)	Used RAM (bytes): 341 (23%)  Free RAM (bytes): 1174 (77%)
-hint: 0	1144	Used ROM (bytes): 1052 (3%)  Free ROM (bytes): 31716 (97%)	Used ROM (bytes): 1052 (3%)  Free ROM (bytes): 31716 (97%)
+warning: 120	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Master.c
+warning: 140	1505	Suspicious pointer conversion	Master.c
+warning: 141	1505	Suspicious pointer conversion	Master.c
+diagnostics: 219	123	Compiled Successfully	Master.c
+diagnostics: 0	127	All files Compiled in 157 ms	 
+hint: 0	1144	Used RAM (bytes): 340 (22%)  Free RAM (bytes): 1175 (78%)	Used RAM (bytes): 340 (22%)  Free RAM (bytes): 1175 (78%)
+hint: 0	1144	Used ROM (bytes): 1092 (3%)  Free ROM (bytes): 31676 (97%)	Used ROM (bytes): 1092 (3%)  Free ROM (bytes): 31676 (97%)
 diagnostics: 0	125	Project Linked Successfully	Master.mcppi
 diagnostics: 0	128	Linked in 62 ms	 
-diagnostics: 0	129	Project 'Master.mcppi' completed: 203 ms	 
-diagnostics: 0	103	Finished successfully: 08 ago. 2018, 16:11:45	Master.mcppi
+diagnostics: 0	129	Project 'Master.mcppi' completed: 266 ms	 
+diagnostics: 0	103	Finished successfully: 13 ago. 2018, 15:55:34	Master.mcppi

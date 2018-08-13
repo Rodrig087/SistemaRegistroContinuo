@@ -14,7 +14,7 @@ const short Hdr = 0x3A;                                 //Constante de delimitad
 const short End1 = 0x0D;                                //Constantes de delimitador de final de trama:
 const short End2 = 0x0A;                                //El delimitador de final de trama es del tipo CR+LF
 
-unsigned short PDUSize;                                 //Variable de longitud de trama PDU
+unsigned short DataSize;                                //Variable de longitud del campo de datos de la trama de peticion
 unsigned short Psize;                                   //Variable de longitud de trama de Peticion
 unsigned short Rsize;                                   //Variable de longitud de trama de Respuesta
 
@@ -56,8 +56,7 @@ void interrupt(void){
         if (BanTI==1){                                  //Verifica que la bandera de inicio de trama este activa
            
            if ((BanTF==1)&&(Dato==End2)){               //Verifica que se cumpla la condicion de final de trama
-              Rspt[it] = 0;                             //Borrar el ultimo elemento de la trama de respuesta, por que corresponde al primer byte del delimitador de final de trama
-              RSize = it;                               //Establece la longitud de la trama de respuesta sin considerar el ultimo elemento
+              RSize = it+1;                             //Establece la longitud total de la trama de respuesta
               BanTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               BanTC = 1;                                //Activa la bandera de trama completa
            }
@@ -84,15 +83,16 @@ unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
 {
    unsigned char ucCounter;
    unsigned int uiCRCResult;
+
    for(uiCRCResult=0xFFFF; uiLen!=0; uiLen --)
    {
-      uiCRCResult ^=*ptucBuffer ++;
+      uiCRCResult ^= *ptucBuffer ++;
       for(ucCounter =0; ucCounter <8; ucCounter ++)
       {
          if(uiCRCResult & 0x0001)
-            uiCRCResult =( uiCRCResult >>1)^PolModbus;
+            uiCRCResult =(uiCRCResult>>1)^PolModbus;
          else
-            uiCRCResult >>=1;
+            uiCRCResult >>= 1;
       }
    }
    return uiCRCResult;
@@ -106,6 +106,7 @@ void Configuracion(){
      ANSELC = 0;                                       //Configura el PORTC como digital
 
      TRISC5_bit = 0;                                   //Configura el pin C5 como salida
+     TRISC4_bit = 0;                                   //Configura el pin C4 como salida
      TRISA0_bit = 1;
      TRISA1_bit = 0;
 
@@ -134,17 +135,21 @@ void main() {
 
      
      RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
+     RC4_bit = 0;                                                   //Inicializa un indicador. No tiene relevancia para la ejecucion del programa
 
      ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
      ptrCRCPDU = &CRCPDU;                                           //Asociacion del puntero CRCPDU
      
      Add = 0x01;                                                    //Direccion del esclavo a quien se realiza la peticion (Ejemplo)
      Fcn = 0x02;                                                    //Funcion solicitada al esclavo (Ejemplo)
-     Psize = 9;                                                     //Longitu de la trama de peticion (Ejemplo)
+     DataSize = 2;                                                  //Longitud del campo de datos de la trama de peticion
+     
+     Psize = DataSize+7;                                            //Longitu de la trama de peticion
      
      //Trama de peticion
      // | Hdr |              PDU          |        CRC        |     End     |
      // |  :  | Add | Fcn | Data1 | Data2 | CRC_MSB | CRC_LSB |  CR  |  LF  |
+     // |  0  |  1  |  2  |   3   |   4   |    5    |    6    |  7   |   8  |
      
      Ptcn[0]=Hdr;
      Ptcn[1]=Add;
@@ -161,17 +166,18 @@ void main() {
             //Rutina de ejemplo del dispositivo maestro. Cada vez que se pulsa un boton se envia una peticion a un esclavo especifico.
             if ((RA0_bit==0)&&(Bb==0)){
                Bb = 1;
-               for (i=1;i<=4;i++){                                  //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
+               
+               for (i=1;i<=(DataSize+2);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC
                    PDU[i-1] = Ptcn[i];
                }
                
-               CRC16 = ModbusRTU_CRC16(PDU, 4);                     //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+               CRC16 = ModbusRTU_CRC16(PDU, DataSize+2);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
                Ptcn[6] = *ptrCRC16;                                 //Asigna el LSB del CRC al espacio 6 de la trama de peticion
                Ptcn[5] = *(ptrCRC16+1);                             //Asigna el MSB del CRC al espacio 5 de la trama de peticion
                
                RC5_bit = 1;                                         //Establece el Max485 en modo de escritura
                for (i=0;i<Psize;i++){
-                   UART1_WRITE(Ptcn[i]);                           //Manda por Uart la trama de peticion
+                   UART1_WRITE(Ptcn[i]);                            //Manda por Uart la trama de peticion
                }
 
                while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
@@ -181,26 +187,30 @@ void main() {
                Bb = 0;                                              //Esta rutina sirve para evitar rebotes en el boton
             }
      
-            //Ojo condicion inexistente para hacer pruebas
-            if (BanTC==5){                                          //Verifica que la bandera de trama completa este activa
+            if (BanTC==1){                                          //Verifica que la bandera de trama completa este activa
             
-               if (Rspt[0]==Add){                                   //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
-
-                  for (i=0;i<=(Rsize-3);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC
-                      PDU[i] = Rspt[i];
-                  }
-
-                  CRC16 = ModbusRTU_CRC16(PDU, PDUSize);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
-                  *ptrCRCPDU = Rspt[Rsize-1];                       //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
-                  *(ptrCRCPDU+1) = Rspt[Rsize-2];                   //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
-                  
-                  if (CRC16==CRCPDU) {                              //Verifica si el CRC calculado es igual al CRC obtenido de la trama de peticion
-
-                  }
-
-                  BanTC = 0;                                        //Limpia la bandera de trama completa
+               if (Rspt[1]==Add){                                   //Verifica que el campo de direccion de la trama de respuesta concuerde con la direccion del esclavo solicitado
                
+                  for (i=0;i<=(Rsize-5);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de respuesta, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+                      PDU[i] = Rspt[i+1];
+                  }
+
+                  CRC16 = ModbusRTU_CRC16(PDU, Rsize-5);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+                  *ptrCRCPDU = Rspt[Rsize-3];                       //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
+                  *(ptrCRCPDU+1) = Rspt[Rsize-4];                   //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
+
+                  if (CRC16==CRCPDU) {                              //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
+               
+                     //Aqui se ejecuta la accion que tomara el cliente una vez que reciba los datos solicitados
+                     //En este caso unicamente cambiara el estado del bit C4
+                     RC4_bit = ~RC4_bit;                             //Indicador
+
+                  }
+                  
                }
+               
+               BanTC = 0;
+               
             }
 
             Delay_ms(10);
