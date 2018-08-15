@@ -37,10 +37,10 @@ unsigned short *ptrCRC16, *ptrCRCPDU;                   //Puntero para almacenar
 
 unsigned short Bb;                                      //Bandera de boton, sirve solo para hacer pruebas
 
-
-//Interrupcion por Uart
+////////////////////////////////////////////////////////////// Interrupciones //////////////////////////////////////////////////////////////
 void interrupt(void){
-     if(PIR1.F5==1){
+//Interrupcion por Uart
+     if(PIR1.RC1IF==1){
 
         Dato = UART1_Read();                            //Recibe el byte por el Uart1 y lo almacena en la variable Dato
         
@@ -48,9 +48,12 @@ void interrupt(void){
         //de inicio de trama para permitir almacenar los datos en la trama de respuesta. Si se vuelve a recibir el identificador de inicio de trama y no a
         //terminado de llenar la primera trama de respuesta, inicializa de nuevo el subindice y el Time Out para sobreescribir la trama.
         if (Dato==Hdr){
-           BanTI = 1;
-           it = 0;
-           //Inicializa el TimeOut
+           BanTI = 1;                                   //Activa la bandera de inicio de trama
+           it = 0;                                      //Limpia el subindice de trama
+           T1CON.TMR1ON = 1;                            //Enciende el Timer1
+           TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
+           TMR1H = 0x3C;                                //Se vuelve a cargar el valor del preload correspondiente a los 50ms, porque
+           TMR1L = 0xB0;                                //al parecer este valor se pierde cada vez que entra a la interrupcion
         }
         
         if (BanTI==1){                                  //Verifica que la bandera de inicio de trama este activa
@@ -59,6 +62,8 @@ void interrupt(void){
               RSize = it+1;                             //Establece la longitud total de la trama de respuesta
               BanTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               BanTC = 1;                                //Activa la bandera de trama completa
+              T1CON.TMR1ON = 0;                         //Apaga el Timer1
+              TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
            }
            
            if (Dato!=End1){                             //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
@@ -73,7 +78,22 @@ void interrupt(void){
            
         }
 
-        PIR1.F5 = 0;                                 //Limpia la bandera de interrupcion
+        PIR1.F5 = 0;                                    //Limpia la bandera de interrupcion
+     }
+     
+//Interrupcion por desbordamiento del TMR1
+     //Si se produce una interrupcion por desbordamiento del TMR1 quiere decir que se cumplio el tiempo establecido por el TimeOut,
+     //por lo que se debe descartar la trama actual. Esto se logra limpiando la bandera de inicio de trama y encerando el subindice de trama,
+     //de esta manera si llega otro dato por el Uart y este es diferente del encabezamiento de inicio de trama ya no se almacenara en la trama de respuesta.
+     if (TMR1IF_bit==1){
+        TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
+        T1CON.TMR1ON = 0;                               //Apaga el Timer1
+        
+        RC4_bit = ~RC4_bit;                             //Conmuta el valor de la salida RC4 para indicar que entro a la interrupcion
+        
+        BanTI = 0;                                      //Limpia la bandera de inicio de trama
+        it = 0;                                         //Limpia el subindice de trama
+
      }
 }
 
@@ -105,21 +125,35 @@ void Configuracion(){
      ANSELB = 0;                                       //Configura el PORTB como digital
      ANSELC = 0;                                       //Configura el PORTC como digital
 
+     TRISC0_bit = 1;
      TRISC5_bit = 0;                                   //Configura el pin C5 como salida
      TRISC4_bit = 0;                                   //Configura el pin C4 como salida
-     TRISA0_bit = 1;
-     TRISA1_bit = 0;
+     TRISC3_bit = 0;                                   //Configura el pin C3 como salida
+     //TRISA0_bit = 1;
+     //TRISA1_bit = 0;
 
      INTCON.GIE = 1;                                   //Habilita las interrupciones globales
      INTCON.PEIE = 1;                                  //Habilita las interrupciones perifericas
-     INTCON.RBIF = 0;
 
+     //Configuracion del UART
      PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
-     PIR1.F5 = 0;                                      //Limpia la bandera de interrupcion
-
+     PIR1.RC1IF = 0;                                   //Limpia la bandera de interrupcion
      UART1_Init(19200);                                //Inicializa el UART a 9600 bps
      
+     //Configuracion del TMR1
+     T1CON = 0x11;                                     //Establece el prescalador en 1:2, enciende el TMR1
+     TMR1IE_bit = 1;                                   //Habilita la interrupcion por desbordamiento del TMR1
+     TMR1IF_bit = 0;                                   //Limpia la bandera de interrupcion por desbordamiento del TMR1
+     TMR1H = 0x3C;                                     //Preload = 15536, Time = 50ms
+     TMR1L = 0xB0;
+     
+     //Nivel de prioridad de las interrupciones
+     RCON.IPEN = 1;                                    //Habilita el nivel de prioridad en las interrupciones
+     IPR1.RC1IP = 0;                                   //EUSART1 Receive Interrupt Priority bit = Low priority
+     IPR1.TMR1IP = 1;                                  //TMR1 Overflow Interrupt Priority bit = High priority
+     
      Delay_ms(10);                                     //Espera para que el modulo UART se estabilice
+     
 
 }
 
@@ -134,6 +168,7 @@ void main() {
      Bb = 0;                                                        //Inicializa la bandera del boton, es solo para el ejemplo del dispositivo maestro
 
      
+     RC0_bit = 0;
      RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
      RC4_bit = 0;                                                   //Inicializa un indicador. No tiene relevancia para la ejecucion del programa
 
@@ -164,7 +199,7 @@ void main() {
      while (1){
      
             //Rutina de ejemplo del dispositivo maestro. Cada vez que se pulsa un boton se envia una peticion a un esclavo especifico.
-            if ((RA0_bit==0)&&(Bb==0)){
+            if ((RC0_bit==0)&&(Bb==0)){
                Bb = 1;
                
                for (i=1;i<=(DataSize+2);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC
@@ -183,7 +218,7 @@ void main() {
                while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
                RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
                
-            } else if (RA0_bit==1){
+            } else if (RC0_bit==1){
                Bb = 0;                                              //Esta rutina sirve para evitar rebotes en el boton
             }
      
@@ -202,9 +237,10 @@ void main() {
                   if (CRC16==CRCPDU) {                              //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
                
                      //Aqui se ejecuta la accion que tomara el cliente una vez que reciba los datos solicitados
-                     //En este caso unicamente cambiara el estado del bit C4
-                     RC4_bit = ~RC4_bit;                             //Indicador
-
+                     //En este caso unicamente cambiara el estado del bit C3
+                     RC3_bit = 1;
+                     Delay_ms(100);
+                     RC3_bit = 0;
                   }
                   
                }

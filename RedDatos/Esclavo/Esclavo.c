@@ -229,6 +229,7 @@ void main() {
 
                      for (i=0;i<=8;i++){
                          UART1_Write(Rspt[i]);                //Envia la trama de respuesta
+                         Delay_ms(5);                         //Simula un retardo entre bytes en la trama enviada. TiempoTotal=9*5=45ms entre el primer byte y el ultimo
                      }
                      while(UART1_Tx_Idle()==0);
 

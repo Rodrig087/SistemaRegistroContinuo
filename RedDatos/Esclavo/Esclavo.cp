@@ -220,6 +220,7 @@ void main() {
 
  for (i=0;i<=8;i++){
  UART1_Write(Rspt[i]);
+ Delay_ms(5);
  }
  while(UART1_Tx_Idle()==0);
 

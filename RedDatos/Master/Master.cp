@@ -28,9 +28,9 @@ unsigned short *ptrCRC16, *ptrCRCPDU;
 unsigned short Bb;
 
 
-
 void interrupt(void){
- if(PIR1.F5==1){
+
+ if(PIR1.RC1IF==1){
 
  Dato = UART1_Read();
 
@@ -40,7 +40,10 @@ void interrupt(void){
  if (Dato==Hdr){
  BanTI = 1;
  it = 0;
-
+ T1CON.TMR1ON = 1;
+ TMR1IF_bit = 0;
+ TMR1H = 0x3C;
+ TMR1L = 0xB0;
  }
 
  if (BanTI==1){
@@ -49,6 +52,8 @@ void interrupt(void){
  RSize = it+1;
  BanTI = 0;
  BanTC = 1;
+ T1CON.TMR1ON = 0;
+ TMR1IF_bit = 0;
  }
 
  if (Dato!=End1){
@@ -64,6 +69,21 @@ void interrupt(void){
  }
 
  PIR1.F5 = 0;
+ }
+
+
+
+
+
+ if (TMR1IF_bit==1){
+ TMR1IF_bit = 0;
+ T1CON.TMR1ON = 0;
+
+ RC4_bit = ~RC4_bit;
+
+ BanTI = 0;
+ it = 0;
+
  }
 }
 
@@ -95,21 +115,35 @@ void Configuracion(){
  ANSELB = 0;
  ANSELC = 0;
 
+ TRISC0_bit = 1;
  TRISC5_bit = 0;
  TRISC4_bit = 0;
- TRISA0_bit = 1;
- TRISA1_bit = 0;
+ TRISC3_bit = 0;
+
+
 
  INTCON.GIE = 1;
  INTCON.PEIE = 1;
- INTCON.RBIF = 0;
+
 
  PIE1.RC1IE = 1;
- PIR1.F5 = 0;
-
+ PIR1.RC1IF = 0;
  UART1_Init(19200);
 
+
+ T1CON = 0x11;
+ TMR1IE_bit = 1;
+ TMR1IF_bit = 0;
+ TMR1H = 0x3C;
+ TMR1L = 0xB0;
+
+
+ RCON.IPEN = 1;
+ IPR1.RC1IP = 0;
+ IPR1.TMR1IP = 1;
+
  Delay_ms(10);
+
 
 }
 
@@ -124,6 +158,7 @@ void main() {
  Bb = 0;
 
 
+ RC0_bit = 0;
  RC5_bit = 0;
  RC4_bit = 0;
 
@@ -154,7 +189,7 @@ void main() {
  while (1){
 
 
- if ((RA0_bit==0)&&(Bb==0)){
+ if ((RC0_bit==0)&&(Bb==0)){
  Bb = 1;
 
  for (i=1;i<=(DataSize+2);i++){
@@ -173,7 +208,7 @@ void main() {
  while(UART_Tx_Idle()==0);
  RC5_bit = 0;
 
- } else if (RA0_bit==1){
+ } else if (RC0_bit==1){
  Bb = 0;
  }
 
@@ -193,8 +228,9 @@ void main() {
 
 
 
- RC4_bit = ~RC4_bit;
-
+ RC3_bit = 1;
+ Delay_ms(100);
+ RC3_bit = 0;
  }
 
  }

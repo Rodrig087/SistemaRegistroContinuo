@@ -35,7 +35,7 @@ L_interrupt1:
 	XORLW       10
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt5
-L__interrupt50:
+L__interrupt51:
 ;Esclavo.c,67 :: 		PSize = it+1;                             //Establece la longitud total de la trama de peticion
 	MOVF        _it+0, 0 
 	ADDLW       1
@@ -96,7 +96,7 @@ L_interrupt2:
 L_interrupt0:
 ;Esclavo.c,86 :: 		}
 L_end_interrupt:
-L__interrupt52:
+L__interrupt53:
 	RETFIE      1
 ; end of _interrupt
 
@@ -107,10 +107,10 @@ _Responder:
 	MOVLW       0
 	XORWF       FARG_Responder_Reg+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__Responder54
+	GOTO        L__Responder55
 	MOVLW       1
 	XORWF       FARG_Responder_Reg+0, 0 
-L__Responder54:
+L__Responder55:
 	BTFSS       STATUS+0, 2 
 	GOTO        L_Responder8
 ;Esclavo.c,93 :: 		for (ir=4;ir>=3;ir--){
@@ -147,10 +147,10 @@ L_Responder8:
 	MOVLW       0
 	XORWF       FARG_Responder_Reg+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__Responder55
+	GOTO        L__Responder56
 	MOVLW       2
 	XORWF       FARG_Responder_Reg+0, 0 
-L__Responder55:
+L__Responder56:
 	BTFSS       STATUS+0, 2 
 	GOTO        L_Responder12
 ;Esclavo.c,99 :: 		for (ir=4;ir>=3;ir--){
@@ -263,10 +263,10 @@ L_ModbusRTU_CRC1624:
 	MOVLW       0
 	XORWF       FARG_ModbusRTU_CRC16_uiLen+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__ModbusRTU_CRC1657
+	GOTO        L__ModbusRTU_CRC1658
 	MOVLW       0
 	XORWF       FARG_ModbusRTU_CRC16_uiLen+0, 0 
-L__ModbusRTU_CRC1657:
+L__ModbusRTU_CRC1658:
 	BTFSC       STATUS+0, 2 
 	GOTO        L_ModbusRTU_CRC1625
 ;Esclavo.c,128 :: 		uiCRCResult ^=*ptucBuffer ++;
@@ -461,10 +461,10 @@ L_main37:
 	MOVLW       128
 	SUBWF       R0, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__main60
+	GOTO        L__main61
 	MOVF        _i+0, 0 
 	SUBWF       R1, 0 
-L__main60:
+L__main61:
 	BTFSS       STATUS+0, 0 
 	GOTO        L_main38
 ;Esclavo.c,206 :: 		PDU[i] = Ptcn[i+1];
@@ -553,10 +553,10 @@ L_main38:
 	MOVF        _CRC16+1, 0 
 	XORWF       _CRCPDU+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__main61
+	GOTO        L__main62
 	MOVF        _CRCPDU+0, 0 
 	XORWF       _CRC16+0, 0 
-L__main61:
+L__main62:
 	BTFSS       STATUS+0, 2 
 	GOTO        L_main40
 ;Esclavo.c,218 :: 		Rspt[2] = Ptcn[2];                       //Rellena el campo de funcion con la funcion requerida en la trama de peticion
@@ -584,10 +584,10 @@ L_main41:
 	MOVLW       128
 	SUBWF       R0, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__main62
+	GOTO        L__main63
 	MOVF        _i+0, 0 
 	SUBWF       R1, 0 
-L__main62:
+L__main63:
 	BTFSS       STATUS+0, 0 
 	GOTO        L_main42
 ;Esclavo.c,223 :: 		PDU[i-1] = Rspt[i];
@@ -664,44 +664,56 @@ L_main44:
 	MOVF        POSTINC0+0, 0 
 	MOVWF       FARG_UART1_Write_data_+0 
 	CALL        _UART1_Write+0, 0
+;Esclavo.c,232 :: 		Delay_ms(5);                         //Simula un retardo entre bytes en la trama enviada. TiempoTotal=9*5=45ms entre el primer byte y el ultimo
+	MOVLW       13
+	MOVWF       R12, 0
+	MOVLW       251
+	MOVWF       R13, 0
+L_main47:
+	DECFSZ      R13, 1, 1
+	BRA         L_main47
+	DECFSZ      R12, 1, 1
+	BRA         L_main47
+	NOP
+	NOP
 ;Esclavo.c,230 :: 		for (i=0;i<=8;i++){
 	INCF        _i+0, 1 
-;Esclavo.c,232 :: 		}
+;Esclavo.c,233 :: 		}
 	GOTO        L_main44
 L_main45:
-;Esclavo.c,233 :: 		while(UART1_Tx_Idle()==0);
-L_main47:
+;Esclavo.c,234 :: 		while(UART1_Tx_Idle()==0);
+L_main48:
 	CALL        _UART1_Tx_Idle+0, 0
 	MOVF        R0, 0 
 	XORLW       0
 	BTFSS       STATUS+0, 2 
+	GOTO        L_main49
 	GOTO        L_main48
-	GOTO        L_main47
-L_main48:
-;Esclavo.c,235 :: 		}
+L_main49:
+;Esclavo.c,236 :: 		}
 L_main40:
-;Esclavo.c,236 :: 		BanTC = 0;
+;Esclavo.c,237 :: 		BanTC = 0;
 	CLRF        _BanTC+0 
-;Esclavo.c,237 :: 		}
+;Esclavo.c,238 :: 		}
 L_main36:
-;Esclavo.c,239 :: 		BanTC = 0;                                      //Limpia la bandera de trama completa
+;Esclavo.c,240 :: 		BanTC = 0;                                      //Limpia la bandera de trama completa
 	CLRF        _BanTC+0 
-;Esclavo.c,241 :: 		}
+;Esclavo.c,242 :: 		}
 L_main35:
-;Esclavo.c,243 :: 		Delay_ms(10);
+;Esclavo.c,244 :: 		Delay_ms(10);
 	MOVLW       26
 	MOVWF       R12, 0
 	MOVLW       248
 	MOVWF       R13, 0
-L_main49:
+L_main50:
 	DECFSZ      R13, 1, 1
-	BRA         L_main49
+	BRA         L_main50
 	DECFSZ      R12, 1, 1
-	BRA         L_main49
+	BRA         L_main50
 	NOP
-;Esclavo.c,246 :: 		}
+;Esclavo.c,247 :: 		}
 	GOTO        L_main33
-;Esclavo.c,248 :: 		}
+;Esclavo.c,249 :: 		}
 L_end_main:
 	GOTO        $+0
 ; end of _main
