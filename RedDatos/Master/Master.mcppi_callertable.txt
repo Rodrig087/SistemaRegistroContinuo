@@ -1,9 +1,10 @@
 main
 	Configuracion
 		UART1_Init
+	enviarTrama
+		ModbusRTU_CRC16
+		UART1_Write
+		UART1_Tx_Idle
 	ModbusRTU_CRC16
-	UART1_Write
-	UART_Tx_Idle
-		____DoIFC
 interrupt
 	UART1_Read

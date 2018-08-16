@@ -14,9 +14,9 @@ const short Hdr = 0x3A;                                 //Constante de delimitad
 const short End1 = 0x0D;                                //Constantes de delimitador de final de trama:
 const short End2 = 0x0A;                                //El delimitador de final de trama es del tipo CR+LF
 
-unsigned short DataSize;                                //Variable de longitud del campo de datos de la trama de peticion
-unsigned short Psize;                                   //Variable de longitud de trama de Peticion
-unsigned short Rsize;                                   //Variable de longitud de trama de Respuesta
+unsigned short dataSize;                                //Variable de longitud del campo de datos de la trama de peticion
+unsigned short psize;                                   //Variable de longitud de trama de Peticion
+unsigned short rsize;                                   //Variable de longitud de trama de Respuesta
 
 unsigned short Add;                                     //Variable de codigo de direccion de esclavo
 unsigned short Fcn;                                     //Variable de funcion
@@ -59,7 +59,7 @@ void interrupt(void){
         if (BanTI==1){                                  //Verifica que la bandera de inicio de trama este activa
            
            if ((BanTF==1)&&(Dato==End2)){               //Verifica que se cumpla la condicion de final de trama
-              RSize = it+1;                             //Establece la longitud total de la trama de respuesta
+              rSize = it+1;                             //Establece la longitud total de la trama de respuesta
               BanTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               BanTC = 1;                                //Activa la bandera de trama completa
               T1CON.TMR1ON = 0;                         //Apaga el Timer1
@@ -97,10 +97,11 @@ void interrupt(void){
      }
 }
 
+////////////////////////////////////////////////////////////// Funciones //////////////////////////////////////////////////////////////
 
 //Funcion para calcular el CRC16 de una trama de datos
-unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
-{
+unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen){
+
    unsigned char ucCounter;
    unsigned int uiCRCResult;
 
@@ -116,21 +117,63 @@ unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
       }
    }
    return uiCRCResult;
+   
 }
 
-// Configuracion //
+//Funcion para rellenar y enviar la trama de peticion
+//////////////////////////////////////// Formato de trama ////////////////////////////////////////
+//| Encabezado |                      PDU                     |        CRC        |      Fin     |
+//|   1 byte   |        2 bytes      |        n bytes         |      2 bytes      |    2 bytes   |
+//|     :      | Dirección | Función | Data1 | Data2 | DataN  | CRC_MSB | CRC_LSB |  CR   |  LF  |
+//|     0      |     1     |    2    |   3   |   4   |    n   |   n+3   |   n+4   |  n+5  |  n+6 |
+
+void enviarTrama(unsigned short dataSize, unsigned short fcn){
+
+     unsigned short pSize = dataSize + 7;                //Longitud de la trama de respuesta
+
+      //Prepara la trama PDU
+     PDU[0] = Add;                                       //Rellena el campo de direccion con la direccion del dispositivo esclavo
+     PDU[1] = fcn;                                       //Rellena el campo de funcion con la funcion que se requerira al esclavo
+     //Rellena el campo de datos de la trama PDU con el payload. OJO aqui hay que buscar la forma de pasar como parametro un vector
+     PDU[2] = 0xAA;                                     //Rellena el campo de datos con los valores 0xAAFF
+     PDU[3] = 0xAA;
+
+     //Prepara la trama de peticion
+     Ptcn[0] = Hdr;                                     //Se rellena el primer byte de la trama de peticion con el delimitador de inicio de trama
+     for (i=0;i<=(dataSize+1);i++){                     //Rellena la trama de Respuesta con el PDU
+         Ptcn[i+1] = PDU[i];
+     }
+     CRC16 = ModbusRTU_CRC16(PDU, dataSize+2);          //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
+     Ptcn[dataSize+3] = *(ptrCRC16+1);                  //Rellena el campo CRC_MSB de la trama de respuesta
+     Ptcn[dataSize+4] = *ptrCRC16;                      //Rellena el campo CRC_LSB de la trama de respuesta
+     Ptcn[dataSize+5] = End1;                           //Se rellena el penultimo byte de la trama de repuesta con el primer byte del delimitador de final de trama
+     Ptcn[dataSize+6] = End2;                           //Se rellena el ultimo byte de la trama de repuesta con el segundo byte del delimitador de final de trama
+
+     //Envia la trama de peticion por el UART1
+     RC5_bit = 1;                                       //Establece el Max485 en modo de escritura
+     for (i=0;i<pSize;i++){
+         UART1_Write(Ptcn[i]);                          //Envia la trama de peticion
+     }
+     while(UART1_Tx_Idle()==0);
+     RC5_bit = 0;                                       //Establece el Max485 en modo de lectura
+
+}
+
+////////////////////////////////////////////////////////////// Configuracion //////////////////////////////////////////////////////////////
+
 void Configuracion(){
 
      ANSELA = 0;                                       //Configura el PORTA como digital
      ANSELB = 0;                                       //Configura el PORTB como digital
      ANSELC = 0;                                       //Configura el PORTC como digital
 
-     TRISC0_bit = 1;
-     TRISC5_bit = 0;                                   //Configura el pin C5 como salida
-     TRISC4_bit = 0;                                   //Configura el pin C4 como salida
+     TRISA = 1;                                        //Configura el puerto A como entrada
+     TRISC0_bit = 1;                                   //Configura el pin C0 como entrada
+     TRISC1_bit = 1;                                   //Configura el pin C1 como entrada
+     TRISC2_bit = 1;                                   //Configura el pin C2 como entrada
      TRISC3_bit = 0;                                   //Configura el pin C3 como salida
-     //TRISA0_bit = 1;
-     //TRISA1_bit = 0;
+     TRISC4_bit = 0;                                   //Configura el pin C4 como salida
+     TRISC5_bit = 0;                                   //Configura el pin C5 como salida
 
      INTCON.GIE = 1;                                   //Habilita las interrupciones globales
      INTCON.PEIE = 1;                                  //Habilita las interrupciones perifericas
@@ -141,10 +184,10 @@ void Configuracion(){
      UART1_Init(19200);                                //Inicializa el UART a 9600 bps
      
      //Configuracion del TMR1
-     T1CON = 0x11;                                     //Establece el prescalador en 1:2, enciende el TMR1
+     T1CON = 0x21;                                     //Establece el prescalador en 1:2, enciende el TMR1
      TMR1IE_bit = 1;                                   //Habilita la interrupcion por desbordamiento del TMR1
      TMR1IF_bit = 0;                                   //Limpia la bandera de interrupcion por desbordamiento del TMR1
-     TMR1H = 0x3C;                                     //Preload = 15536, Time = 50ms
+     TMR1H = 0x3C;                                     //Preload = 15536, Time = 100ms
      TMR1L = 0xB0;
      
      //Nivel de prioridad de las interrupciones
@@ -167,58 +210,22 @@ void main() {
      
      Bb = 0;                                                        //Inicializa la bandera del boton, es solo para el ejemplo del dispositivo maestro
 
-     
-     RC0_bit = 0;
-     RC5_bit = 0;                                                   //Establece el Max485 en modo de lectura;
+     RC5_bit = 0;
+     RC3_bit = 0;                                                   //Establece el Max485 en modo de lectura;
      RC4_bit = 0;                                                   //Inicializa un indicador. No tiene relevancia para la ejecucion del programa
 
      ptrCRC16 = &CRC16;                                             //Asociacion del puntero CRC16
      ptrCRCPDU = &CRCPDU;                                           //Asociacion del puntero CRCPDU
      
-     Add = 0x01;                                                    //Direccion del esclavo a quien se realiza la peticion (Ejemplo)
-     Fcn = 0x02;                                                    //Funcion solicitada al esclavo (Ejemplo)
-     DataSize = 2;                                                  //Longitud del campo de datos de la trama de peticion
-     
-     Psize = DataSize+7;                                            //Longitu de la trama de peticion
-     
-     //Trama de peticion
-     // | Hdr |              PDU          |        CRC        |     End     |
-     // |  :  | Add | Fcn | Data1 | Data2 | CRC_MSB | CRC_LSB |  CR  |  LF  |
-     // |  0  |  1  |  2  |   3   |   4   |    5    |    6    |  7   |   8  |
-     
-     Ptcn[0]=Hdr;
-     Ptcn[1]=Add;
-     Ptcn[2]=Fcn;
-     Ptcn[3]=0x03;
-     Ptcn[4]=0x04;
-     Ptcn[7]=End1;
-     Ptcn[8]=End2;
-     
-     //Ptc[] = 3A010203042BA10D0A
-     
      while (1){
      
             //Rutina de ejemplo del dispositivo maestro. Cada vez que se pulsa un boton se envia una peticion a un esclavo especifico.
-            if ((RC0_bit==0)&&(Bb==0)){
+            if ((RC2_bit==0)&&(Bb==0)){
                Bb = 1;
+               Add = (PORTA&0x3F)+((PORTC&0x03)<<6);                //Carga el valor del dipswitch como direccion del esclavo a quien se realiza la peticion
+               enviarTrama(2,3);                                    //Envia la trama de peticion con 2 bytes de pyload y solicitando la funcion 3
                
-               for (i=1;i<=(DataSize+2);i++){                       //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC
-                   PDU[i-1] = Ptcn[i];
-               }
-               
-               CRC16 = ModbusRTU_CRC16(PDU, DataSize+2);            //Calcula el CRC de la trama PDU y la almacena en la variable CRC16
-               Ptcn[6] = *ptrCRC16;                                 //Asigna el LSB del CRC al espacio 6 de la trama de peticion
-               Ptcn[5] = *(ptrCRC16+1);                             //Asigna el MSB del CRC al espacio 5 de la trama de peticion
-               
-               RC5_bit = 1;                                         //Establece el Max485 en modo de escritura
-               for (i=0;i<Psize;i++){
-                   UART1_WRITE(Ptcn[i]);                            //Manda por Uart la trama de peticion
-               }
-
-               while(UART_Tx_Idle()==0);                            //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
-               RC5_bit = 0;                                         //Establece el Max485 en modo de lectura;
-               
-            } else if (RC0_bit==1){
+            } else if (RC2_bit==1){
                Bb = 0;                                              //Esta rutina sirve para evitar rebotes en el boton
             }
      

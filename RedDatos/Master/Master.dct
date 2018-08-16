@@ -730,6 +730,7 @@ eepgd
 eepgd_bit
 end1
 end2
+enviartrama
 equals_double
 f
 fast

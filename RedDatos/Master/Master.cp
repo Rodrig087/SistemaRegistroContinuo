@@ -4,9 +4,9 @@ const short Hdr = 0x3A;
 const short End1 = 0x0D;
 const short End2 = 0x0A;
 
-unsigned short DataSize;
-unsigned short Psize;
-unsigned short Rsize;
+unsigned short dataSize;
+unsigned short psize;
+unsigned short rsize;
 
 unsigned short Add;
 unsigned short Fcn;
@@ -49,7 +49,7 @@ void interrupt(void){
  if (BanTI==1){
 
  if ((BanTF==1)&&(Dato==End2)){
- RSize = it+1;
+ rSize = it+1;
  BanTI = 0;
  BanTC = 1;
  T1CON.TMR1ON = 0;
@@ -89,8 +89,9 @@ void interrupt(void){
 
 
 
-unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
-{
+
+unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen){
+
  unsigned char ucCounter;
  unsigned int uiCRCResult;
 
@@ -106,7 +107,48 @@ unsigned int ModbusRTU_CRC16(unsigned char* ptucBuffer, unsigned int uiLen)
  }
  }
  return uiCRCResult;
+
 }
+
+
+
+
+
+
+
+
+void enviarTrama(unsigned short dataSize, unsigned short fcn){
+
+ unsigned short pSize = dataSize + 7;
+
+
+ PDU[0] = Add;
+ PDU[1] = fcn;
+
+ PDU[2] = 0xAA;
+ PDU[3] = 0xAA;
+
+
+ Ptcn[0] = Hdr;
+ for (i=0;i<=(dataSize+1);i++){
+ Ptcn[i+1] = PDU[i];
+ }
+ CRC16 = ModbusRTU_CRC16(PDU, dataSize+2);
+ Ptcn[dataSize+3] = *(ptrCRC16+1);
+ Ptcn[dataSize+4] = *ptrCRC16;
+ Ptcn[dataSize+5] = End1;
+ Ptcn[dataSize+6] = End2;
+
+
+ RC5_bit = 1;
+ for (i=0;i<pSize;i++){
+ UART1_Write(Ptcn[i]);
+ }
+ while(UART1_Tx_Idle()==0);
+ RC5_bit = 0;
+
+}
+
 
 
 void Configuracion(){
@@ -115,12 +157,13 @@ void Configuracion(){
  ANSELB = 0;
  ANSELC = 0;
 
+ TRISA = 1;
  TRISC0_bit = 1;
- TRISC5_bit = 0;
- TRISC4_bit = 0;
+ TRISC1_bit = 1;
+ TRISC2_bit = 1;
  TRISC3_bit = 0;
-
-
+ TRISC4_bit = 0;
+ TRISC5_bit = 0;
 
  INTCON.GIE = 1;
  INTCON.PEIE = 1;
@@ -131,7 +174,7 @@ void Configuracion(){
  UART1_Init(19200);
 
 
- T1CON = 0x11;
+ T1CON = 0x21;
  TMR1IE_bit = 1;
  TMR1IF_bit = 0;
  TMR1H = 0x3C;
@@ -157,58 +200,22 @@ void main() {
 
  Bb = 0;
 
-
- RC0_bit = 0;
  RC5_bit = 0;
+ RC3_bit = 0;
  RC4_bit = 0;
 
  ptrCRC16 = &CRC16;
  ptrCRCPDU = &CRCPDU;
 
- Add = 0x01;
- Fcn = 0x02;
- DataSize = 2;
-
- Psize = DataSize+7;
-
-
-
-
-
-
- Ptcn[0]=Hdr;
- Ptcn[1]=Add;
- Ptcn[2]=Fcn;
- Ptcn[3]=0x03;
- Ptcn[4]=0x04;
- Ptcn[7]=End1;
- Ptcn[8]=End2;
-
-
-
  while (1){
 
 
- if ((RC0_bit==0)&&(Bb==0)){
+ if ((RC2_bit==0)&&(Bb==0)){
  Bb = 1;
+ Add = (PORTA&0x3F)+((PORTC&0x03)<<6);
+ enviarTrama(2,3);
 
- for (i=1;i<=(DataSize+2);i++){
- PDU[i-1] = Ptcn[i];
- }
-
- CRC16 = ModbusRTU_CRC16(PDU, DataSize+2);
- Ptcn[6] = *ptrCRC16;
- Ptcn[5] = *(ptrCRC16+1);
-
- RC5_bit = 1;
- for (i=0;i<Psize;i++){
- UART1_WRITE(Ptcn[i]);
- }
-
- while(UART_Tx_Idle()==0);
- RC5_bit = 0;
-
- } else if (RC0_bit==1){
+ } else if (RC2_bit==1){
  Bb = 0;
  }
 

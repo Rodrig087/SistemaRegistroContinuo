@@ -1,14 +1,14 @@
 0	1	mikroCPIC1618.exe -MSF -DBG -pP18F25K22 -DL -O11111114 -fo8 -N"E:\Milton\Github\RSA\InstrumentacionPresa\RedDatos\Master\Master.mcppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\uses\P18\" -SP"E:\Milton\Github\RSA\InstrumentacionPresa\RedDatos\Master\" -SP"E:\Milton\Github\Tesis\SensorUltrasonico\DSP\Master\" "Master.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_CString.mcl" "__Lib_Conversions.mcl" "__Lib_UART_c67b67.mcl" "__Lib_LcdConsts.mcl" "__Lib_Lcd.mcl"	 
 hint: 0	1139	Available RAM: 1515 [bytes], Available ROM: 32768 [bytes]	 
 diagnostics: 0	122	Compilation Started	Master.c
-warning: 141	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Master.c
-warning: 175	1505	Suspicious pointer conversion	Master.c
-warning: 176	1505	Suspicious pointer conversion	Master.c
-diagnostics: 255	123	Compiled Successfully	Master.c
+warning: 184	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Master.c
+warning: 217	1505	Suspicious pointer conversion	Master.c
+warning: 218	1505	Suspicious pointer conversion	Master.c
+diagnostics: 262	123	Compiled Successfully	Master.c
 diagnostics: 0	127	All files Compiled in 125 ms	 
 hint: 0	1144	Used RAM (bytes): 340 (22%)  Free RAM (bytes): 1175 (78%)	Used RAM (bytes): 340 (22%)  Free RAM (bytes): 1175 (78%)
-hint: 0	1144	Used ROM (bytes): 1210 (4%)  Free ROM (bytes): 31558 (96%)	Used ROM (bytes): 1210 (4%)  Free ROM (bytes): 31558 (96%)
+hint: 0	1144	Used ROM (bytes): 1266 (4%)  Free ROM (bytes): 31502 (96%)	Used ROM (bytes): 1266 (4%)  Free ROM (bytes): 31502 (96%)
 diagnostics: 0	125	Project Linked Successfully	Master.mcppi
-diagnostics: 0	128	Linked in 63 ms	 
-diagnostics: 0	129	Project 'Master.mcppi' completed: 235 ms	 
-diagnostics: 0	103	Finished successfully: 15 ago. 2018, 16:24:02	Master.mcppi
+diagnostics: 0	128	Linked in 62 ms	 
+diagnostics: 0	129	Project 'Master.mcppi' completed: 234 ms	 
+diagnostics: 0	103	Finished successfully: 16 ago. 2018, 15:54:24	Master.mcppi

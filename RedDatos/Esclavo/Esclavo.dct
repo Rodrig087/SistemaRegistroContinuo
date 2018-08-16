@@ -712,6 +712,7 @@ eepgd
 eepgd_bit
 end1
 end2
+enviartrama
 equals_double
 f
 fast
@@ -1485,7 +1486,6 @@ rd16_bit
 re3
 re3_bit
 res032
-responder
 rh_byte1
 rh_byte2
 ri
@@ -1493,7 +1493,6 @@ ri_bit
 rsen
 rsen_bit
 rsen_ssp1con2_bit
-rsize
 rspt
 rx_
 rx__bit
