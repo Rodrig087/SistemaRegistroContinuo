@@ -33,11 +33,10 @@ Count=0
 [OTHER_FILES]
 Count=0
 [SEARCH_PATH]
-Count=4
+Count=3
 Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\uses\P18\
-Path2=E:\Milton\Github\RSA\InstrumentacionPresa\RedDatos\Splitter\Programa\
-Path3=E:\Milton\Github\Tesis\SensorUltrasonico\DSP\Splitter\
+Path2=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\Splitter\
 [HEADER_PATH]
 Count=0
 [HEADERS]
@@ -45,10 +44,8 @@ Count=0
 [PLDS]
 Count=0
 [Useses]
-Count=3
-File0=Conversions
-File1=C_String
-File2=UART
+Count=1
+File0=UART
 [EXPANDED_NODES]
 Node0=Sources
 Count=1

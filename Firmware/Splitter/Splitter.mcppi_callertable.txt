@@ -1,0 +1,36 @@
+main
+	ConfiguracionPrincipal
+		UART1_Init
+		UART2_Init
+interrupt
+	UART1_Read
+	EnviarMensajeRS485
+		CalcularCRC
+		UART1_Write
+		UART1_Tx_Idle
+	VerificarCRC
+		CalcularCRC
+	EnviarACK
+		UART1_Write
+		UART1_Tx_Idle
+		UART2_Write
+		UART2_Tx_Idle
+	ConfiguracionAPC220
+		UART2_Init
+		UART2_Write
+		UART1_Tx_Idle
+		RenviarTrama
+			UART1_Write
+			UART1_Tx_Idle
+			UART2_Write
+			UART2_Tx_Idle
+	RenviarTrama
+		UART1_Write
+		UART1_Tx_Idle
+		UART2_Write
+		UART2_Tx_Idle
+	EnviarNACK
+		UART1_Write
+		UART1_Tx_Idle
+		UART2_Write
+		UART2_Tx_Idle
