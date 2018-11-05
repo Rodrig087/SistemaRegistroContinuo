@@ -94,7 +94,7 @@ void ConfiguracionPrincipal(){
      T2CON = 0x78;
      TMR2IF_bit = 0;
      PR2 = 249;
-     TMR2IE_bit	= 1;
+     TMR2IE_bit        = 1;
 
      Delay_ms(100);                                    //Espera hasta que se estabilicen los cambios
      
@@ -363,7 +363,7 @@ void interrupt(void){
                   } else if (tramaRS485[3]==0x02){      //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
                      //SincronizacionFechaHora();       //Invoca a la funcion de sincronizacion de fecha y hora
                   } else if (tramaRS485[3]==0x03){      //Verifica el campo de Funcion para ver si se trata de una solicitud de configuracion del APC220
-                     ConfiguracionAPC220(tramaRS485,t1Size);//Invoca a la funcion para realizar la configuracion del modulo APC con los parametros especificados en la trama
+                     ConfiguracionAPC220(tramaRS485,t1Size);  //Invoca a la funcion para realizar la configuracion del modulo APC con los parametros especificados en la trama
                   } else {
                      //Arma una trama de respuesta para indicar al Master que se produjo un error
                      tramaPDU[1]=0xFF;
