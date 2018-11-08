@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------
 Autor: Milton Munoz
-Fecha de creacion: 25/10/2018
-Configuracion: PIC16F1827 XT=8MHz
+Fecha de creacion: 5/11/2018
+Configuracion: PIC16F876A XT=8MHz
 Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
@@ -16,14 +16,13 @@ Descripcion:
 // Codigo NACK: AFh
 // Direccion H/S: FDh, FEh, FFh
 
-
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 //Variables y contantes para la peticion y respuesta de datos
-sbit RE_DE at RB3_bit;                                  //Definicion del pin RE_DE
-sbit RE_DE_Direction at TRISB3_bit;
+sbit RE_DE at RB1_bit;                                  //Definicion del pin RE_DE
+sbit RE_DE_Direction at TRISB1_bit;
 
-sbit IU1 at RB6_bit;                                    //Definicion del pin de indicador de interrupcion por UART1
-sbit IU1_Direction at TRISB6_bit;
+sbit IU1 at RC4_bit;                                    //Definicion del pin de indicador de interrupcion por UART1
+sbit IU1_Direction at TRISC4_bit;
 
 const short HDR = 0x3A;                                 //Constante de delimitador de inicio de trama
 const short END1 = 0x0D;                                //Constante de delimitador 1 de final de trama
@@ -61,9 +60,8 @@ unsigned short contadorNACK;                            //Contador de NACK
 // Funcion para realizar la Configuracion de parametros
 void ConfiguracionPrincipal(){
 
-     ANSELA = 0;                                        //Configura PORTB como digital
-     ANSELB = 0;                                        //Configura PORTC como digital
      TRISB0_bit = 1;
+     TRISB1_bit = 0;
      TRISB2_bit = 1;
      TRISB3_bit = 0;
      TRISB5_bit = 0;
@@ -73,14 +71,7 @@ void ConfiguracionPrincipal(){
      INTCON.PEIE = 1;                                   //Habilita las interrupciones perifericas
 
      //Configuracion del puerto UART
-     APFCON0.RXDTSEL = 1;                               //Rx => RB2
-     APFCON1.TXCKSEL = 1;                               //Tx => RB5
      UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
-     
-     //Configuracion del puerto SPI
-     APFCON0.SDO1SEL = 1;                               //SDO1 => RA6
-     APFCON0.SS1SEL = 1;                                //SS1 => RA5
-     SPI1_Init();                                       //Inicializa el SPI1
 
      //Configuracion del TMR1 con un tiempo de 250ms
      T1CON = 0x30;
@@ -89,12 +80,12 @@ void ConfiguracionPrincipal(){
      TMR1L = 0xDC;
      TMR1IE_bit = 1;
      INTCON = 0xC0;
-     
+
      //Configuracion del TMR2 con un tiempo de 2ms
      T2CON = 0x78;
      PR2 = 249;
-     TMR2IE_bit	= 1;
-     
+     TMR2IE_bit        = 1;
+
      //Configuracion de la interrupcion externa (simula la interrupcion por SPI)
      INTCON.INTE = 1;                                   //Habilita la interrupcion externa
      INTCON.INTF = 0;                                   //Limpia la bandera de interrupcion externa
@@ -147,11 +138,13 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
      }
      while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
      RE_DE = 0;                                         //Establece el Max485-2 en modo de lectura;
+     
+     //Aqui esta el problema, o tal vez funciona correctamente debido a que no obtiene como respuesta el ACK
      //Inicializa el Time-Out-Dispositivo
-     T1CON.TMR1ON = 1;                                  //Enciende el Timer1
+     /*T1CON.TMR1ON = 1;                                  //Enciende el Timer1
      TMR1IF_bit = 0;                                    //Limpia la bandera de interrupcion por desbordamiento del TMR1
      TMR1H = 0x0B;                                      //Se carga el valor del preload correspondiente al tiempo de 250ms
-     TMR1L = 0xDC;
+     TMR1L = 0xDC;*/
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -221,8 +214,11 @@ void interrupt(){
         direccionRpi = tramaSPI[0];                     //Guarda el dato de la direccion del dispositvo con que se desea comunicar
         sizeSPI = tramaSPI[1];                          //Guarda el dato de la longitud de la trama PDU
         funcionRpi = tramaSPI[2];                       //Guarda el dato de la funcion requerida
+        
+        
+        EnviarMensajeRS485(tramaSPI, sizeSPI);    //Invoca a la funcion para enviar la peticion
 
-        if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
+        /*if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
            if (funcionRpi==0x01){                       //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
               //SincronizacionSegundos();               //Invoca a la funcion de sincronizacion de segundos
            } else if (funcionRpi==0x02){                //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
@@ -237,7 +233,7 @@ void interrupt(){
            TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
            TMR1H = 0x0B;                                //Se carga el valor del preload correspondiente al tiempo de 250ms
            TMR1L = 0xDC;                                //al parecer este valor se pierde cada vez que entra a la interrupcion
-        }
+        }*/
 
      }
 
@@ -257,7 +253,7 @@ void interrupt(){
            T1CON.TMR1ON = 0;                            //Apaga el Timer1
            TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
         }
-        
+
         if ((byteTrama==NACK)&&(banTI==0)){             //Verifica si recibio un NACK
            //Detiene el Time-Out-Dispositivo
            T1CON.TMR1ON = 0;                            //Apaga el Timer1
@@ -269,9 +265,9 @@ void interrupt(){
               //EnviarMensajeSPI()                      //Responde a la RPI notificandole del error
               contadorNACK = 0;                         //Limpia el contador de Time-Out-Trama
            }
-           
+
         }
-        
+
         if ((byteTrama==HDR)&&(banTI==0)){
            tramaRS485[0]=byteTrama;                     //Guarda el primer byte de la trama en la primera posicion de la trama de peticion
            banTI = 1;                                   //Activa la bandera de inicio de trama
@@ -304,7 +300,7 @@ void interrupt(){
               }
            }
         }
-        
+
         if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
 
            tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
@@ -322,7 +318,7 @@ void interrupt(){
 
         PIR1.F5 = 0;                                    //Limpia la bandera de interrupcion de UART2
         IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
-        
+
 
      }
 
@@ -363,8 +359,9 @@ void interrupt(){
 void main() {
 
      ConfiguracionPrincipal();
-     RE_DE = 0;                                         //Establece el Max485-1 en modo de lectura;
+     RE_DE = 1;                                         //Establece el Max485-1 en modo de lectura;
      i1=0;
      contadorTOD = 0;                                   //Inicia el contador de Time-Out-Dispositivo
      contadorNACK = 0;                                  //Inicia el contador de NACK
+     
 }

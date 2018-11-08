@@ -1,10 +1,10 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
 #line 22 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
-sbit RE_DE at RB3_bit;
-sbit RE_DE_Direction at TRISB3_bit;
+sbit RE_DE at RB1_bit;
+sbit RE_DE_Direction at TRISB1_bit;
 
-sbit IU1 at RB6_bit;
-sbit IU1_Direction at TRISB6_bit;
+sbit IU1 at RC4_bit;
+sbit IU1_Direction at TRISC4_bit;
 
 const short HDR = 0x3A;
 const short END1 = 0x0D;
@@ -42,9 +42,8 @@ unsigned short contadorNACK;
 
 void ConfiguracionPrincipal(){
 
- ANSELA = 0;
- ANSELB = 0;
  TRISB0_bit = 1;
+ TRISB1_bit = 0;
  TRISB2_bit = 1;
  TRISB3_bit = 0;
  TRISB5_bit = 0;
@@ -54,14 +53,7 @@ void ConfiguracionPrincipal(){
  INTCON.PEIE = 1;
 
 
- APFCON0.RXDTSEL = 1;
- APFCON1.TXCKSEL = 1;
  UART1_Init(19200);
-
-
- APFCON0.SDO1SEL = 1;
- APFCON0.SS1SEL = 1;
- SPI1_Init();
 
 
  T1CON = 0x30;
@@ -128,11 +120,7 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  while(UART1_Tx_Idle()==0);
  RE_DE = 0;
-
- T1CON.TMR1ON = 1;
- TMR1IF_bit = 0;
- TMR1H = 0x0B;
- TMR1L = 0xDC;
+#line 149 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
 }
 
 
@@ -203,23 +191,9 @@ void interrupt(){
  sizeSPI = tramaSPI[1];
  funcionRpi = tramaSPI[2];
 
- if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
- if (funcionRpi==0x01){
 
- } else if (funcionRpi==0x02){
-
- } else {
  EnviarMensajeRS485(tramaSPI, sizeSPI);
- }
- } else {
- EnviarMensajeRS485(tramaSPI, sizeSPI);
-
- T1CON.TMR1ON = 1;
- TMR1IF_bit = 0;
- TMR1H = 0x0B;
- TMR1L = 0xDC;
- }
-
+#line 239 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
  }
 
 
@@ -344,8 +318,9 @@ void interrupt(){
 void main() {
 
  ConfiguracionPrincipal();
- RE_DE = 0;
+ RE_DE = 1;
  i1=0;
  contadorTOD = 0;
  contadorNACK = 0;
+
 }

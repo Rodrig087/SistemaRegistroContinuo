@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------
 Autor: Milton Munoz
 Fecha de creacion: 5/11/2018
-Configuracion: PIC16F1827 XT=8MHz
+Configuracion: PIC16F876A XT=8MHz
 Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
@@ -16,14 +16,16 @@ Descripcion:
 // Codigo NACK: AFh
 // Direccion H/S: FDh, FEh, FFh
 
-
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 //Variables y contantes para la peticion y respuesta de datos
-sbit RE_DE at RB3_bit;                                  //Definicion del pin RE_DE
-sbit RE_DE_Direction at TRISB3_bit;
+sbit RE_DE at RB1_bit;                                  //Definicion del pin RE_DE
+sbit RE_DE_Direction at TRISB1_bit;
 
-sbit IU1 at RB6_bit;                                    //Definicion del pin de indicador de interrupcion por UART1
-sbit IU1_Direction at TRISB6_bit;
+sbit IU1 at RB2_bit;                                    //Definicion del pin de indicador de interrupcion por UART1
+sbit IU1_Direction at TRISB2_bit;
+
+sbit AUX at RB3_bit;                                    //Definicion del pin de indicador auxiliar para hacer pruebas
+sbit AUX_Direction at TRISB3_bit;
 
 const short HDR = 0x3A;                                 //Constante de delimitador de inicio de trama
 const short END1 = 0x0D;                                //Constante de delimitador 1 de final de trama
@@ -51,6 +53,9 @@ unsigned short funcionRpi;                              //Variable para alamacen
 
 unsigned short contadorTOD;                             //Contador de Time-Out-Dispositivo
 unsigned short contadorNACK;                            //Contador de NACK
+
+unsigned short x;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -61,44 +66,37 @@ unsigned short contadorNACK;                            //Contador de NACK
 // Funcion para realizar la Configuracion de parametros
 void ConfiguracionPrincipal(){
 
-     ANSELA = 0;                                        //Configura PORTB como digital
-     ANSELB = 0;                                        //Configura PORTC como digital
      TRISB0_bit = 1;
-     TRISB2_bit = 1;
+     TRISB1_bit = 0;
+     TRISB2_bit = 0;
      TRISB3_bit = 0;
-     TRISB5_bit = 0;
-     TRISB6_bit = 0;
 
      INTCON.GIE = 1;                                    //Habilita las interrupciones globales
      INTCON.PEIE = 1;                                   //Habilita las interrupciones perifericas
 
      //Configuracion del puerto UART
-     APFCON0.RXDTSEL = 1;                               //Rx => RB2
-     APFCON1.TXCKSEL = 1;                               //Tx => RB5
      UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
-
-     //Configuracion del puerto SPI
-     APFCON0.SDO1SEL = 1;                               //SDO1 => RA6
-     APFCON0.SS1SEL = 1;                                //SS1 => RA5
-     SPI1_Init();                                       //Inicializa el SPI1
+     PIE1.RCIE = 1;
+     
 
      //Configuracion del TMR1 con un tiempo de 250ms
      T1CON = 0x30;
-     TMR1IF_bit = 0;
+     PIR1.TMR1IF = 0;
      TMR1H = 0x0B;
      TMR1L = 0xDC;
-     TMR1IE_bit = 1;
+     PIE1.TMR1IE = 1;
      INTCON = 0xC0;
 
      //Configuracion del TMR2 con un tiempo de 2ms
      T2CON = 0x78;
      PR2 = 249;
-     TMR2IE_bit	= 1;
+     PIR1.TMR2IF = 0;
+     PIE1.TMR2IE = 1;
 
      //Configuracion de la interrupcion externa (simula la interrupcion por SPI)
-     INTCON.INTE = 1;                                   //Habilita la interrupcion externa
-     INTCON.INTF = 0;                                   //Limpia la bandera de interrupcion externa
-     OPTION_REG.INTEDG = 0;                             //Activa la interrupcion en el flanco de bajada
+     //INTCON.INTE = 1;                                   //Habilita la interrupcion externa
+     //INTCON.INTF = 0;                                   //Limpia la bandera de interrupcion externa
+     //OPTION_REG.INTEDG = 0;                             //Activa la interrupcion en el flanco de bajada
 
      Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
 
@@ -147,11 +145,13 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
      }
      while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
      RE_DE = 0;                                         //Establece el Max485-2 en modo de lectura;
+
+     //Aqui esta el problema, o tal vez funciona correctamente debido a que no obtiene como respuesta el ACK
      //Inicializa el Time-Out-Dispositivo
-     T1CON.TMR1ON = 1;                                  //Enciende el Timer1
+     /*T1CON.TMR1ON = 1;                                  //Enciende el Timer1
      TMR1IF_bit = 0;                                    //Limpia la bandera de interrupcion por desbordamiento del TMR1
      TMR1H = 0x0B;                                      //Se carga el valor del preload correspondiente al tiempo de 250ms
-     TMR1L = 0xDC;
+     TMR1L = 0xDC;*/
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -159,20 +159,32 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
 //Funcion para la comprobacion del CRC
 //Esta funcion recibe como parametro una trama RS485 y la longitud de la trama PDU, y devuelve un 1 si el CRC calculado coincide con el valor del campo CRC
 //de la trama o un 0 en caso contrario
-unsigned int VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
-     unsigned char* pdu;
+unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
+     unsigned char pdu[15]; //**Aqui se daña cuando pongo un numero de elementos mayor a 30
      unsigned short j;
      unsigned int crcCalculado, crcTrama;               //Variables para almacenar el CRC calculado, y el CRC de la trama recibida
      unsigned short *ptrCRCTrama;                       //Puntero para almacenar los valores del CRC calculado y el de la trama PDU recibida
+     
+     unsigned short *crcPrint;
+     
      crcCalculado = 0;                                  //Inicializa los valores del CRC obtenido y calculado con valores diferentes
      crcTrama = 1;
-     for (j=0;j<=(tramaPDUSize);j++){                   //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+     
+     for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
          pdu[j] = trama[j+1];
+         //UART1_Write(pdu[j]);
      }
+     
      crcCalculado = CalcularCRC(pdu, tramaPDUSize);     //Invoca la funcion para el calculo del CRC de la trama PDU
+     
+     //crcPrint = &crcCalculado;
+     //UART1_Write(*crcPrint);
+     //UART1_Write(*(crcPrint+1));
+     
      ptrCRCTrama = &CRCTrama;                           //Asociacion del puntero CRCPDU
      *ptrCRCTrama = trama[tramaPDUSize+2];              //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
      *(ptrCRCTrama+1) = trama[tramaPDUSize+1];          //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
+     
      if (crcCalculado==CRCTrama) {                      //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
         return 1;
      } else {
@@ -210,7 +222,7 @@ void interrupt(){
 
 //Interrupcion Externa
 //Esta interrupcion simula lo que debe hacer el dipositivo MasterComunicacion al recibir una peticion del RPi por SPI
-     if (INTCON.INTF==1){
+     /*if (INTCON.INTF==1){
         INTCON.INTF=0;                                  //Limpia la badera de interrupcion externa
         //Aqui va la parte donde realiza la toma de datos que llegan por SPI desde la Rpi
         tramaSPI[0]=0x03;                               //Ejemplo de trama de peticion enviada por la RPi
@@ -222,24 +234,10 @@ void interrupt(){
         sizeSPI = tramaSPI[1];                          //Guarda el dato de la longitud de la trama PDU
         funcionRpi = tramaSPI[2];                       //Guarda el dato de la funcion requerida
 
-        if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
-           if (funcionRpi==0x01){                       //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
-              //SincronizacionSegundos();               //Invoca a la funcion de sincronizacion de segundos
-           } else if (funcionRpi==0x02){                //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
-              //SincronizacionFechaHora();              //Invoca a la funcion de sincronizacion de fecha y hora
-           } else {
-              EnviarMensajeRS485(tramaSPI, sizeSPI);    //Invoca a la funcion para enviar la peticion
-           }
-        } else {
-           EnviarMensajeRS485(tramaSPI, sizeSPI);       //Invoca a la funcion para enviar la peticion
-           //Inicializa el Time-Out-Dispositivo, t=250ms
-           T1CON.TMR1ON = 1;                            //Enciende el Timer1
-           TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
-           TMR1H = 0x0B;                                //Se carga el valor del preload correspondiente al tiempo de 250ms
-           TMR1L = 0xDC;                                //al parecer este valor se pierde cada vez que entra a la interrupcion
-        }
 
-     }
+        EnviarMensajeRS485(tramaSPI, sizeSPI);    //Invoca a la funcion para enviar la peticion
+
+     }*/
 
 //Interrupcion UART1
 //Esta interrupcion supervisa el estado del bus RS485, cuando detecta una peticion procediente del Master revisa si el prmer byte de la trama es
@@ -247,7 +245,7 @@ void interrupt(){
 //bytes debe guardar a continuacion. Despues guarda el campo PDU, calcula su CRC y lo compara con el campo CRC de la trama de peticion, si coincide el CRC
 //envia un ACK al remitente para indicar que la peticion llego correctamente. Despues, comprueba el campo de Direccion, si es igual a 0xFF dara paso al
 //proceso de calibracion, caso contrario renviara la trama por el puerto UART2 es decir a travez de los modulos inhalabricos hacia los esclavos.
-     if (PIR1.F5==1){
+     if (PIR1.RCIF==1){
 
         IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
         byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
@@ -273,54 +271,45 @@ void interrupt(){
         }
 
         if ((byteTrama==HDR)&&(banTI==0)){
-           tramaRS485[0]=byteTrama;                     //Guarda el primer byte de la trama en la primera posicion de la trama de peticion
            banTI = 1;                                   //Activa la bandera de inicio de trama
-           i1 = 1;                                      //Define en 1 el subindice de la trama de peticion
-           tramaOk = 0;                                 //Limpia la variable que indica si la trama ha llegado correctamente
+           i1 = 0;                                      //Define en 1 el subindice de la trama de peticion
+           tramaOk = 9;                                 //Limpia la variable que indica si la trama ha llegado correctamente
            //Inicializa el Time-Out-Trama, t=2ms
-           T2CON.TMR2ON = 1;                            //Enciende el Timer2
-           PR2 = 249;                                   //Se carga el valor del preload correspondiente al tiempo de 2ms
+           //T2CON.TMR2ON = 1;                            //Enciende el Timer2
+           //PR2 = 249;                                   //Se carga el valor del preload correspondiente al tiempo de 2ms
         }
 
         if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
-           T2CON.TMR2ON = 0;                            //Detiene el Time-Out-Trama
-           if (i1==1){
-              tramaRS485[i1] = byteTrama;               //Guarda el byte de Direccion en la segunda posicion del vector de peticion
-              i1 = 2;                                   //Incrementa el subindice de la trama de peticion en una unidad
-              T2CON.TMR2ON = 1;                         //Enciende el Time-Out-Trama
-           } else if (i1=2){
-              tramaRS485[i1] = byteTrama;               //Guarda el byte de #Datos en la tercera posicion del vector de peticion
-              t1Size = byteTrama;                       //Guarda en la variable t1Size el valor del campo #Datos
-              i1 = 3;                                   //Incrementa el subindice de la trama de peticion en una unidad
-              T2CON.TMR2ON = 1;                         //Enciende el Time-Out-Trama
-           } else if ((i1>2)&&(i1<t1Size)){
-              tramaRS485[i1] = byteTrama;               //Guarda el resto de bytes en el vector de peticion hasta que se complete el numero de bytes especificado en el campo #Datos
-              i1=i1+1;                                  //Incrementa el subindice de la trama de peticion en una unidad
-              T2CON.TMR2ON = 1;                         //Enciende el Time-Out-Trama
-              if (i1==t1Size-1){
-                 banTI = 0;                             //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
-                 banTC = 1;                             //Activa la bandera de trama completa
-                 T2CON.TMR2ON = 0;                      //Apaga el Time-Out-Trama
-              }
+           if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
+              tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+              i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+              banTF = 0;                                //Limpia la bandera de final de trama
+           } else {
+              tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+              banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
+           }
+           if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
+              banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
+              banTC = 1;                                //Activa la bandera de trama completa
+              t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
+              //**Hasta aqui se ha logrado recuperar la trama de datos sin errores
            }
         }
 
         if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
-
+           
            tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
-
            if (tramaOk==1){
                EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
-               //EnviarMensajeSPI()                     //Envia la respuesta a la RPi
-           } else {
+           } else if (tramaOk==0) {
                EnviarNACK();                            //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
            }
            banTC = 0;                                   //Limpia la bandera de trama completa
            i1 = 0;                                      //Limpia el subindice de trama
+           banTI = 0;
 
         }
 
-        PIR1.F5 = 0;                                    //Limpia la bandera de interrupcion de UART2
         IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
 
 
@@ -348,12 +337,12 @@ void interrupt(){
 //de esta manera si llega otro dato por el Uart y este es diferente del encabezamiento de inicio de trama ya no se almacenara en la trama de respuesta.
 //Tambien se envia un NACK para pedir el renvio de la trama
      if (PIR1.TMR2IF==1){
-        TMR2IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR2
+        PIR1.TMR2IF = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR2
         T2CON.TMR2ON = 0;                               //Apaga el Timer2
         banTI = 0;                                      //Limpia la bandera de inicio de trama
         i1 = 0;                                         //Limpia el subindice de la trama de peticion
         banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
-        EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
+        //EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
      }
 
 }
@@ -363,8 +352,13 @@ void interrupt(){
 void main() {
 
      ConfiguracionPrincipal();
-     RE_DE = 0;                                         //Establece el Max485-1 en modo de lectura;
+     RE_DE = 1;                                         //Establece el Max485-1 en modo de lectura;
+     AUX = 0;
+     IU1 = 0;
      i1=0;
      contadorTOD = 0;                                   //Inicia el contador de Time-Out-Dispositivo
      contadorNACK = 0;                                  //Inicia el contador de NACK
+     banTI=0;
+     banTC=0;
+     banTF=0;
 }
