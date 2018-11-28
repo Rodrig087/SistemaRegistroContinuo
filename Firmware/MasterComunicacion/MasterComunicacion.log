@@ -1,14 +1,14 @@
 0	1	mikroCPIC1618.exe -MSF -DBG -pP16F876A -DL -O11111114 -fo8 -N"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\MasterComunicacion\MasterComunicacion.mcppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Uses\P16\" -SP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\MasterComunicacion\" "MasterComunicacion.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_UART_c67.mcl"	 
 hint: 0	1139	Available RAM: 352 [bytes], Available ROM: 8192 [bytes]	 
 diagnostics: 0	122	Compilation Started	MasterComunicacion.c
-warning: 75	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	MasterComunicacion.c
-warning: 125	1505	Suspicious pointer conversion	MasterComunicacion.c
-warning: 167	1505	Suspicious pointer conversion	MasterComunicacion.c
-diagnostics: 368	123	Compiled Successfully	MasterComunicacion.c
-diagnostics: 0	127	All files Compiled in 62 ms	 
-hint: 0	1144	Used RAM (bytes): 126 (36%)  Free RAM (bytes): 226 (64%)	Used RAM (bytes): 126 (36%)  Free RAM (bytes): 226 (64%)
-hint: 0	1144	Used ROM (program words): 570 (7%)  Free ROM (program words): 7622 (93%)	Used ROM (program words): 570 (7%)  Free ROM (program words): 7622 (93%)
+warning: 74	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	MasterComunicacion.c
+warning: 124	1505	Suspicious pointer conversion	MasterComunicacion.c
+warning: 169	1505	Suspicious pointer conversion	MasterComunicacion.c
+diagnostics: 354	123	Compiled Successfully	MasterComunicacion.c
+diagnostics: 0	127	All files Compiled in 79 ms	 
+hint: 0	1144	Used RAM (bytes): 141 (40%)  Free RAM (bytes): 211 (60%)	Used RAM (bytes): 141 (40%)  Free RAM (bytes): 211 (60%)
+hint: 0	1144	Used ROM (program words): 589 (7%)  Free ROM (program words): 7603 (93%)	Used ROM (program words): 589 (7%)  Free ROM (program words): 7603 (93%)
 diagnostics: 0	125	Project Linked Successfully	MasterComunicacion.mcppi
-diagnostics: 0	128	Linked in 32 ms	 
-diagnostics: 0	129	Project 'MasterComunicacion.mcppi' completed: 110 ms	 
-diagnostics: 0	103	Finished successfully: 05 nov. 2018, 18:02:34	MasterComunicacion.mcppi
+diagnostics: 0	128	Linked in 15 ms	 
+diagnostics: 0	129	Project 'MasterComunicacion.mcppi' completed: 109 ms	 
+diagnostics: 0	103	Finished successfully: 12 nov. 2018, 15:33:54	MasterComunicacion.mcppi

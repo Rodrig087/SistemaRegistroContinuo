@@ -18,6 +18,9 @@ Lo ultimo que hice el miercoles 31 de octubre fue revisar la secuencia de instru
 
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 //Variables y contantes para la peticion y respuesta de datos
+sbit AUX at RB3_bit;                                    //Definicion del pin de indicador auxiliar para hacer pruebas
+sbit AUX_Direction at TRISB3_bit;
+
 sbit RE_DE at RC5_bit;                                  //Definicion del pin RE_DE
 sbit RE_DE_Direction at TRISC5_bit;
 
@@ -42,7 +45,7 @@ const unsigned int POLMODBUS = 0xA001;                  //Polinomio para el calc
 unsigned short byteTrama;                               //Variable de bytes de trama de datos
 unsigned short t1Size, t2Size, sizeTramaPDU;            //Variables de longitud de tramas de peticion, respuesta y PDU
 unsigned char tramaRS485[50];                           //Vector de trama de datos del puerto UART1
-unsigned char tramaPDU[50];                             //Vector para almacenar los valores de la trama PDU creada localmente
+unsigned char tramaPDU[15];                             //Vector para almacenar los valores de la trama PDU creada localmente
 unsigned char u2Trama[50];                              //Vector de trama de datos del puerto UART2
 short i1, i2;                                           //Subindices para el manejo de las tramas de datos
 
@@ -55,6 +58,9 @@ unsigned short tramaOk;                                 //Variable para indicar 
 unsigned short contadorTOD;                             //Contador de Time-Out-Dispositivo
 unsigned short contadorNACK;                            //Contador de NACK
 unsigned short puertoTOT;                               //Especifica el puerto por cual enviar el NACK en caso de producirse un Time-Out-Trama
+
+unsigned short x;
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -67,6 +73,7 @@ void ConfiguracionPrincipal(){
      ANSELB = 0;                                       //Configura PORTB como digital
      ANSELC = 0;                                       //Configura PORTC como digital
 
+     TRISB3_bit = 0;                                   //Configura el pin B3 como salida
      TRISB5_bit = 0;                                   //Configura el pin B5 como salida
      TRISC5_bit = 0;                                   //Configura el pin C5 como salida
      TRISB4_bit = 0;                                   //Configura el pin B5 como salida
@@ -84,17 +91,17 @@ void ConfiguracionPrincipal(){
      UART2_Init(19200);                                //Inicializa el UART2 a 9600 bps
 
      //Configuracion del TMR1 con un tiempo de 250ms
-     T1CON = 0x30;
-     TMR1IF_bit = 0;
+     T1CON = 0x30;                                     //Timer1 Input Clock Prescale Select bits
      TMR1H = 0x0B;
      TMR1L = 0xDC;
-     TMR1IE_bit = 1;
+     PIR1.TMR1IF = 0;                                  //Limpia la bandera de interrupcion del TMR1
+     PIE1.TMR1IE = 1;                                  //Habilita la interrupción de desbordamiento TMR1
 
      //Configuracion del TMR2 con un tiempo de 2ms
-     T2CON = 0x78;
-     TMR2IF_bit = 0;
+     T2CON = 0x78;                                     //Timer2 Output Postscaler Select bits
      PR2 = 249;
-     TMR2IE_bit        = 1;
+     PIR1.TMR2IF = 0;                                  //Limpia la bandera de interrupcion del TMR2
+     PIE1.TMR2IE = 1;                                  //Habilita la interrupción de desbordamiento TMR2
 
      Delay_ms(100);                                    //Espera hasta que se estabilicen los cambios
      
@@ -107,11 +114,11 @@ void ConfiguracionPrincipal(){
 unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
      unsigned char ucCounter;
      unsigned int CRC16;                                //Variables para almacenar el CRC calculado, y el CRC de la trama PDU recibida
-     for(CRC16=0xFFFF; tramaSize!=0; tramaSize --){
-          CRC16 ^=*trama ++;
-          for(ucCounter =0; ucCounter <8; ucCounter ++){
+     for(CRC16=0xFFFF; tramaSize!=0; tramaSize--){
+          CRC16^=*trama ++;
+          for(ucCounter=0; ucCounter<8; ucCounter++){
                if(CRC16 & 0x0001)
-               CRC16 = (CRC16 >>1)^POLMODBUS;
+               CRC16 = (CRC16>>1)^POLMODBUS;
           else
                CRC16>>=1;
           }
@@ -124,15 +131,16 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
 //Funcion para la comprobacion del CRC
 //Esta funcion recibe como parametro una trama RS485 y la longitud de la trama PDU, y devuelve un 1 si el CRC calculado coincide con el valor del campo CRC
 //de la trama o un 0 en caso contrario
-unsigned int VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
-     unsigned char* pdu;
+unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
+     unsigned char pdu[15];
      unsigned short j;
      unsigned int crcCalculado, crcTrama;               //Variables para almacenar el CRC calculado, y el CRC de la trama recibida
      unsigned short *ptrCRCTrama;                       //Puntero para almacenar los valores del CRC calculado y el de la trama PDU recibida
      crcCalculado = 0;                                  //Inicializa los valores del CRC obtenido y calculado con valores diferentes
      crcTrama = 1;
-     for (j=0;j<=(tramaPDUSize);j++){                   //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+     for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
          pdu[j] = trama[j+1];
+        //UART1_Write(pdu[j]);
      }
      crcCalculado = CalcularCRC(pdu, tramaPDUSize);     //Invoca la funcion para el calculo del CRC de la trama PDU
      ptrCRCTrama = &CRCTrama;                           //Asociacion del puntero CRCPDU
@@ -183,17 +191,17 @@ void EnviarNACK(unsigned char puerto){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de una trama de datos
 //Esta funcion recibe como parametros el puerto UART, la trama de datos y el numero de elementos
-void RenviarTrama(unsigned char puerto, unsigned char *trama, unsigned char numDatos){
+void RenviarTrama(unsigned char puerto, unsigned char *trama, unsigned char sizePDU){
      unsigned char i;
      if (puerto==1){
         RE_DE = 1;                                     //Establece el Max485 en modo escritura
-        for (i=0;i<(numDatos);i++){
+        for (i=0;i<(sizePDU+5);i++){
             UART1_Write(trama[i]);                     //Reenvia la trama de peticion a travez del UART1
         }
         while(UART1_Tx_Idle()==0);                     //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
         RE_DE = 0;                                     //Establece el Max485-2 en modo de lectura;
      } else {
-        for (i=0;i<(numDatos);i++){
+        for (i=0;i<(sizePDU+5);i++){
             UART2_Write(trama[i]);                     //Reenvia la trama de peticion a travez del UART2
         }
         while(UART2_Tx_Idle()==0);                     //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
@@ -287,18 +295,17 @@ void interrupt(void){
 //bytes debe guardar a continuacion. Despues guarda el campo PDU, calcula su CRC y lo compara con el campo CRC de la trama de peticion, si coincide el CRC
 //envia un ACK al remitente para indicar que la peticion llego correctamente. Despues, comprueba el campo de Direccion, si es igual a 0xFF dara paso al 
 //proceso de calibracion, caso contrario renviara la trama por el puerto UART2 es decir a travez de los modulos inhalabricos hacia los esclavos.
-     if(PIR1.F5==1){
+     if(PIR1.RC1IF==1){
      
         IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
         byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
-        
+
         //Verifica si el primer byte en llegar es una cabecera, un ACK o un NACK
         if (banTI==0){                                  //Verifica que la bandera de inicio de trama este apagada
             if (byteTrama==HDR){                        //Verifica si recibio una cabecera
-              tramaRS485[0]=byteTrama;                  //Guarda el primer byte de la trama en la primera posicion de la trama de peticion
               banTI = 1;                                //Activa la bandera de inicio de trama
-              i1 = 1;                                   //Define en 1 el subindice de la trama de peticion
-              tramaOk = 0;                              //Limpia la variable que indica si la trama ha llegado correctamente
+              i1 = 0;                                   //Define en 1 el subindice de la trama de peticion
+              tramaOk = 9;                              //Limpia la variable que indica si la trama ha llegado correctamente
               puertoTOT = 1;                            //Indica al Time-Out-Trama que de ser necesario envie el NACK por el puerto UART1
               //Inicializa el Time-Out-Trama, t=2ms
               T2CON.TMR2ON = 1;                         //Enciende el Timer2
@@ -308,6 +315,7 @@ void interrupt(void){
               //Detiene el Time-Out-Dispositivo
               T1CON.TMR1ON = 0;                         //Apaga el Timer1
               TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
+              banTI=0;                                  //Limpia la bandera de inicio de trama
            }
            if (byteTrama==NACK){                        //Verifica si recibio un NACK
               //Detiene el Time-Out-Dispositivo
@@ -319,44 +327,42 @@ void interrupt(void){
               } else {
                  contadorNACK = 0;                      //Solo puede resetear el contador de NACK por que no puede comunicarse con el dispositivo jerarquico superior (Master) para notificarle el error
               }
+              banTI=0;                                  //Limpia la bandera de inicio de trama
            }
         }
         
         //Si en el paso anterior recibio una cabecera aqui termina de llenar la trama de datos
         //Cada vez que entra en esta etapa apaga el Time-Out-Trama y lo vuelve a encender al salir, excepto cuando termina de completar la trama
         if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
-           T2CON.TMR2ON = 0;                            //Detiene el Time-Out-Trama
-           if (i1==1){
-              tramaRS485[i1] = byteTrama;               //Guarda el byte de Direccion en la segunda posicion del vector de peticion
-              i1 = 2;                                   //Incrementa el subindice de la trama de peticion en una unidad
-              T2CON.TMR2ON = 1;                         //Enciende el Time-Out-Trama
-              PR2 = 249;                                //Se carga el valor del preload correspondiente al tiempo de 2ms
-           } else if (i1=2){
-              tramaRS485[i1] = byteTrama;               //Guarda el byte de #Datos en la tercera posicion del vector de peticion
-              t1Size = byteTrama;                       //Guarda en la variable t1Size el valor del campo #Datos, este campo tiene informacion de la longitud de la trama PDU
-              i1 = 3;                                   //Incrementa el subindice de la trama de peticion en una unidad
-              T2CON.TMR2ON = 1;                         //Enciende el Time-Out-Trama
-              PR2 = 249;                                //Se carga el valor del preload correspondiente al tiempo de 2ms
-           } else if ((i1>2)&&(i1<t1Size)){
-              tramaRS485[i1] = byteTrama;               //Guarda el resto de bytes en el vector de peticion hasta que se complete el numero de bytes especificado en el campo #Datos
-              i1=i1+1;                                  //Incrementa el subindice de la trama de peticion en una unidad
-              T2CON.TMR2ON = 1;                         //Enciende el Time-Out-Trama
-              if (i1==t1Size-1){
-                 banTI = 0;                             //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
-                 banTC = 1;                             //Activa la bandera de trama completa
-                 T2CON.TMR2ON = 0;                      //Apaga el Time-Out-Trama
-              }
+           PIR1.TMR2IF = 0;                             //Limpia la bandera de interrupcion por desbordamiento del TMR2
+           T2CON.TMR2ON = 0;                            //Apaga el Timer2
+           if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
+              tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+              i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+              banTF = 0;                                //Limpia la bandera de final de trama
+              T2CON.TMR2ON = 1;                         //Enciende el Timer2
+              PR2 = 249;
+           } else {
+              tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+              banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
+              T2CON.TMR2ON = 1;                         //Enciende el Timer2
+              PR2 = 249;
+           }
+           if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
+              banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
+              banTC = 1;                                //Activa la bandera de trama completa
+              t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
+              PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
+              T2CON.TMR2ON = 0;                         //Apaga el Timer2
            }
         }
         
         //Aqui procesa el contenido de la trama de peticion
         if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
            tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
-           
-           //Si la trama llego sin errores responde con un ACK al master y luego reenvia la trama a los esclavos
-           //Si hubo algun error no hace nada, el master renviara la peticion al no recibir respuesta en un tiempo determinado
            if (tramaOk==1){
-               EnviarACK(1);                            //Invoca a la funcion EnviarACK() para notificar al remitente que la trama llego sin errores
+               //Delay_ms(300);                         //Sirve para probar el Time-Out-Dispositivo en el dispositivo que recibe el ACK
+               EnviarACK(1);                            //Si la trama llego sin errores responde con un ACK al Master y luego reenvia la trama a los esclavos
                if (tramaRS485[1]==DIR){                 //Verifica si la direccion es FFh para comprobar si se trata de una solicitud de sincronizacion.
                   if (tramaRS485[3]==0x01){             //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
                      //SincronizacionSegundos();        //Invoca a la funcion de sincronizacion de segundos
@@ -366,24 +372,25 @@ void interrupt(void){
                      ConfiguracionAPC220(tramaRS485,t1Size);  //Invoca a la funcion para realizar la configuracion del modulo APC con los parametros especificados en la trama
                   } else {
                      //Arma una trama de respuesta para indicar al Master que se produjo un error
-                     tramaPDU[1]=0xFF;
-                     tramaPDU[2]=0x04;                   //Establece en 10 el numero de elementos de la trama de respuesta de error
+                     tramaPDU[1]=DIR;
+                     tramaPDU[2]=0x04;                   //Establece en 4 el numero de elementos del PDU de la trama de respuesta de error
                      tramaPDU[3]=0xEE;                   //Cambia el campo de funcion por el codigo 0xEE para
-                     tramaPDU[4]=0xE1;                   //Codigo de error para funcion no disponible
+                     tramaPDU[4]=0xE0;                   //Codigo de error para funcion no disponible
                      sizeTramaPDU = tramaPDU[2];         //Guarda en la variable sizeTramaPDU el valor del campo #Datos de la trama PDU
                      EnviarMensajeRS485(tramaRS485,sizeTramaPDU);   //Invoca a la funcion de Error pasandole como parametros el puerto, la Direccion y el tipo de error
                   }
                } else {                                  //Si la direccion es diferente de FFh renvia la trama de peticion por el puerto UART2
-                  RenviarTrama(2,tramaRS485,t1Size);        //Invoca la funcion para renviar la trama por el puerto UART2
+                  RenviarTrama(2,tramaRS485,t1Size);     //Invoca la funcion para renviar la trama por el puerto UART2
                }
+           } else if (tramaOk==0) {
+               EnviarNACK(1);                            //Si hubo algun error en la trama se envia un ACK al Master para que reenvie la trama
            }
-           
+           banTI = 0;                                    //Limpia la bandera de inicio de trama
            banTC = 0;                                    //Limpia la bandera de trama completa
            i1 = 0;                                       //Incializa el subindice de la trama de peticion
-           
         }
         
-        PIR1.F5 = 0;                                     //Limpia la bandera de interrupcion de UART1
+        //PIR1.RC1IF = 0;                                  //Limpia la bandera de interrupcion de UART1
         IU1 = 0;                                         //Apaga el indicador de interrupcion por UART1
         
      }
@@ -526,5 +533,9 @@ void main() {
      i2=0;
      contadorTOD = 0;                                  //Inicia el contador de Time-Out-Dispositivo
      contadorNACK = 0;                                 //Inicia el contador de NACK
+     banTI=0;                                          //Limpia la bandera de inicio de trama
+     banTC=0;                                          //Limpia la bandera de trama completa
+     banTF=0;                                          //Limpia la bandera de final de trama
+     AUX = 0;
      
 }

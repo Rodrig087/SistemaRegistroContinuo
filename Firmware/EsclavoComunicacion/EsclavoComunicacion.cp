@@ -105,6 +105,8 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
 
 
 
+
+
 void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
  unsigned char i;
  unsigned int CRCPDU;
@@ -127,7 +129,7 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  while(UART1_Tx_Idle()==0);
  RE_DE = 0;
-#line 155 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 157 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 }
 
 
@@ -148,14 +150,9 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
 
  for (j=0;j<tramaPDUSize;j++){
  pdu[j] = trama[j+1];
-
  }
 
  crcCalculado = CalcularCRC(pdu, tramaPDUSize);
-
-
-
-
 
  ptrCRCTrama = &CRCTrama;
  *ptrCRCTrama = trama[tramaPDUSize+2];
@@ -195,16 +192,19 @@ void EnviarNACK(){
 
 
 void interrupt(){
-#line 248 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 245 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
  if (PIR1.RCIF==1){
 
  IU1 = 1;
  byteTrama = UART1_Read();
+ AUX = 1;
 
  if ((byteTrama==ACK)&&(banTI==0)){
 
  T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
+ banTI=0;
+ byteTrama=0;
  }
 
  if ((byteTrama==NACK)&&(banTI==0)){
@@ -218,7 +218,8 @@ void interrupt(){
 
  contadorNACK = 0;
  }
-
+ banTI=0;
+ byteTrama=0;
  }
 
  if ((byteTrama==HDR)&&(banTI==0)){
@@ -226,29 +227,35 @@ void interrupt(){
  i1 = 0;
  tramaOk = 9;
 
-
-
+ T2CON.TMR2ON = 1;
+ PR2 = 249;
  }
 
  if (banTI==1){
+ PIR1.TMR2IF = 0;
+ T2CON.TMR2ON = 0;
  if (byteTrama!=END2){
  tramaRS485[i1] = byteTrama;
  i1++;
  banTF = 0;
+ T2CON.TMR2ON = 1;
+ PR2 = 249;
  } else {
  tramaRS485[i1] = byteTrama;
  banTF = 1;
+ T2CON.TMR2ON = 1;
+ PR2 = 249;
  }
  if (BanTF==1){
  banTI = 0;
  banTC = 1;
  t1Size = tramaRS485[2];
-
+ PIR1.TMR2IF = 0;
+ T2CON.TMR2ON = 0;
  }
  }
 
  if (banTC==1){
-
  tramaOk = VerificarCRC(tramaRS485,t1Size);
  if (tramaOk==1){
  EnviarACK();
@@ -258,11 +265,11 @@ void interrupt(){
  banTC = 0;
  i1 = 0;
  banTI = 0;
-
  }
 
+ PIR1.RCIF = 0;
  IU1 = 0;
-
+ AUX = 0;
 
  }
 
@@ -290,10 +297,11 @@ void interrupt(){
  if (PIR1.TMR2IF==1){
  PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
- banTI = 0;
  i1 = 0;
+ banTI = 0;
  banTC = 0;
-
+ banTF = 0;
+ EnviarNACK();
  }
 
 }

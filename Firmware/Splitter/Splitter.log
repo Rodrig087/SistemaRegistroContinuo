@@ -1,19 +1,19 @@
 0	1	mikroCPIC1618.exe -MSF -DBG -pP18F25K22 -DL -O11111114 -fo8 -N"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\Splitter\Splitter.mcppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\uses\P18\" -SP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\Splitter\" "Splitter.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_UART_c67b67.mcl"	 
 hint: 0	1139	Available RAM: 1515 [bytes], Available ROM: 32768 [bytes]	 
 diagnostics: 0	122	Compilation Started	Splitter.c
-warning: 83	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Splitter.c
-warning: 84	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Splitter.c
-warning: 138	1505	Suspicious pointer conversion	Splitter.c
-hint: 153	1163	Variable 'i' has been declared, but not used	Splitter.c
-hint: 170	1163	Variable 'i' has been declared, but not used	Splitter.c
-warning: 215	1505	Suspicious pointer conversion	Splitter.c
-warning: 257	1509	Generated baud rate is 9615 bps (error = 0.16 percent)	Splitter.c
-warning: 273	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Splitter.c
-diagnostics: 530	123	Compiled Successfully	Splitter.c
-diagnostics: 0	127	All files Compiled in 47 ms	 
-hint: 0	1144	Used RAM (bytes): 145 (10%)  Free RAM (bytes): 1370 (90%)	Used RAM (bytes): 145 (10%)  Free RAM (bytes): 1370 (90%)
-hint: 0	1144	Used ROM (bytes): 1960 (6%)  Free ROM (bytes): 30808 (94%)	Used ROM (bytes): 1960 (6%)  Free ROM (bytes): 30808 (94%)
+warning: 90	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Splitter.c
+warning: 91	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Splitter.c
+warning: 146	1505	Suspicious pointer conversion	Splitter.c
+hint: 161	1163	Variable 'i' has been declared, but not used	Splitter.c
+hint: 178	1163	Variable 'i' has been declared, but not used	Splitter.c
+warning: 223	1505	Suspicious pointer conversion	Splitter.c
+warning: 265	1509	Generated baud rate is 9615 bps (error = 0.16 percent)	Splitter.c
+warning: 281	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	Splitter.c
+diagnostics: 541	123	Compiled Successfully	Splitter.c
+diagnostics: 0	127	All files Compiled in 63 ms	 
+hint: 0	1144	Used RAM (bytes): 124 (8%)  Free RAM (bytes): 1391 (92%)	Used RAM (bytes): 124 (8%)  Free RAM (bytes): 1391 (92%)
+hint: 0	1144	Used ROM (bytes): 2044 (6%)  Free ROM (bytes): 30724 (94%)	Used ROM (bytes): 2044 (6%)  Free ROM (bytes): 30724 (94%)
 diagnostics: 0	125	Project Linked Successfully	Splitter.mcppi
-diagnostics: 0	128	Linked in 47 ms	 
+diagnostics: 0	128	Linked in 46 ms	 
 diagnostics: 0	129	Project 'Splitter.mcppi' completed: 125 ms	 
-diagnostics: 0	103	Finished successfully: 31 oct. 2018, 17:45:51	Splitter.mcppi
+diagnostics: 0	103	Finished successfully: 12 nov. 2018, 15:43:14	Splitter.mcppi

@@ -7,11 +7,11 @@ interrupt
 		UART1_Write
 		UART1_Tx_Idle
 	UART1_Read
-	VerificarCRC
-		CalcularCRC
 	EnviarACK
 		UART1_Write
 		UART1_Tx_Idle
+	VerificarCRC
+		CalcularCRC
 	EnviarNACK
 		UART1_Write
 		UART1_Tx_Idle

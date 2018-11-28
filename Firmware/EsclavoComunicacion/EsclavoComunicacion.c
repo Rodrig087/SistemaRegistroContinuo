@@ -78,6 +78,8 @@ void ConfiguracionPrincipal(){
      UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
      PIE1.RCIE = 1;
      
+     //Configuracion del puerto SPI
+     SPI1_Init();
 
      //Configuracion del TMR1 con un tiempo de 250ms
      T1CON = 0x30;
@@ -120,6 +122,8 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
      }
      return CRC16;
 }
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de una trama de datos
 //Esta funcion recibe como parametros la trama PDU y su tamaño, y envia la trama de peticion completa a travez de RS485
@@ -172,14 +176,9 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
      
      for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
          pdu[j] = trama[j+1];
-         //UART1_Write(pdu[j]);
      }
      
      crcCalculado = CalcularCRC(pdu, tramaPDUSize);     //Invoca la funcion para el calculo del CRC de la trama PDU
-     
-     //crcPrint = &crcCalculado;
-     //UART1_Write(*crcPrint);
-     //UART1_Write(*(crcPrint+1));
      
      ptrCRCTrama = &CRCTrama;                           //Asociacion del puntero CRCPDU
      *ptrCRCTrama = trama[tramaPDUSize+2];              //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
@@ -215,6 +214,11 @@ void EnviarNACK(){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para el envio de una peticion SPI
+//Esta funcion permite enviar una solicitud al EsclavoSensor para realizar una lectura de los sensores
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 ////////////////////////////////////////////////////////////// Interrupciones //////////////////////////////////////////////////////////////
@@ -249,11 +253,14 @@ void interrupt(){
 
         IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
         byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
+        AUX = 1;
 
         if ((byteTrama==ACK)&&(banTI==0)){              //Verifica si recibio un ACK
            //Detiene el Time-Out-Dispositivo
            T1CON.TMR1ON = 0;                            //Apaga el Timer1
            TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
+           banTI=0;                                     //Limpia la bandera de inicio de trama
+           byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
         }
 
         if ((byteTrama==NACK)&&(banTI==0)){             //Verifica si recibio un NACK
@@ -267,7 +274,8 @@ void interrupt(){
               //EnviarMensajeSPI()                      //Responde a la RPI notificandole del error
               contadorNACK = 0;                         //Limpia el contador de Time-Out-Trama
            }
-
+           banTI=0;                                     //Limpia la bandera de inicio de trama
+           byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
         }
 
         if ((byteTrama==HDR)&&(banTI==0)){
@@ -275,29 +283,35 @@ void interrupt(){
            i1 = 0;                                      //Define en 1 el subindice de la trama de peticion
            tramaOk = 9;                                 //Limpia la variable que indica si la trama ha llegado correctamente
            //Inicializa el Time-Out-Trama, t=2ms
-           //T2CON.TMR2ON = 1;                            //Enciende el Timer2
-           //PR2 = 249;                                   //Se carga el valor del preload correspondiente al tiempo de 2ms
+           T2CON.TMR2ON = 1;                            //Enciende el Timer2
+           PR2 = 249;                                   //Se carga el valor del preload correspondiente al tiempo de 2ms
         }
 
         if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
+           PIR1.TMR2IF = 0;                             //Limpia la bandera de interrupcion por desbordamiento del TMR2
+           T2CON.TMR2ON = 0;                            //Apaga el Timer2
            if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
               tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
               i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
               banTF = 0;                                //Limpia la bandera de final de trama
+              T2CON.TMR2ON = 1;                         //Enciende el Timer2
+              PR2 = 249;
            } else {
               tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
               banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
+              T2CON.TMR2ON = 1;                         //Enciende el Timer2
+              PR2 = 249;
            }
            if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
               banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               banTC = 1;                                //Activa la bandera de trama completa
               t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
-              //**Hasta aqui se ha logrado recuperar la trama de datos sin errores
+              PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
+              T2CON.TMR2ON = 0;                         //Apaga el Timer2
            }
         }
 
         if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
-           
            tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
            if (tramaOk==1){
                EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
@@ -307,11 +321,11 @@ void interrupt(){
            banTC = 0;                                   //Limpia la bandera de trama completa
            i1 = 0;                                      //Limpia el subindice de trama
            banTI = 0;
-
         }
 
+        PIR1.RCIF = 0;
         IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
-
+        AUX = 0;
 
      }
 
@@ -339,10 +353,11 @@ void interrupt(){
      if (PIR1.TMR2IF==1){
         PIR1.TMR2IF = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR2
         T2CON.TMR2ON = 0;                               //Apaga el Timer2
-        banTI = 0;                                      //Limpia la bandera de inicio de trama
         i1 = 0;                                         //Limpia el subindice de la trama de peticion
+        banTI = 0;                                      //Limpia la bandera de inicio de trama
         banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
-        //EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
+        banTF = 0;
+        EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
      }
 
 }

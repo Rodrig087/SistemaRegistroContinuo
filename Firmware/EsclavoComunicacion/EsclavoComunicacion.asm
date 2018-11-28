@@ -135,8 +135,8 @@ L_end_CalcularCRC:
 
 _EnviarMensajeRS485:
 
-;EsclavoComunicacion.c,126 :: 		void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
-;EsclavoComunicacion.c,130 :: 		CRCPDU = CalcularCRC(tramaPDU, sizePDU);           //Calcula el CRC de la trama pdu
+;EsclavoComunicacion.c,128 :: 		void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
+;EsclavoComunicacion.c,132 :: 		CRCPDU = CalcularCRC(tramaPDU, sizePDU);           //Calcula el CRC de la trama pdu
 	MOVF       FARG_EnviarMensajeRS485_tramaPDU+0, 0
 	MOVWF      FARG_CalcularCRC_trama+0
 	MOVF       FARG_EnviarMensajeRS485_sizePDU+0, 0
@@ -146,13 +146,13 @@ _EnviarMensajeRS485:
 	MOVWF      EnviarMensajeRS485_CRCPDU_L0+0
 	MOVF       R0+1, 0
 	MOVWF      EnviarMensajeRS485_CRCPDU_L0+1
-;EsclavoComunicacion.c,131 :: 		ptrCRCPDU = &CRCPDU;                               //Asociacion del puntero CrcTramaError
+;EsclavoComunicacion.c,133 :: 		ptrCRCPDU = &CRCPDU;                               //Asociacion del puntero CrcTramaError
 	MOVLW      EnviarMensajeRS485_CRCPDU_L0+0
 	MOVWF      EnviarMensajeRS485_ptrCRCPDU_L0+0
-;EsclavoComunicacion.c,133 :: 		tramaRS485[0]=HDR;                                 //Añade la cabecera a la trama a enviar
+;EsclavoComunicacion.c,135 :: 		tramaRS485[0]=HDR;                                 //Añade la cabecera a la trama a enviar
 	MOVLW      58
 	MOVWF      _tramaRS485+0
-;EsclavoComunicacion.c,134 :: 		tramaRS485[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
+;EsclavoComunicacion.c,136 :: 		tramaRS485[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
 	MOVLW      2
 	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
 	MOVWF      R0+0
@@ -170,7 +170,7 @@ _EnviarMensajeRS485:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,135 :: 		tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
+;EsclavoComunicacion.c,137 :: 		tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
 	MOVF       FARG_EnviarMensajeRS485_sizePDU+0, 0
 	ADDLW      1
 	MOVWF      R0+0
@@ -188,7 +188,7 @@ _EnviarMensajeRS485:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,136 :: 		tramaRS485[sizePDU+3]=END1;                        //Añade el primer delimitador de final de trama
+;EsclavoComunicacion.c,138 :: 		tramaRS485[sizePDU+3]=END1;                        //Añade el primer delimitador de final de trama
 	MOVLW      3
 	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
 	MOVWF      R0+0
@@ -200,7 +200,7 @@ _EnviarMensajeRS485:
 	MOVWF      FSR
 	MOVLW      13
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,137 :: 		tramaRS485[sizePDU+4]=END2;                        //Añade el segundo delimitador de final de trama
+;EsclavoComunicacion.c,139 :: 		tramaRS485[sizePDU+4]=END2;                        //Añade el segundo delimitador de final de trama
 	MOVLW      4
 	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
 	MOVWF      R0+0
@@ -212,9 +212,9 @@ _EnviarMensajeRS485:
 	MOVWF      FSR
 	MOVLW      10
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,138 :: 		RE_DE = 1;                                         //Establece el Max485 en modo escritura
+;EsclavoComunicacion.c,140 :: 		RE_DE = 1;                                         //Establece el Max485 en modo escritura
 	BSF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,139 :: 		for (i=0;i<(sizePDU+5);i++){
+;EsclavoComunicacion.c,141 :: 		for (i=0;i<(sizePDU+5);i++){
 	CLRF       EnviarMensajeRS485_i_L0+0
 L_EnviarMensajeRS4859:
 	MOVLW      5
@@ -235,7 +235,7 @@ L_EnviarMensajeRS4859:
 L__EnviarMensajeRS48558:
 	BTFSC      STATUS+0, 0
 	GOTO       L_EnviarMensajeRS48510
-;EsclavoComunicacion.c,140 :: 		if ((i>=1)&&(i<=sizePDU)){
+;EsclavoComunicacion.c,142 :: 		if ((i>=1)&&(i<=sizePDU)){
 	MOVLW      1
 	SUBWF      EnviarMensajeRS485_i_L0+0, 0
 	BTFSS      STATUS+0, 0
@@ -245,7 +245,7 @@ L__EnviarMensajeRS48558:
 	BTFSS      STATUS+0, 0
 	GOTO       L_EnviarMensajeRS48514
 L__EnviarMensajeRS48551:
-;EsclavoComunicacion.c,141 :: 		UART1_Write(tramaPDU[i-1]);                 //Envia el contenido de la trama PDU a travez del UART1
+;EsclavoComunicacion.c,143 :: 		UART1_Write(tramaPDU[i-1]);                 //Envia el contenido de la trama PDU a travez del UART1
 	MOVLW      1
 	SUBWF      EnviarMensajeRS485_i_L0+0, 0
 	MOVWF      R0+0
@@ -258,24 +258,24 @@ L__EnviarMensajeRS48551:
 	MOVF       INDF+0, 0
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
-;EsclavoComunicacion.c,142 :: 		} else {
+;EsclavoComunicacion.c,144 :: 		} else {
 	GOTO       L_EnviarMensajeRS48515
 L_EnviarMensajeRS48514:
-;EsclavoComunicacion.c,143 :: 		UART1_Write(tramaRS485[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
+;EsclavoComunicacion.c,145 :: 		UART1_Write(tramaRS485[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
 	MOVF       EnviarMensajeRS485_i_L0+0, 0
 	ADDLW      _tramaRS485+0
 	MOVWF      FSR
 	MOVF       INDF+0, 0
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
-;EsclavoComunicacion.c,144 :: 		}
+;EsclavoComunicacion.c,146 :: 		}
 L_EnviarMensajeRS48515:
-;EsclavoComunicacion.c,139 :: 		for (i=0;i<(sizePDU+5);i++){
+;EsclavoComunicacion.c,141 :: 		for (i=0;i<(sizePDU+5);i++){
 	INCF       EnviarMensajeRS485_i_L0+0, 1
-;EsclavoComunicacion.c,145 :: 		}
+;EsclavoComunicacion.c,147 :: 		}
 	GOTO       L_EnviarMensajeRS4859
 L_EnviarMensajeRS48510:
-;EsclavoComunicacion.c,146 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+;EsclavoComunicacion.c,148 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
 L_EnviarMensajeRS48516:
 	CALL       _UART1_Tx_Idle+0
 	MOVF       R0+0, 0
@@ -284,32 +284,32 @@ L_EnviarMensajeRS48516:
 	GOTO       L_EnviarMensajeRS48517
 	GOTO       L_EnviarMensajeRS48516
 L_EnviarMensajeRS48517:
-;EsclavoComunicacion.c,147 :: 		RE_DE = 0;                                         //Establece el Max485-2 en modo de lectura;
+;EsclavoComunicacion.c,149 :: 		RE_DE = 0;                                         //Establece el Max485-2 en modo de lectura;
 	BCF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,155 :: 		}
+;EsclavoComunicacion.c,157 :: 		}
 L_end_EnviarMensajeRS485:
 	RETURN
 ; end of _EnviarMensajeRS485
 
 _VerificarCRC:
 
-;EsclavoComunicacion.c,162 :: 		unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
-;EsclavoComunicacion.c,170 :: 		crcCalculado = 0;                                  //Inicializa los valores del CRC obtenido y calculado con valores diferentes
+;EsclavoComunicacion.c,164 :: 		unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
+;EsclavoComunicacion.c,172 :: 		crcCalculado = 0;                                  //Inicializa los valores del CRC obtenido y calculado con valores diferentes
 	CLRF       VerificarCRC_crcCalculado_L0+0
 	CLRF       VerificarCRC_crcCalculado_L0+1
-;EsclavoComunicacion.c,171 :: 		crcTrama = 1;
+;EsclavoComunicacion.c,173 :: 		crcTrama = 1;
 	MOVLW      1
 	MOVWF      VerificarCRC_crcTrama_L0+0
 	MOVLW      0
 	MOVWF      VerificarCRC_crcTrama_L0+1
-;EsclavoComunicacion.c,173 :: 		for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+;EsclavoComunicacion.c,175 :: 		for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
 	CLRF       VerificarCRC_j_L0+0
 L_VerificarCRC18:
 	MOVF       FARG_VerificarCRC_tramaPDUSize+0, 0
 	SUBWF      VerificarCRC_j_L0+0, 0
 	BTFSC      STATUS+0, 0
 	GOTO       L_VerificarCRC19
-;EsclavoComunicacion.c,174 :: 		pdu[j] = trama[j+1];
+;EsclavoComunicacion.c,176 :: 		pdu[j] = trama[j+1];
 	MOVF       VerificarCRC_j_L0+0, 0
 	ADDLW      VerificarCRC_pdu_L0+0
 	MOVWF      R2+0
@@ -328,12 +328,12 @@ L_VerificarCRC18:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,173 :: 		for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+;EsclavoComunicacion.c,175 :: 		for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
 	INCF       VerificarCRC_j_L0+0, 1
-;EsclavoComunicacion.c,176 :: 		}
+;EsclavoComunicacion.c,177 :: 		}
 	GOTO       L_VerificarCRC18
 L_VerificarCRC19:
-;EsclavoComunicacion.c,178 :: 		crcCalculado = CalcularCRC(pdu, tramaPDUSize);     //Invoca la funcion para el calculo del CRC de la trama PDU
+;EsclavoComunicacion.c,179 :: 		crcCalculado = CalcularCRC(pdu, tramaPDUSize);     //Invoca la funcion para el calculo del CRC de la trama PDU
 	MOVLW      VerificarCRC_pdu_L0+0
 	MOVWF      FARG_CalcularCRC_trama+0
 	MOVF       FARG_VerificarCRC_tramaPDUSize+0, 0
@@ -343,10 +343,10 @@ L_VerificarCRC19:
 	MOVWF      VerificarCRC_crcCalculado_L0+0
 	MOVF       R0+1, 0
 	MOVWF      VerificarCRC_crcCalculado_L0+1
-;EsclavoComunicacion.c,184 :: 		ptrCRCTrama = &CRCTrama;                           //Asociacion del puntero CRCPDU
+;EsclavoComunicacion.c,181 :: 		ptrCRCTrama = &CRCTrama;                           //Asociacion del puntero CRCPDU
 	MOVLW      VerificarCRC_crcTrama_L0+0
 	MOVWF      VerificarCRC_ptrCRCTrama_L0+0
-;EsclavoComunicacion.c,185 :: 		*ptrCRCTrama = trama[tramaPDUSize+2];              //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
+;EsclavoComunicacion.c,182 :: 		*ptrCRCTrama = trama[tramaPDUSize+2];              //Asigna el elemento CRC_LSB de la trama de respuesta al LSB de la variable CRCPDU
 	MOVLW      2
 	ADDWF      FARG_VerificarCRC_tramaPDUSize+0, 0
 	MOVWF      R0+0
@@ -362,7 +362,7 @@ L_VerificarCRC19:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,186 :: 		*(ptrCRCTrama+1) = trama[tramaPDUSize+1];          //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
+;EsclavoComunicacion.c,183 :: 		*(ptrCRCTrama+1) = trama[tramaPDUSize+1];          //Asigna el elemento CRC_MSB de la trama de respuesta al MSB de la variable CRCPDU
 	INCF       VerificarCRC_ptrCRCTrama_L0+0, 0
 	MOVWF      R2+0
 	MOVF       FARG_VerificarCRC_tramaPDUSize+0, 0
@@ -380,7 +380,7 @@ L_VerificarCRC19:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,188 :: 		if (crcCalculado==CRCTrama) {                      //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
+;EsclavoComunicacion.c,185 :: 		if (crcCalculado==CRCTrama) {                      //Verifica si el CRC calculado sea igual al CRC obtenido de la trama de peticion
 	MOVF       VerificarCRC_crcCalculado_L0+1, 0
 	XORWF      VerificarCRC_crcTrama_L0+1, 0
 	BTFSS      STATUS+0, 2
@@ -390,29 +390,29 @@ L_VerificarCRC19:
 L__VerificarCRC60:
 	BTFSS      STATUS+0, 2
 	GOTO       L_VerificarCRC21
-;EsclavoComunicacion.c,189 :: 		return 1;
+;EsclavoComunicacion.c,186 :: 		return 1;
 	MOVLW      1
 	MOVWF      R0+0
 	GOTO       L_end_VerificarCRC
-;EsclavoComunicacion.c,190 :: 		} else {
+;EsclavoComunicacion.c,187 :: 		} else {
 L_VerificarCRC21:
-;EsclavoComunicacion.c,191 :: 		return 0;
+;EsclavoComunicacion.c,188 :: 		return 0;
 	CLRF       R0+0
-;EsclavoComunicacion.c,193 :: 		}
+;EsclavoComunicacion.c,190 :: 		}
 L_end_VerificarCRC:
 	RETURN
 ; end of _VerificarCRC
 
 _EnviarACK:
 
-;EsclavoComunicacion.c,199 :: 		void EnviarACK(){
-;EsclavoComunicacion.c,200 :: 		RE_DE = 1;                                         //Establece el Max485 en modo escritura
+;EsclavoComunicacion.c,196 :: 		void EnviarACK(){
+;EsclavoComunicacion.c,197 :: 		RE_DE = 1;                                         //Establece el Max485 en modo escritura
 	BSF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,201 :: 		UART1_Write(ACK);                                  //Envia el valor de la Cabecera de la trama ACK por el puerto UART1
+;EsclavoComunicacion.c,198 :: 		UART1_Write(ACK);                                  //Envia el valor de la Cabecera de la trama ACK por el puerto UART1
 	MOVLW      170
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
-;EsclavoComunicacion.c,202 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+;EsclavoComunicacion.c,199 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
 L_EnviarACK23:
 	CALL       _UART1_Tx_Idle+0
 	MOVF       R0+0, 0
@@ -421,23 +421,23 @@ L_EnviarACK23:
 	GOTO       L_EnviarACK24
 	GOTO       L_EnviarACK23
 L_EnviarACK24:
-;EsclavoComunicacion.c,203 :: 		RE_DE = 0;                                         //Establece el Max485 en modo de lectura;
+;EsclavoComunicacion.c,200 :: 		RE_DE = 0;                                         //Establece el Max485 en modo de lectura;
 	BCF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,204 :: 		}
+;EsclavoComunicacion.c,201 :: 		}
 L_end_EnviarACK:
 	RETURN
 ; end of _EnviarACK
 
 _EnviarNACK:
 
-;EsclavoComunicacion.c,210 :: 		void EnviarNACK(){
-;EsclavoComunicacion.c,211 :: 		RE_DE = 1;                                         //Establece el Max485 en modo escritura
+;EsclavoComunicacion.c,207 :: 		void EnviarNACK(){
+;EsclavoComunicacion.c,208 :: 		RE_DE = 1;                                         //Establece el Max485 en modo escritura
 	BSF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,212 :: 		UART1_Write(NACK);                                 //Envia el valor de la Cabecera de la trama ACK por el puerto UART1
+;EsclavoComunicacion.c,209 :: 		UART1_Write(NACK);                                 //Envia el valor de la Cabecera de la trama ACK por el puerto UART1
 	MOVLW      175
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
-;EsclavoComunicacion.c,213 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
+;EsclavoComunicacion.c,210 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
 L_EnviarNACK25:
 	CALL       _UART1_Tx_Idle+0
 	MOVF       R0+0, 0
@@ -446,9 +446,9 @@ L_EnviarNACK25:
 	GOTO       L_EnviarNACK26
 	GOTO       L_EnviarNACK25
 L_EnviarNACK26:
-;EsclavoComunicacion.c,214 :: 		RE_DE = 0;                                         //Establece el Max485 en modo de lectura;
+;EsclavoComunicacion.c,211 :: 		RE_DE = 0;                                         //Establece el Max485 en modo de lectura;
 	BCF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,215 :: 		}
+;EsclavoComunicacion.c,212 :: 		}
 L_end_EnviarNACK:
 	RETURN
 ; end of _EnviarNACK
@@ -462,17 +462,19 @@ _interrupt:
 	MOVWF      ___savePCLATH+0
 	CLRF       PCLATH+0
 
-;EsclavoComunicacion.c,221 :: 		void interrupt(){
-;EsclavoComunicacion.c,248 :: 		if (PIR1.RCIF==1){
+;EsclavoComunicacion.c,218 :: 		void interrupt(){
+;EsclavoComunicacion.c,245 :: 		if (PIR1.RCIF==1){
 	BTFSS      PIR1+0, 5
 	GOTO       L_interrupt27
-;EsclavoComunicacion.c,250 :: 		IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
+;EsclavoComunicacion.c,247 :: 		IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
 	BSF        RB2_bit+0, BitPos(RB2_bit+0)
-;EsclavoComunicacion.c,251 :: 		byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
+;EsclavoComunicacion.c,248 :: 		byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
 	CALL       _UART1_Read+0
 	MOVF       R0+0, 0
 	MOVWF      _byteTrama+0
-;EsclavoComunicacion.c,253 :: 		if ((byteTrama==ACK)&&(banTI==0)){              //Verifica si recibio un ACK
+;EsclavoComunicacion.c,249 :: 		AUX = 1;
+	BSF        RB3_bit+0, BitPos(RB3_bit+0)
+;EsclavoComunicacion.c,251 :: 		if ((byteTrama==ACK)&&(banTI==0)){              //Verifica si recibio un ACK
 	MOVF       R0+0, 0
 	XORLW      170
 	BTFSS      STATUS+0, 2
@@ -482,10 +484,14 @@ _interrupt:
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt30
 L__interrupt54:
-;EsclavoComunicacion.c,255 :: 		T1CON.TMR1ON = 0;                            //Apaga el Timer1
+;EsclavoComunicacion.c,253 :: 		T1CON.TMR1ON = 0;                            //Apaga el Timer1
 	BCF        T1CON+0, 0
-;EsclavoComunicacion.c,256 :: 		TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;EsclavoComunicacion.c,254 :: 		TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF        TMR1IF_bit+0, BitPos(TMR1IF_bit+0)
+;EsclavoComunicacion.c,255 :: 		banTI=0;                                     //Limpia la bandera de inicio de trama
+	CLRF       _banTI+0
+;EsclavoComunicacion.c,256 :: 		byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
+	CLRF       _byteTrama+0
 ;EsclavoComunicacion.c,257 :: 		}
 L_interrupt30:
 ;EsclavoComunicacion.c,259 :: 		if ((byteTrama==NACK)&&(banTI==0)){             //Verifica si recibio un NACK
@@ -522,9 +528,13 @@ L_interrupt34:
 	CLRF       _contadorNACK+0
 ;EsclavoComunicacion.c,269 :: 		}
 L_interrupt35:
-;EsclavoComunicacion.c,271 :: 		}
+;EsclavoComunicacion.c,270 :: 		banTI=0;                                     //Limpia la bandera de inicio de trama
+	CLRF       _banTI+0
+;EsclavoComunicacion.c,271 :: 		byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
+	CLRF       _byteTrama+0
+;EsclavoComunicacion.c,272 :: 		}
 L_interrupt33:
-;EsclavoComunicacion.c,273 :: 		if ((byteTrama==HDR)&&(banTI==0)){
+;EsclavoComunicacion.c,274 :: 		if ((byteTrama==HDR)&&(banTI==0)){
 	MOVF       _byteTrama+0, 0
 	XORLW      58
 	BTFSS      STATUS+0, 2
@@ -534,73 +544,96 @@ L_interrupt33:
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt38
 L__interrupt52:
-;EsclavoComunicacion.c,274 :: 		banTI = 1;                                   //Activa la bandera de inicio de trama
+;EsclavoComunicacion.c,275 :: 		banTI = 1;                                   //Activa la bandera de inicio de trama
 	MOVLW      1
 	MOVWF      _banTI+0
-;EsclavoComunicacion.c,275 :: 		i1 = 0;                                      //Define en 1 el subindice de la trama de peticion
+;EsclavoComunicacion.c,276 :: 		i1 = 0;                                      //Define en 1 el subindice de la trama de peticion
 	CLRF       _i1+0
-;EsclavoComunicacion.c,276 :: 		tramaOk = 9;                                 //Limpia la variable que indica si la trama ha llegado correctamente
+;EsclavoComunicacion.c,277 :: 		tramaOk = 9;                                 //Limpia la variable que indica si la trama ha llegado correctamente
 	MOVLW      9
 	MOVWF      _tramaOk+0
-;EsclavoComunicacion.c,280 :: 		}
+;EsclavoComunicacion.c,279 :: 		T2CON.TMR2ON = 1;                            //Enciende el Timer2
+	BSF        T2CON+0, 2
+;EsclavoComunicacion.c,280 :: 		PR2 = 249;                                   //Se carga el valor del preload correspondiente al tiempo de 2ms
+	MOVLW      249
+	MOVWF      PR2+0
+;EsclavoComunicacion.c,281 :: 		}
 L_interrupt38:
-;EsclavoComunicacion.c,282 :: 		if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
+;EsclavoComunicacion.c,283 :: 		if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
 	MOVF       _banTI+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt39
-;EsclavoComunicacion.c,283 :: 		if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
+;EsclavoComunicacion.c,284 :: 		PIR1.TMR2IF = 0;                             //Limpia la bandera de interrupcion por desbordamiento del TMR2
+	BCF        PIR1+0, 1
+;EsclavoComunicacion.c,285 :: 		T2CON.TMR2ON = 0;                            //Apaga el Timer2
+	BCF        T2CON+0, 2
+;EsclavoComunicacion.c,286 :: 		if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
 	MOVF       _byteTrama+0, 0
 	XORLW      10
 	BTFSC      STATUS+0, 2
 	GOTO       L_interrupt40
-;EsclavoComunicacion.c,284 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+;EsclavoComunicacion.c,287 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
 	MOVF       _i1+0, 0
 	ADDLW      _tramaRS485+0
 	MOVWF      FSR
 	MOVF       _byteTrama+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,285 :: 		i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+;EsclavoComunicacion.c,288 :: 		i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
 	INCF       _i1+0, 1
-;EsclavoComunicacion.c,286 :: 		banTF = 0;                                //Limpia la bandera de final de trama
+;EsclavoComunicacion.c,289 :: 		banTF = 0;                                //Limpia la bandera de final de trama
 	CLRF       _banTF+0
-;EsclavoComunicacion.c,287 :: 		} else {
+;EsclavoComunicacion.c,290 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
+	BSF        T2CON+0, 2
+;EsclavoComunicacion.c,291 :: 		PR2 = 249;
+	MOVLW      249
+	MOVWF      PR2+0
+;EsclavoComunicacion.c,292 :: 		} else {
 	GOTO       L_interrupt41
 L_interrupt40:
-;EsclavoComunicacion.c,288 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+;EsclavoComunicacion.c,293 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
 	MOVF       _i1+0, 0
 	ADDLW      _tramaRS485+0
 	MOVWF      FSR
 	MOVF       _byteTrama+0, 0
 	MOVWF      INDF+0
-;EsclavoComunicacion.c,289 :: 		banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
+;EsclavoComunicacion.c,294 :: 		banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
 	MOVLW      1
 	MOVWF      _banTF+0
-;EsclavoComunicacion.c,290 :: 		}
+;EsclavoComunicacion.c,295 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
+	BSF        T2CON+0, 2
+;EsclavoComunicacion.c,296 :: 		PR2 = 249;
+	MOVLW      249
+	MOVWF      PR2+0
+;EsclavoComunicacion.c,297 :: 		}
 L_interrupt41:
-;EsclavoComunicacion.c,291 :: 		if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
+;EsclavoComunicacion.c,298 :: 		if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
 	MOVF       _banTF+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt42
-;EsclavoComunicacion.c,292 :: 		banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
+;EsclavoComunicacion.c,299 :: 		banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
 	CLRF       _banTI+0
-;EsclavoComunicacion.c,293 :: 		banTC = 1;                                //Activa la bandera de trama completa
+;EsclavoComunicacion.c,300 :: 		banTC = 1;                                //Activa la bandera de trama completa
 	MOVLW      1
 	MOVWF      _banTC+0
-;EsclavoComunicacion.c,294 :: 		t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
+;EsclavoComunicacion.c,301 :: 		t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
 	MOVF       _tramaRS485+2, 0
 	MOVWF      _t1Size+0
-;EsclavoComunicacion.c,296 :: 		}
+;EsclavoComunicacion.c,302 :: 		PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
+	BCF        PIR1+0, 1
+;EsclavoComunicacion.c,303 :: 		T2CON.TMR2ON = 0;                         //Apaga el Timer2
+	BCF        T2CON+0, 2
+;EsclavoComunicacion.c,304 :: 		}
 L_interrupt42:
-;EsclavoComunicacion.c,297 :: 		}
+;EsclavoComunicacion.c,305 :: 		}
 L_interrupt39:
-;EsclavoComunicacion.c,299 :: 		if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
+;EsclavoComunicacion.c,307 :: 		if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
 	MOVF       _banTC+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt43
-;EsclavoComunicacion.c,301 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
+;EsclavoComunicacion.c,308 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
 	MOVLW      _tramaRS485+0
 	MOVWF      FARG_VerificarCRC_trama+0
 	MOVF       _t1Size+0, 0
@@ -608,82 +641,90 @@ L_interrupt39:
 	CALL       _VerificarCRC+0
 	MOVF       R0+0, 0
 	MOVWF      _tramaOk+0
-;EsclavoComunicacion.c,302 :: 		if (tramaOk==1){
+;EsclavoComunicacion.c,309 :: 		if (tramaOk==1){
 	MOVF       R0+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt44
-;EsclavoComunicacion.c,303 :: 		EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
+;EsclavoComunicacion.c,310 :: 		EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
 	CALL       _EnviarACK+0
-;EsclavoComunicacion.c,304 :: 		} else if (tramaOk==0) {
+;EsclavoComunicacion.c,311 :: 		} else if (tramaOk==0) {
 	GOTO       L_interrupt45
 L_interrupt44:
 	MOVF       _tramaOk+0, 0
 	XORLW      0
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt46
-;EsclavoComunicacion.c,305 :: 		EnviarNACK();                            //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
+;EsclavoComunicacion.c,312 :: 		EnviarNACK();                            //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
 	CALL       _EnviarNACK+0
-;EsclavoComunicacion.c,306 :: 		}
+;EsclavoComunicacion.c,313 :: 		}
 L_interrupt46:
 L_interrupt45:
-;EsclavoComunicacion.c,307 :: 		banTC = 0;                                   //Limpia la bandera de trama completa
+;EsclavoComunicacion.c,314 :: 		banTC = 0;                                   //Limpia la bandera de trama completa
 	CLRF       _banTC+0
-;EsclavoComunicacion.c,308 :: 		i1 = 0;                                      //Limpia el subindice de trama
+;EsclavoComunicacion.c,315 :: 		i1 = 0;                                      //Limpia el subindice de trama
 	CLRF       _i1+0
-;EsclavoComunicacion.c,309 :: 		banTI = 0;
+;EsclavoComunicacion.c,316 :: 		banTI = 0;
 	CLRF       _banTI+0
-;EsclavoComunicacion.c,311 :: 		}
+;EsclavoComunicacion.c,317 :: 		}
 L_interrupt43:
-;EsclavoComunicacion.c,313 :: 		IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
+;EsclavoComunicacion.c,319 :: 		PIR1.RCIF = 0;
+	BCF        PIR1+0, 5
+;EsclavoComunicacion.c,320 :: 		IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
 	BCF        RB2_bit+0, BitPos(RB2_bit+0)
-;EsclavoComunicacion.c,316 :: 		}
+;EsclavoComunicacion.c,321 :: 		AUX = 0;
+	BCF        RB3_bit+0, BitPos(RB3_bit+0)
+;EsclavoComunicacion.c,323 :: 		}
 L_interrupt27:
-;EsclavoComunicacion.c,322 :: 		if (PIR1.TMR1IF==1){
+;EsclavoComunicacion.c,329 :: 		if (PIR1.TMR1IF==1){
 	BTFSS      PIR1+0, 0
 	GOTO       L_interrupt47
-;EsclavoComunicacion.c,323 :: 		TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;EsclavoComunicacion.c,330 :: 		TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF        TMR1IF_bit+0, BitPos(TMR1IF_bit+0)
-;EsclavoComunicacion.c,324 :: 		T1CON.TMR1ON = 0;                               //Apaga el Timer1
+;EsclavoComunicacion.c,331 :: 		T1CON.TMR1ON = 0;                               //Apaga el Timer1
 	BCF        T1CON+0, 0
-;EsclavoComunicacion.c,325 :: 		if (contadorTOD<3){
+;EsclavoComunicacion.c,332 :: 		if (contadorTOD<3){
 	MOVLW      3
 	SUBWF      _contadorTOD+0, 0
 	BTFSC      STATUS+0, 0
 	GOTO       L_interrupt48
-;EsclavoComunicacion.c,326 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);       //Reenvia la trama por el bus RS485
+;EsclavoComunicacion.c,333 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);       //Reenvia la trama por el bus RS485
 	MOVLW      _tramaSPI+0
 	MOVWF      FARG_EnviarMensajeRS485_tramaPDU+0
 	MOVF       _sizeSPI+0, 0
 	MOVWF      FARG_EnviarMensajeRS485_sizePDU+0
 	CALL       _EnviarMensajeRS485+0
-;EsclavoComunicacion.c,327 :: 		contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
+;EsclavoComunicacion.c,334 :: 		contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
 	INCF       _contadorTOD+0, 1
-;EsclavoComunicacion.c,328 :: 		} else {
+;EsclavoComunicacion.c,335 :: 		} else {
 	GOTO       L_interrupt49
 L_interrupt48:
-;EsclavoComunicacion.c,330 :: 		contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
+;EsclavoComunicacion.c,337 :: 		contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
 	CLRF       _contadorTOD+0
-;EsclavoComunicacion.c,331 :: 		}
+;EsclavoComunicacion.c,338 :: 		}
 L_interrupt49:
-;EsclavoComunicacion.c,332 :: 		}
+;EsclavoComunicacion.c,339 :: 		}
 L_interrupt47:
-;EsclavoComunicacion.c,339 :: 		if (PIR1.TMR2IF==1){
+;EsclavoComunicacion.c,346 :: 		if (PIR1.TMR2IF==1){
 	BTFSS      PIR1+0, 1
 	GOTO       L_interrupt50
-;EsclavoComunicacion.c,340 :: 		PIR1.TMR2IF = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR2
+;EsclavoComunicacion.c,347 :: 		PIR1.TMR2IF = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR2
 	BCF        PIR1+0, 1
-;EsclavoComunicacion.c,341 :: 		T2CON.TMR2ON = 0;                               //Apaga el Timer2
+;EsclavoComunicacion.c,348 :: 		T2CON.TMR2ON = 0;                               //Apaga el Timer2
 	BCF        T2CON+0, 2
-;EsclavoComunicacion.c,342 :: 		banTI = 0;                                      //Limpia la bandera de inicio de trama
-	CLRF       _banTI+0
-;EsclavoComunicacion.c,343 :: 		i1 = 0;                                         //Limpia el subindice de la trama de peticion
+;EsclavoComunicacion.c,349 :: 		i1 = 0;                                         //Limpia el subindice de la trama de peticion
 	CLRF       _i1+0
-;EsclavoComunicacion.c,344 :: 		banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
+;EsclavoComunicacion.c,350 :: 		banTI = 0;                                      //Limpia la bandera de inicio de trama
+	CLRF       _banTI+0
+;EsclavoComunicacion.c,351 :: 		banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
 	CLRF       _banTC+0
-;EsclavoComunicacion.c,346 :: 		}
+;EsclavoComunicacion.c,352 :: 		banTF = 0;
+	CLRF       _banTF+0
+;EsclavoComunicacion.c,353 :: 		EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
+	CALL       _EnviarNACK+0
+;EsclavoComunicacion.c,354 :: 		}
 L_interrupt50:
-;EsclavoComunicacion.c,348 :: 		}
+;EsclavoComunicacion.c,356 :: 		}
 L_end_interrupt:
 L__interrupt64:
 	MOVF       ___savePCLATH+0, 0
@@ -697,28 +738,28 @@ L__interrupt64:
 
 _main:
 
-;EsclavoComunicacion.c,352 :: 		void main() {
-;EsclavoComunicacion.c,354 :: 		ConfiguracionPrincipal();
+;EsclavoComunicacion.c,360 :: 		void main() {
+;EsclavoComunicacion.c,362 :: 		ConfiguracionPrincipal();
 	CALL       _ConfiguracionPrincipal+0
-;EsclavoComunicacion.c,355 :: 		RE_DE = 1;                                         //Establece el Max485-1 en modo de lectura;
+;EsclavoComunicacion.c,363 :: 		RE_DE = 1;                                         //Establece el Max485-1 en modo de lectura;
 	BSF        RB1_bit+0, BitPos(RB1_bit+0)
-;EsclavoComunicacion.c,356 :: 		AUX = 0;
+;EsclavoComunicacion.c,364 :: 		AUX = 0;
 	BCF        RB3_bit+0, BitPos(RB3_bit+0)
-;EsclavoComunicacion.c,357 :: 		IU1 = 0;
+;EsclavoComunicacion.c,365 :: 		IU1 = 0;
 	BCF        RB2_bit+0, BitPos(RB2_bit+0)
-;EsclavoComunicacion.c,358 :: 		i1=0;
+;EsclavoComunicacion.c,366 :: 		i1=0;
 	CLRF       _i1+0
-;EsclavoComunicacion.c,359 :: 		contadorTOD = 0;                                   //Inicia el contador de Time-Out-Dispositivo
+;EsclavoComunicacion.c,367 :: 		contadorTOD = 0;                                   //Inicia el contador de Time-Out-Dispositivo
 	CLRF       _contadorTOD+0
-;EsclavoComunicacion.c,360 :: 		contadorNACK = 0;                                  //Inicia el contador de NACK
+;EsclavoComunicacion.c,368 :: 		contadorNACK = 0;                                  //Inicia el contador de NACK
 	CLRF       _contadorNACK+0
-;EsclavoComunicacion.c,361 :: 		banTI=0;
+;EsclavoComunicacion.c,369 :: 		banTI=0;
 	CLRF       _banTI+0
-;EsclavoComunicacion.c,362 :: 		banTC=0;
+;EsclavoComunicacion.c,370 :: 		banTC=0;
 	CLRF       _banTC+0
-;EsclavoComunicacion.c,363 :: 		banTF=0;
+;EsclavoComunicacion.c,371 :: 		banTF=0;
 	CLRF       _banTF+0
-;EsclavoComunicacion.c,364 :: 		}
+;EsclavoComunicacion.c,372 :: 		}
 L_end_main:
 	GOTO       $+0
 ; end of _main

@@ -1,5 +1,5 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
-#line 22 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
+#line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
 sbit RE_DE at RB1_bit;
 sbit RE_DE_Direction at TRISB1_bit;
 
@@ -106,13 +106,14 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
  ptrCRCPDU = &CRCPDU;
 
  tramaRS485[0]=HDR;
- tramaRS485[sizePDU+2] = *ptrCrcPdu;
- tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);
+ tramaRS485[sizePDU+2]=*ptrCrcPdu;
+ tramaRS485[sizePDU+1]=*(ptrCrcPdu+1);
  tramaRS485[sizePDU+3]=END1;
  tramaRS485[sizePDU+4]=END2;
  RE_DE = 1;
  for (i=0;i<(sizePDU+5);i++){
  if ((i>=1)&&(i<=sizePDU)){
+
  UART1_Write(tramaPDU[i-1]);
  } else {
  UART1_Write(tramaRS485[i]);
@@ -120,7 +121,15 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  while(UART1_Tx_Idle()==0);
  RE_DE = 0;
-#line 149 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
+
+ byteTrama=0;
+
+
+
+ T1CON.TMR1ON = 1;
+ TMR1IF_bit = 0;
+ TMR1H = 0x0B;
+ TMR1L = 0xDC;
 }
 
 
@@ -129,7 +138,7 @@ void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
 
 
 unsigned int VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
- unsigned char* pdu;
+ unsigned char pdu[15];
  unsigned short j;
  unsigned int crcCalculado, crcTrama;
  unsigned short *ptrCRCTrama;
@@ -183,17 +192,27 @@ void interrupt(){
  INTCON.INTF=0;
 
  tramaSPI[0]=0x03;
- tramaSPI[1]=0x04;
+ tramaSPI[1]=0x05;
  tramaSPI[2]=0x05;
  tramaSPI[3]=0x06;
+ tramaSPI[4]=0x07;
 
  direccionRpi = tramaSPI[0];
  sizeSPI = tramaSPI[1];
  funcionRpi = tramaSPI[2];
 
+ if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
+ if (funcionRpi==0x01){
 
+ } else if (funcionRpi==0x02){
+
+ } else {
  EnviarMensajeRS485(tramaSPI, sizeSPI);
-#line 239 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/MasterComunicacion/MasterComunicacion.c"
+ }
+ } else {
+ EnviarMensajeRS485(tramaSPI, sizeSPI);
+ }
+
  }
 
 
@@ -209,22 +228,26 @@ void interrupt(){
 
  if ((byteTrama==ACK)&&(banTI==0)){
 
- T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
+ T1CON.TMR1ON = 0;
+ banTI=0;
+ byteTrama=0;
  }
 
  if ((byteTrama==NACK)&&(banTI==0)){
 
- T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
+ T1CON.TMR1ON = 0;
  if (contadorNACK<3){
  EnviarMensajeRS485(tramaSPI, sizeSPI);
  contadorNACK++;
  } else {
 
  contadorNACK = 0;
+ EnviarACK();
  }
-
+ banTI=0;
+ byteTrama=0;
  }
 
  if ((byteTrama==HDR)&&(banTI==0)){
@@ -233,32 +256,14 @@ void interrupt(){
  i1 = 1;
  tramaOk = 0;
 
- T2CON.TMR2ON = 1;
- PR2 = 249;
+
+
  }
 
  if (banTI==1){
- T2CON.TMR2ON = 0;
- if (i1==1){
- tramaRS485[i1] = byteTrama;
- i1 = 2;
- T2CON.TMR2ON = 1;
- } else if (i1=2){
- tramaRS485[i1] = byteTrama;
- t1Size = byteTrama;
- i1 = 3;
- T2CON.TMR2ON = 1;
- } else if ((i1>2)&&(i1<t1Size)){
- tramaRS485[i1] = byteTrama;
- i1=i1+1;
- T2CON.TMR2ON = 1;
- if (i1==t1Size-1){
- banTI = 0;
- banTC = 1;
- T2CON.TMR2ON = 0;
+
  }
- }
- }
+
 
  if (banTC==1){
 
@@ -288,6 +293,7 @@ void interrupt(){
  if (PIR1.TMR1IF==1){
  TMR1IF_bit = 0;
  T1CON.TMR1ON = 0;
+
  if (contadorTOD<3){
  EnviarMensajeRS485(tramaSPI, sizeSPI);
  contadorTOD++;
@@ -322,5 +328,9 @@ void main() {
  i1=0;
  contadorTOD = 0;
  contadorNACK = 0;
+ byteTrama=0;
+ banTI=0;
+ banTC=0;
+ banTF=0;
 
 }

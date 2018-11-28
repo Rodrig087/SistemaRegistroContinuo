@@ -1,5 +1,8 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
 #line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
+sbit AUX at RB3_bit;
+sbit AUX_Direction at TRISB3_bit;
+
 sbit RE_DE at RC5_bit;
 sbit RE_DE_Direction at TRISC5_bit;
 
@@ -24,7 +27,7 @@ const unsigned int POLMODBUS = 0xA001;
 unsigned short byteTrama;
 unsigned short t1Size, t2Size, sizeTramaPDU;
 unsigned char tramaRS485[50];
-unsigned char tramaPDU[50];
+unsigned char tramaPDU[15];
 unsigned char u2Trama[50];
 short i1, i2;
 
@@ -38,6 +41,9 @@ unsigned short contadorTOD;
 unsigned short contadorNACK;
 unsigned short puertoTOT;
 
+unsigned short x;
+
+
 
 
 
@@ -49,6 +55,7 @@ void ConfiguracionPrincipal(){
  ANSELB = 0;
  ANSELC = 0;
 
+ TRISB3_bit = 0;
  TRISB5_bit = 0;
  TRISC5_bit = 0;
  TRISB4_bit = 0;
@@ -67,16 +74,16 @@ void ConfiguracionPrincipal(){
 
 
  T1CON = 0x30;
- TMR1IF_bit = 0;
  TMR1H = 0x0B;
  TMR1L = 0xDC;
- TMR1IE_bit = 1;
+ PIR1.TMR1IF = 0;
+ PIE1.TMR1IE = 1;
 
 
  T2CON = 0x78;
- TMR2IF_bit = 0;
  PR2 = 249;
- TMR2IE_bit = 1;
+ PIR1.TMR2IF = 0;
+ PIE1.TMR2IE = 1;
 
  Delay_ms(100);
 
@@ -89,11 +96,11 @@ void ConfiguracionPrincipal(){
 unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
  unsigned char ucCounter;
  unsigned int CRC16;
- for(CRC16=0xFFFF; tramaSize!=0; tramaSize --){
- CRC16 ^=*trama ++;
- for(ucCounter =0; ucCounter <8; ucCounter ++){
+ for(CRC16=0xFFFF; tramaSize!=0; tramaSize--){
+ CRC16^=*trama ++;
+ for(ucCounter=0; ucCounter<8; ucCounter++){
  if(CRC16 & 0x0001)
- CRC16 = (CRC16 >>1)^POLMODBUS;
+ CRC16 = (CRC16>>1)^POLMODBUS;
  else
  CRC16>>=1;
  }
@@ -106,15 +113,16 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
 
 
 
-unsigned int VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
- unsigned char* pdu;
+unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
+ unsigned char pdu[15];
  unsigned short j;
  unsigned int crcCalculado, crcTrama;
  unsigned short *ptrCRCTrama;
  crcCalculado = 0;
  crcTrama = 1;
- for (j=0;j<=(tramaPDUSize);j++){
+ for (j=0;j<tramaPDUSize;j++){
  pdu[j] = trama[j+1];
+
  }
  crcCalculado = CalcularCRC(pdu, tramaPDUSize);
  ptrCRCTrama = &CRCTrama;
@@ -165,17 +173,17 @@ void EnviarNACK(unsigned char puerto){
 
 
 
-void RenviarTrama(unsigned char puerto, unsigned char *trama, unsigned char numDatos){
+void RenviarTrama(unsigned char puerto, unsigned char *trama, unsigned char sizePDU){
  unsigned char i;
  if (puerto==1){
  RE_DE = 1;
- for (i=0;i<(numDatos);i++){
+ for (i=0;i<(sizePDU+5);i++){
  UART1_Write(trama[i]);
  }
  while(UART1_Tx_Idle()==0);
  RE_DE = 0;
  } else {
- for (i=0;i<(numDatos);i++){
+ for (i=0;i<(sizePDU+5);i++){
  UART2_Write(trama[i]);
  }
  while(UART2_Tx_Idle()==0);
@@ -269,7 +277,7 @@ void interrupt(void){
 
 
 
- if(PIR1.F5==1){
+ if(PIR1.RC1IF==1){
 
  IU1 = 1;
  byteTrama = UART1_Read();
@@ -277,10 +285,9 @@ void interrupt(void){
 
  if (banTI==0){
  if (byteTrama==HDR){
- tramaRS485[0]=byteTrama;
  banTI = 1;
- i1 = 1;
- tramaOk = 0;
+ i1 = 0;
+ tramaOk = 9;
  puertoTOT = 1;
 
  T2CON.TMR2ON = 1;
@@ -290,6 +297,7 @@ void interrupt(void){
 
  T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
+ banTI=0;
  }
  if (byteTrama==NACK){
 
@@ -301,43 +309,41 @@ void interrupt(void){
  } else {
  contadorNACK = 0;
  }
+ banTI=0;
  }
  }
 
 
 
  if (banTI==1){
+ PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
- if (i1==1){
+ if (byteTrama!=END2){
  tramaRS485[i1] = byteTrama;
- i1 = 2;
+ i1++;
+ banTF = 0;
  T2CON.TMR2ON = 1;
  PR2 = 249;
- } else if (i1=2){
+ } else {
  tramaRS485[i1] = byteTrama;
- t1Size = byteTrama;
- i1 = 3;
+ banTF = 1;
  T2CON.TMR2ON = 1;
  PR2 = 249;
- } else if ((i1>2)&&(i1<t1Size)){
- tramaRS485[i1] = byteTrama;
- i1=i1+1;
- T2CON.TMR2ON = 1;
- if (i1==t1Size-1){
+ }
+ if (BanTF==1){
  banTI = 0;
  banTC = 1;
+ t1Size = tramaRS485[2];
+ PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
- }
  }
  }
 
 
  if (banTC==1){
  tramaOk = VerificarCRC(tramaRS485,t1Size);
-
-
-
  if (tramaOk==1){
+
  EnviarACK(1);
  if (tramaRS485[1]==DIR){
  if (tramaRS485[3]==0x01){
@@ -348,28 +354,29 @@ void interrupt(void){
  ConfiguracionAPC220(tramaRS485,t1Size);
  } else {
 
- tramaPDU[1]=0xFF;
+ tramaPDU[1]=DIR;
  tramaPDU[2]=0x04;
  tramaPDU[3]=0xEE;
- tramaPDU[4]=0xE1;
+ tramaPDU[4]=0xE0;
  sizeTramaPDU = tramaPDU[2];
  EnviarMensajeRS485(tramaRS485,sizeTramaPDU);
  }
  } else {
  RenviarTrama(2,tramaRS485,t1Size);
  }
+ } else if (tramaOk==0) {
+ EnviarNACK(1);
  }
-
+ banTI = 0;
  banTC = 0;
  i1 = 0;
-
  }
 
- PIR1.F5 = 0;
+
  IU1 = 0;
 
  }
-#line 484 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
+#line 491 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
  if (TMR1IF_bit==1){
  TMR1IF_bit = 0;
  T1CON.TMR1ON = 0;
@@ -415,5 +422,9 @@ void main() {
  i2=0;
  contadorTOD = 0;
  contadorNACK = 0;
+ banTI=0;
+ banTC=0;
+ banTF=0;
+ AUX = 0;
 
 }

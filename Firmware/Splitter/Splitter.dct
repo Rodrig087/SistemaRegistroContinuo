@@ -155,6 +155,8 @@ ansc7_bit
 ansela
 anselb
 anselc
+aux
+aux_direction
 b0
 b1
 b2
@@ -2307,5 +2309,6 @@ wrerr_bit
 wue
 wue_baud1con_bit
 wue_bit
+x
 z
 z_bit

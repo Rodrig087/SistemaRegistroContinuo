@@ -44,8 +44,9 @@ Count=0
 [PLDS]
 Count=0
 [Useses]
-Count=1
+Count=2
 File0=UART
+File1=SPI
 [EXPANDED_NODES]
 Node0=Sources
 Count=1
