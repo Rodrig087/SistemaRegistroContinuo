@@ -126,10 +126,10 @@ L__interrupt21:
 	GOTO       L_interrupt8
 ;ESensorPrueba.c,91 :: 		case 1:
 L_interrupt10:
-;ESensorPrueba.c,92 :: 		numBytesSPI = 0x02;
+;ESensorPrueba.c,92 :: 		numBytesSPI = 0x02;                //Si solicita leer el registro #1 establece que el numero de bytes que va a responder sera 2 (ejemplo)
 	MOVLW      2
 	MOVWF      _numBytesSPI+0
-;ESensorPrueba.c,93 :: 		SSPBUF = numBytesSPI;
+;ESensorPrueba.c,93 :: 		SSPBUF = numBytesSPI;              //Escribe la variable numBytesSPI en el buffer para enviarle al Maestro el numero de bytes que le va a responder
 	MOVLW      2
 	MOVWF      SSPBUF+0
 ;ESensorPrueba.c,94 :: 		break;
@@ -146,7 +146,7 @@ L_interrupt11:
 	GOTO       L_interrupt9
 ;ESensorPrueba.c,99 :: 		default:
 L_interrupt12:
-;ESensorPrueba.c,100 :: 		SSPBUF = 0;
+;ESensorPrueba.c,100 :: 		SSPBUF = 0;                        //**Hay que revisar esto para que no de error**
 	CLRF       SSPBUF+0
 ;ESensorPrueba.c,101 :: 		}
 	GOTO       L_interrupt9
@@ -163,50 +163,52 @@ L_interrupt8:
 L_interrupt9:
 ;ESensorPrueba.c,102 :: 		}
 L_interrupt7:
-;ESensorPrueba.c,103 :: 		if (buffer==0xA1){
+;ESensorPrueba.c,103 :: 		if (buffer==0xA1){                                //Si detecta el delimitador de final de trama:
 	MOVF       _buffer+0, 0
 	XORLW      161
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt13
-;ESensorPrueba.c,104 :: 		banPet = 1;
+;ESensorPrueba.c,104 :: 		banPet = 1;                                    //Activa la bandera de peticion
 	MOVLW      1
 	MOVWF      _banPet+0
-;ESensorPrueba.c,105 :: 		banMed = 0;
+;ESensorPrueba.c,105 :: 		banMed = 0;                                    //Limpia la bandera de medicion
 	CLRF       _banMed+0
-;ESensorPrueba.c,106 :: 		UART1_Write(registro);
+;ESensorPrueba.c,106 :: 		banResp = 0;                                   //Limpia la bandera de peticion. **Esto parece no ser necesario pero quiero asegurarme de que no entre al siguiente if sin antes pasar por el bucle
+	CLRF       _banResp+0
+;ESensorPrueba.c,107 :: 		UART1_Write(registro);                         //Manda por UART el valor del registro que solicito el Maestro (Es un ejemplo, no es necesario y se puede eliminar)
 	MOVF       _registro+0, 0
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
-;ESensorPrueba.c,107 :: 		SSPBUF = 0xB0;
+;ESensorPrueba.c,108 :: 		SSPBUF = 0xB0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
 	MOVLW      176
 	MOVWF      SSPBUF+0
-;ESensorPrueba.c,108 :: 		}
+;ESensorPrueba.c,109 :: 		}
 L_interrupt13:
-;ESensorPrueba.c,110 :: 		if (banResp==1){                                  //Verifica que la bandera de respuesta este activa
+;ESensorPrueba.c,111 :: 		if (banResp==1){                                  //Verifica que la bandera de respuesta este activa
 	MOVF       _banResp+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt14
-;ESensorPrueba.c,111 :: 		if (i<numBytesSPI){
+;ESensorPrueba.c,112 :: 		if (i<numBytesSPI){
 	MOVF       _numBytesSPI+0, 0
 	SUBWF      _i+0, 0
 	BTFSC      STATUS+0, 0
 	GOTO       L_interrupt15
-;ESensorPrueba.c,112 :: 		SSPBUF = resSPI[i];
+;ESensorPrueba.c,113 :: 		SSPBUF = resSPI[i];
 	MOVF       _i+0, 0
 	ADDLW      _resSPI+0
 	MOVWF      FSR
 	MOVF       INDF+0, 0
 	MOVWF      SSPBUF+0
-;ESensorPrueba.c,113 :: 		i++;
+;ESensorPrueba.c,114 :: 		i++;
 	INCF       _i+0, 1
-;ESensorPrueba.c,114 :: 		}
+;ESensorPrueba.c,115 :: 		}
 L_interrupt15:
-;ESensorPrueba.c,120 :: 		}
+;ESensorPrueba.c,116 :: 		}
 L_interrupt14:
-;ESensorPrueba.c,123 :: 		}
+;ESensorPrueba.c,119 :: 		}
 L_interrupt2:
-;ESensorPrueba.c,125 :: 		}
+;ESensorPrueba.c,121 :: 		}
 L_end_interrupt:
 L__interrupt24:
 	MOVF       ___savePCLATH+0, 0
@@ -220,39 +222,39 @@ L__interrupt24:
 
 _main:
 
-;ESensorPrueba.c,128 :: 		void main() {
-;ESensorPrueba.c,130 :: 		ConfiguracionPrincipal();
+;ESensorPrueba.c,124 :: 		void main() {
+;ESensorPrueba.c,126 :: 		ConfiguracionPrincipal();
 	CALL       _ConfiguracionPrincipal+0
-;ESensorPrueba.c,131 :: 		ECINT = 0;
+;ESensorPrueba.c,127 :: 		ECINT = 0;
 	BCF        RC2_bit+0, BitPos(RC2_bit+0)
-;ESensorPrueba.c,132 :: 		AUX = 0;
+;ESensorPrueba.c,128 :: 		AUX = 0;
 	BCF        RB3_bit+0, BitPos(RB3_bit+0)
-;ESensorPrueba.c,133 :: 		i = 0;
+;ESensorPrueba.c,129 :: 		i = 0;
 	CLRF       _i+0
-;ESensorPrueba.c,134 :: 		x = 0;
+;ESensorPrueba.c,130 :: 		x = 0;
 	CLRF       _x+0
-;ESensorPrueba.c,135 :: 		banPet = 0;
+;ESensorPrueba.c,131 :: 		banPet = 0;
 	CLRF       _banPet+0
-;ESensorPrueba.c,136 :: 		banResp = 0;
+;ESensorPrueba.c,132 :: 		banResp = 0;
 	CLRF       _banResp+0
-;ESensorPrueba.c,137 :: 		banSPI = 0;
+;ESensorPrueba.c,133 :: 		banSPI = 0;
 	CLRF       _banSPI+0
-;ESensorPrueba.c,138 :: 		banMed = 0;
+;ESensorPrueba.c,134 :: 		banMed = 0;
 	CLRF       _banMed+0
-;ESensorPrueba.c,139 :: 		respSPI = 0xC0;
+;ESensorPrueba.c,135 :: 		respSPI = 0xC0;
 	MOVLW      192
 	MOVWF      _respSPI+0
-;ESensorPrueba.c,140 :: 		SSPBUF = 0xA0;                                   //Carga un valor inicial en el buffer
+;ESensorPrueba.c,136 :: 		SSPBUF = 0xA0;                                   //Carga un valor inicial en el buffer
 	MOVLW      160
 	MOVWF      SSPBUF+0
-;ESensorPrueba.c,144 :: 		while(1){
+;ESensorPrueba.c,139 :: 		while(1){
 L_main16:
-;ESensorPrueba.c,146 :: 		if (banPet==1){                             //Verifica si se ha recibido una solicitud de medicion
+;ESensorPrueba.c,141 :: 		if (banPet==1){                             //Verifica si se ha recibido una solicitud de medicion
 	MOVF       _banPet+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_main18
-;ESensorPrueba.c,147 :: 		Delay_ms(1000);                          //Simula un tiempo de procesamiento de la peticion
+;ESensorPrueba.c,142 :: 		Delay_ms(1000);                          //Simula un tiempo de procesamiento de la peticion
 	MOVLW      11
 	MOVWF      R11+0
 	MOVLW      38
@@ -268,23 +270,23 @@ L_main19:
 	GOTO       L_main19
 	NOP
 	NOP
-;ESensorPrueba.c,148 :: 		resSPI[0] = 0x83;                        //Llena el vector de respuesta con un valor de ejemplo (float 27.07)
+;ESensorPrueba.c,143 :: 		resSPI[0] = 0x83;                        //Llena el vector de respuesta con un valor de ejemplo (float 27.07)
 	MOVLW      131
 	MOVWF      _resSPI+0
-;ESensorPrueba.c,149 :: 		resSPI[1] = 0x58;
+;ESensorPrueba.c,144 :: 		resSPI[1] = 0x58;
 	MOVLW      88
 	MOVWF      _resSPI+1
-;ESensorPrueba.c,150 :: 		resSPI[2] = 0x8F;
+;ESensorPrueba.c,145 :: 		resSPI[2] = 0x8F;
 	MOVLW      143
 	MOVWF      _resSPI+2
-;ESensorPrueba.c,151 :: 		resSPI[3] = 0x5C;
+;ESensorPrueba.c,146 :: 		resSPI[3] = 0x5C;
 	MOVLW      92
 	MOVWF      _resSPI+3
-;ESensorPrueba.c,152 :: 		i=0;
+;ESensorPrueba.c,147 :: 		i=0;
 	CLRF       _i+0
-;ESensorPrueba.c,154 :: 		ECINT = 1;                               //Genera un pulso en alto para producir una interrupcion externa en el Master
+;ESensorPrueba.c,149 :: 		ECINT = 1;                               //Genera un pulso en alto para producir una interrupcion externa en el Master
 	BSF        RC2_bit+0, BitPos(RC2_bit+0)
-;ESensorPrueba.c,155 :: 		Delay_ms(1);
+;ESensorPrueba.c,150 :: 		Delay_ms(1);
 	MOVLW      3
 	MOVWF      R12+0
 	MOVLW      151
@@ -296,18 +298,18 @@ L_main20:
 	GOTO       L_main20
 	NOP
 	NOP
-;ESensorPrueba.c,156 :: 		ECINT = 0;
+;ESensorPrueba.c,151 :: 		ECINT = 0;
 	BCF        RC2_bit+0, BitPos(RC2_bit+0)
-;ESensorPrueba.c,157 :: 		banPet = 0;                              //Limpia la bandera de peticion SPI
+;ESensorPrueba.c,152 :: 		banPet = 0;                              //Limpia la bandera de peticion SPI
 	CLRF       _banPet+0
-;ESensorPrueba.c,158 :: 		banResp = 1;                             //Activa la bandera de respuesta SPI
+;ESensorPrueba.c,153 :: 		banResp = 1;                             //Activa la bandera de respuesta SPI
 	MOVLW      1
 	MOVWF      _banResp+0
-;ESensorPrueba.c,160 :: 		}
+;ESensorPrueba.c,155 :: 		}
 L_main18:
-;ESensorPrueba.c,202 :: 		}
+;ESensorPrueba.c,157 :: 		}
 	GOTO       L_main16
-;ESensorPrueba.c,204 :: 		}
+;ESensorPrueba.c,159 :: 		}
 L_end_main:
 	GOTO       $+0
 ; end of _main

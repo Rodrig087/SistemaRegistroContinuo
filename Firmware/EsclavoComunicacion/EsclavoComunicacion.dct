@@ -66,6 +66,7 @@ banap
 banar
 banlp
 banlr
+banmed
 bantc
 bantf
 banti
@@ -161,6 +162,8 @@ contadornack
 contadortod
 cren
 cren_bit
+cs
+cs_direction
 csrc
 csrc_bit
 cvr0
@@ -202,7 +205,7 @@ delay_5ms
 delay_80us
 delay_8ms
 delay_cyc
-direccionrpi
+direccionesc
 div_16x16_s
 div_16x16_s_l
 div_16x16_u
@@ -231,8 +234,9 @@ eepgd_bit
 end1
 end2
 enviarack
-enviarmensajers485
+enviarmensajeuart
 enviarnack
+enviarsolicitudmedicion
 equals_double
 f
 ferr
@@ -264,6 +268,8 @@ i2c_stop_
 i2c_stop__bit
 ics_auto
 ics_off
+identificaresclavo
+idesclavo
 indf
 int2double
 intcon
@@ -319,6 +325,7 @@ not_write
 not_write_bit
 nrm3232
 nrm4032
+numbytesspi
 oerr
 oerr_bit
 option_reg
@@ -339,6 +346,7 @@ peie
 peie_bit
 pen
 pen_bit
+petspi
 pie1
 pie2
 pir1
@@ -447,6 +455,7 @@ re_de_direction
 read_write
 read_write_bit
 res032
+resspi
 rp0
 rp0_bit
 rp1
@@ -469,6 +478,9 @@ setiov3224
 sizespi
 smp
 smp_bit
+soft_spi_init
+soft_spi_read
+soft_spi_write
 spbrg
 spen
 spen_bit
@@ -517,6 +529,8 @@ t1ckps0_bit
 t1ckps1
 t1ckps1_bit
 t1con
+t1funcion
+t1idesclavo
 t1insync
 t1insync_bit
 t1oscen
@@ -560,8 +574,7 @@ toutps2_bit
 toutps3
 toutps3_bit
 tramaok
-tramars485
-tramaspi
+tramaserial
 trisa
 trisa0
 trisa0_bit

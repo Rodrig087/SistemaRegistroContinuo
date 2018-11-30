@@ -191,7 +191,7 @@ void interrupt(){
  if (INTCON.INTF==1){
  INTCON.INTF=0;
 
- tramaSPI[0]=0x03;
+ tramaSPI[0]=0x09;
  tramaSPI[1]=0x05;
  tramaSPI[2]=0x05;
  tramaSPI[3]=0x06;

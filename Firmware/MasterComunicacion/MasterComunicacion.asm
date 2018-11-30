@@ -489,8 +489,8 @@ _interrupt:
 	GOTO       L_interrupt27
 ;MasterComunicacion.c,210 :: 		INTCON.INTF=0;                                  //Limpia la badera de interrupcion externa
 	BCF        INTCON+0, 1
-;MasterComunicacion.c,212 :: 		tramaSPI[0]=0x03;                               //Ejemplo de trama de peticion enviada por la RPi
-	MOVLW      3
+;MasterComunicacion.c,212 :: 		tramaSPI[0]=0x09;                               //Ejemplo de trama de peticion enviada por la RPi
+	MOVLW      9
 	MOVWF      _tramaSPI+0
 ;MasterComunicacion.c,213 :: 		tramaSPI[1]=0x05;                               //CRC=0xF3C2
 	MOVLW      5

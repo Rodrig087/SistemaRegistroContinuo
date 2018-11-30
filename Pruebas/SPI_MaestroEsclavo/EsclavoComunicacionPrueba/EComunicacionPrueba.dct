@@ -235,7 +235,7 @@ eepgd_bit
 end1
 end2
 enviarack
-enviarmensajers485
+enviarmensajeuart
 enviarnack
 equals_double
 f
@@ -564,7 +564,7 @@ toutps2_bit
 toutps3
 toutps3_bit
 tramaok
-tramars485
+tramauart
 trisa
 trisa0
 trisa0_bit

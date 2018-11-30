@@ -12,6 +12,18 @@ __math_tempb
 __math_tempbd
 __savepclath
 __savestatus
+_spi_clk_idle_high
+_spi_clk_idle_low
+_spi_data_sample_end
+_spi_data_sample_middle
+_spi_high_2_low
+_spi_low_2_high
+_spi_master_osc_div16
+_spi_master_osc_div4
+_spi_master_osc_div64
+_spi_master_tmr2
+_spi_slave_ss_dis
+_spi_slave_ss_enable
 ackdt
 ackdt_bit
 acken
@@ -39,6 +51,8 @@ adon
 adon_bit
 adresh
 adresl
+aux
+aux_direction
 b0
 b1
 b2
@@ -47,6 +61,11 @@ b4
 b5
 b6
 b7
+banid
+banmed
+banpet
+banresp
+banspi
 bclie
 bclie_bit
 bclif
@@ -56,6 +75,7 @@ bf_bit
 boot16_delay_5ms
 brgh
 brgh_bit
+buffer
 byte2double
 c
 c_bit
@@ -132,6 +152,7 @@ cmif
 cmif_bit
 comfrem
 compare_double
+configuracionprincipal
 cren
 cren_bit
 csrc
@@ -175,6 +196,7 @@ delay_5ms
 delay_80us
 delay_8ms
 delay_cyc
+direccionrpi
 div_16x16_s
 div_16x16_s_l
 div_16x16_u
@@ -188,6 +210,8 @@ double2int
 double2longint
 double2longword
 double2word
+ecint
+ecint_direction
 eeadr
 eeadrh
 eecon1
@@ -207,6 +231,7 @@ ferr_bit
 fixsign32
 fsr
 fsrptr
+funcionrpi
 gcen
 gcen_bit
 get_fosc_khz
@@ -218,6 +243,7 @@ go_done
 go_done_bit
 go_not_done
 go_not_done_bit
+i
 i2c_data
 i2c_data_bit
 i2c_read
@@ -228,6 +254,7 @@ i2c_stop_
 i2c_stop__bit
 ics_auto
 ics_off
+idesclavo
 indf
 int2double
 intcon
@@ -235,6 +262,7 @@ inte
 inte_bit
 intedg
 intedg_bit
+interrupt
 intf
 intf_bit
 irp
@@ -279,6 +307,7 @@ not_write
 not_write_bit
 nrm3232
 nrm4032
+numbytesspi
 oerr
 oerr_bit
 option_reg
@@ -299,6 +328,7 @@ peie
 peie_bit
 pen
 pen_bit
+petspi
 pie1
 pie2
 pir1
@@ -403,7 +433,10 @@ rd
 rd_bit
 read_write
 read_write_bit
+registro
 res032
+respspi
+resspi
 rp0
 rp0_bit
 rp1
@@ -423,11 +456,16 @@ setfdz32
 setfov32
 setfun32
 setiov3224
+sizespi
 smp
 smp_bit
 spbrg
 spen
 spen_bit
+spi1_init
+spi1_init_advanced
+spi1_read
+spi1_write
 sren
 sren_bit
 sspadd
@@ -510,6 +548,7 @@ toutps2
 toutps2_bit
 toutps3
 toutps3_bit
+tramaspi
 trisa
 trisa0
 trisa0_bit
@@ -589,5 +628,6 @@ wren
 wren_bit
 wrerr
 wrerr_bit
+x
 z
 z_bit

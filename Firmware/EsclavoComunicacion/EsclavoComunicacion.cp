@@ -2,12 +2,12 @@
 #line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 sbit RE_DE at RB1_bit;
 sbit RE_DE_Direction at TRISB1_bit;
-
 sbit IU1 at RB2_bit;
 sbit IU1_Direction at TRISB2_bit;
-
 sbit AUX at RB3_bit;
 sbit AUX_Direction at TRISB3_bit;
+sbit CS at RC2_bit;
+sbit CS_Direction at TRISC2_bit;
 
 const short HDR = 0x3A;
 const short END1 = 0x0D;
@@ -15,10 +15,13 @@ const short END2 = 0x0A;
 const short ACK = 0xAA;
 const short NACK = 0xAF;
 const unsigned int POLMODBUS = 0xA001;
+unsigned short idEsclavo;
 
 unsigned short byteTrama;
 unsigned short t1Size;
-unsigned char tramaRS485[50];
+unsigned short t1IdEsclavo;
+unsigned short t1Funcion;
+unsigned char tramaSerial[50];
 short i1;
 
 unsigned short banTC, banTI, banTF;
@@ -28,10 +31,14 @@ unsigned short BanAR, BanAP;
 
 unsigned short tramaOk;
 
-unsigned char tramaSPI[50];
+
+unsigned char petSPI[3];
+unsigned char resSPI[15];
 unsigned short sizeSPI;
-unsigned short direccionRpi;
+unsigned short direccionEsc;
 unsigned short funcionRpi;
+unsigned short numBytesSPI;
+unsigned short banMed;
 
 unsigned short contadorTOD;
 unsigned short contadorNACK;
@@ -52,6 +59,7 @@ void ConfiguracionPrincipal(){
  TRISB1_bit = 0;
  TRISB2_bit = 0;
  TRISB3_bit = 0;
+ TRISC2_bit = 0;
 
  INTCON.GIE = 1;
  INTCON.PEIE = 1;
@@ -60,6 +68,8 @@ void ConfiguracionPrincipal(){
  UART1_Init(19200);
  PIE1.RCIE = 1;
 
+
+ SPI1_Init_Advanced(_SPI_MASTER_OSC_DIV64,_SPI_DATA_SAMPLE_MIDDLE,_SPI_CLK_IDLE_HIGH,_SPI_LOW_2_HIGH);
 
 
  T1CON = 0x30;
@@ -76,9 +86,9 @@ void ConfiguracionPrincipal(){
  PIE1.TMR2IE = 1;
 
 
-
-
-
+ INTCON.INTE = 1;
+ INTCON.INTF = 0;
+ OPTION_REG.INTEDG = 1;
 
  Delay_ms(100);
 
@@ -107,29 +117,29 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
 
 
 
-void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
+void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
  unsigned char i;
  unsigned int CRCPDU;
  unsigned short *ptrCRCPDU;
  CRCPDU = CalcularCRC(tramaPDU, sizePDU);
  ptrCRCPDU = &CRCPDU;
 
- tramaRS485[0]=HDR;
- tramaRS485[sizePDU+2] = *ptrCrcPdu;
- tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);
- tramaRS485[sizePDU+3]=END1;
- tramaRS485[sizePDU+4]=END2;
+ tramaSerial[0]=HDR;
+ tramaSerial[sizePDU+2] = *ptrCrcPdu;
+ tramaSerial[sizePDU+1] = *(ptrCrcPdu+1);
+ tramaSerial[sizePDU+3]=END1;
+ tramaSerial[sizePDU+4]=END2;
  RE_DE = 1;
  for (i=0;i<(sizePDU+5);i++){
  if ((i>=1)&&(i<=sizePDU)){
  UART1_Write(tramaPDU[i-1]);
  } else {
- UART1_Write(tramaRS485[i]);
+ UART1_Write(tramaSerial[i]);
  }
  }
  while(UART1_Tx_Idle()==0);
  RE_DE = 0;
-#line 157 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 167 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 }
 
 
@@ -191,15 +201,90 @@ void EnviarNACK(){
 
 
 
+void EnviarSolicitudMedicion(unsigned short registroEsclavo){
+ petSPI[0] = 0xA0;
+ petSPI[1] = registroEsclavo;
+ petSPI[2] = 0xA1;
+ CS = 0;
+ for (x=0;x<3;x++){
+ SSPBUF = petSPI[x];
+ if (x==2){
+ while (SSPSTAT.BF!=1);
+ numBytesSPI = SSPBUF;
+ }
+ Delay_ms(1);
+ }
+ CS = 1;
+ banMed = 1;
+}
+
+
+
+
+
+void IdentificarEsclavo(){
+ petSPI[0] = 0xC0;
+ petSPI[1] = 0xC1;
+ petSPI[2] = 0xC2;
+ CS = 0;
+ for (x=0;x<3;x++){
+ SSPBUF = petSPI[x];
+ if (x==2){
+ while (SSPSTAT.BF!=1);
+ idEsclavo = SSPBUF;
+ }
+ Delay_ms(1);
+ }
+ CS = 1;
+}
+
+
+
+
+
 void interrupt(){
-#line 245 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+
+
+
+ if (INTCON.INTF==1){
+ INTCON.INTF=0;
+ if (banMed==1){
+ CS = 0;
+ for (x=0;x<(numBytesSPI+1);x++){
+ SSPBUF = 0xBB;
+ if ((x>0)){
+ while (SSPSTAT.BF!=1);
+ resSPI[x+2] = SSPBUF;
+ }
+ Delay_us(200);
+ }
+ CS = 1;
+
+ resSPI[0] = idEsclavo;
+ resSPI[1] = numBytesSPI + 3;
+ resSPI[2] = t1Funcion;
+
+ }
+ banMed=0;
+
+ EnviarMensajeUART(resSPI,(numBytesSPI+3));
+
+ }
+
+
+
+
+
+
+
  if (PIR1.RCIF==1){
 
  IU1 = 1;
  byteTrama = UART1_Read();
  AUX = 1;
 
- if ((byteTrama==ACK)&&(banTI==0)){
+ if (banTI==0){
+ if ((byteTrama==ACK)){
 
  T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
@@ -207,22 +292,21 @@ void interrupt(){
  byteTrama=0;
  }
 
- if ((byteTrama==NACK)&&(banTI==0)){
+ if ((byteTrama==NACK)){
 
  T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
  if (contadorNACK<3){
- EnviarMensajeRS485(tramaSPI, sizeSPI);
+
  contadorNACK++;
  } else {
-
  contadorNACK = 0;
  }
  banTI=0;
  byteTrama=0;
  }
 
- if ((byteTrama==HDR)&&(banTI==0)){
+ if ((byteTrama==HDR)){
  banTI = 1;
  i1 = 0;
  tramaOk = 9;
@@ -230,18 +314,19 @@ void interrupt(){
  T2CON.TMR2ON = 1;
  PR2 = 249;
  }
+ }
 
  if (banTI==1){
  PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
  if (byteTrama!=END2){
- tramaRS485[i1] = byteTrama;
+ tramaSerial[i1] = byteTrama;
  i1++;
  banTF = 0;
  T2CON.TMR2ON = 1;
  PR2 = 249;
  } else {
- tramaRS485[i1] = byteTrama;
+ tramaSerial[i1] = byteTrama;
  banTF = 1;
  T2CON.TMR2ON = 1;
  PR2 = 249;
@@ -249,18 +334,23 @@ void interrupt(){
  if (BanTF==1){
  banTI = 0;
  banTC = 1;
- t1Size = tramaRS485[2];
+ t1IdEsclavo = tramaSerial[1];
  PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
  }
  }
 
  if (banTC==1){
- tramaOk = VerificarCRC(tramaRS485,t1Size);
+ if (t1IdEsclavo==IdEsclavo){
+ t1Size = tramaSerial[2];
+ t1Funcion = tramaSerial[3];
+ tramaOk = VerificarCRC(tramaSerial,t1Size);
  if (tramaOk==1){
  EnviarACK();
+ EnviarSolicitudMedicion(0x01);
  } else if (tramaOk==0) {
  EnviarNACK();
+ }
  }
  banTC = 0;
  i1 = 0;
@@ -281,7 +371,7 @@ void interrupt(){
  TMR1IF_bit = 0;
  T1CON.TMR1ON = 0;
  if (contadorTOD<3){
- EnviarMensajeRS485(tramaSPI, sizeSPI);
+
  contadorTOD++;
  } else {
 
@@ -311,13 +401,16 @@ void interrupt(){
 void main() {
 
  ConfiguracionPrincipal();
+ IdentificarEsclavo();
  RE_DE = 1;
+ CS = 1;
  AUX = 0;
  IU1 = 0;
  i1=0;
  contadorTOD = 0;
  contadorNACK = 0;
- banTI=0;
- banTC=0;
- banTF=0;
+ banTI = 0;
+ banTC = 0;
+ banTF = 0;
+ banMed = 0;
 }

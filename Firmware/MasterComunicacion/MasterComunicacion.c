@@ -209,7 +209,7 @@ void interrupt(){
      if (INTCON.INTF==1){
         INTCON.INTF=0;                                  //Limpia la badera de interrupcion externa
         //Aqui va la parte donde realiza la toma de datos que llegan por SPI desde la Rpi
-        tramaSPI[0]=0x03;                               //Ejemplo de trama de peticion enviada por la RPi
+        tramaSPI[0]=0x09;                               //Ejemplo de trama de peticion enviada por la RPi
         tramaSPI[1]=0x05;                               //CRC=0xF3C2
         tramaSPI[2]=0x05;
         tramaSPI[3]=0x06;

@@ -120,36 +120,36 @@ L_end_CalcularCRC:
 	RETURN
 ; end of _CalcularCRC
 
-_EnviarMensajeRS485:
+_EnviarMensajeUART:
 
-;EComunicacionPrueba.c,115 :: 		void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
+;EComunicacionPrueba.c,115 :: 		void EnviarMensajeUART(unsigned char idEsclavo, unsigned char *tramaPDU, unsigned char sizePDU){
 ;EComunicacionPrueba.c,119 :: 		CRCPDU = CalcularCRC(tramaPDU, sizePDU);           //Calcula el CRC de la trama pdu
-	MOVF       FARG_EnviarMensajeRS485_tramaPDU+0, 0
+	MOVF       FARG_EnviarMensajeUART_tramaPDU+0, 0
 	MOVWF      FARG_CalcularCRC_trama+0
-	MOVF       FARG_EnviarMensajeRS485_sizePDU+0, 0
+	MOVF       FARG_EnviarMensajeUART_sizePDU+0, 0
 	MOVWF      FARG_CalcularCRC_tramaSize+0
 	CALL       _CalcularCRC+0
 	MOVF       R0+0, 0
-	MOVWF      EnviarMensajeRS485_CRCPDU_L0+0
+	MOVWF      EnviarMensajeUART_CRCPDU_L0+0
 	MOVF       R0+1, 0
-	MOVWF      EnviarMensajeRS485_CRCPDU_L0+1
+	MOVWF      EnviarMensajeUART_CRCPDU_L0+1
 ;EComunicacionPrueba.c,120 :: 		ptrCRCPDU = &CRCPDU;                               //Asociacion del puntero CrcTramaError
-	MOVLW      EnviarMensajeRS485_CRCPDU_L0+0
-	MOVWF      EnviarMensajeRS485_ptrCRCPDU_L0+0
-;EComunicacionPrueba.c,122 :: 		tramaRS485[0]=HDR;                                 //Añade la cabecera a la trama a enviar
+	MOVLW      EnviarMensajeUART_CRCPDU_L0+0
+	MOVWF      EnviarMensajeUART_ptrCRCPDU_L0+0
+;EComunicacionPrueba.c,122 :: 		tramaUART[0] = HDR;                               //Añade la cabecera a la trama a enviar
 	MOVLW      58
-	MOVWF      _tramaRS485+0
-;EComunicacionPrueba.c,123 :: 		tramaRS485[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
+	MOVWF      _tramaUART+0
+;EComunicacionPrueba.c,123 :: 		tramaUART[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
 	MOVLW      2
-	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
+	ADDWF      FARG_EnviarMensajeUART_sizePDU+0, 0
 	MOVWF      R0+0
 	CLRF       R0+1
 	BTFSC      STATUS+0, 0
 	INCF       R0+1, 1
 	MOVF       R0+0, 0
-	ADDLW      _tramaRS485+0
+	ADDLW      _tramaUART+0
 	MOVWF      R1+0
-	MOVF       EnviarMensajeRS485_ptrCRCPDU_L0+0, 0
+	MOVF       EnviarMensajeUART_ptrCRCPDU_L0+0, 0
 	MOVWF      FSR
 	MOVF       INDF+0, 0
 	MOVWF      R0+0
@@ -157,17 +157,17 @@ _EnviarMensajeRS485:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EComunicacionPrueba.c,124 :: 		tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
-	MOVF       FARG_EnviarMensajeRS485_sizePDU+0, 0
+;EComunicacionPrueba.c,124 :: 		tramaUART[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
+	MOVF       FARG_EnviarMensajeUART_sizePDU+0, 0
 	ADDLW      1
 	MOVWF      R0+0
 	CLRF       R0+1
 	BTFSC      STATUS+0, 0
 	INCF       R0+1, 1
 	MOVF       R0+0, 0
-	ADDLW      _tramaRS485+0
+	ADDLW      _tramaUART+0
 	MOVWF      R1+0
-	INCF       EnviarMensajeRS485_ptrCRCPDU_L0+0, 0
+	INCF       EnviarMensajeUART_ptrCRCPDU_L0+0, 0
 	MOVWF      FSR
 	MOVF       INDF+0, 0
 	MOVWF      R0+0
@@ -175,35 +175,35 @@ _EnviarMensajeRS485:
 	MOVWF      FSR
 	MOVF       R0+0, 0
 	MOVWF      INDF+0
-;EComunicacionPrueba.c,125 :: 		tramaRS485[sizePDU+3]=END1;                        //Añade el primer delimitador de final de trama
+;EComunicacionPrueba.c,125 :: 		tramaUART[sizePDU+3] = END1;                      //Añade el primer delimitador de final de trama
 	MOVLW      3
-	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
+	ADDWF      FARG_EnviarMensajeUART_sizePDU+0, 0
 	MOVWF      R0+0
 	CLRF       R0+1
 	BTFSC      STATUS+0, 0
 	INCF       R0+1, 1
 	MOVF       R0+0, 0
-	ADDLW      _tramaRS485+0
+	ADDLW      _tramaUART+0
 	MOVWF      FSR
 	MOVLW      13
 	MOVWF      INDF+0
-;EComunicacionPrueba.c,126 :: 		tramaRS485[sizePDU+4]=END2;                        //Añade el segundo delimitador de final de trama
+;EComunicacionPrueba.c,126 :: 		tramaUART[sizePDU+4] = END2;                      //Añade el segundo delimitador de final de trama
 	MOVLW      4
-	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
+	ADDWF      FARG_EnviarMensajeUART_sizePDU+0, 0
 	MOVWF      R0+0
 	CLRF       R0+1
 	BTFSC      STATUS+0, 0
 	INCF       R0+1, 1
 	MOVF       R0+0, 0
-	ADDLW      _tramaRS485+0
+	ADDLW      _tramaUART+0
 	MOVWF      FSR
 	MOVLW      10
 	MOVWF      INDF+0
 ;EComunicacionPrueba.c,127 :: 		for (i=0;i<(sizePDU+5);i++){
-	CLRF       EnviarMensajeRS485_i_L0+0
-L_EnviarMensajeRS4859:
+	CLRF       EnviarMensajeUART_i_L0+0
+L_EnviarMensajeUART9:
 	MOVLW      5
-	ADDWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
+	ADDWF      FARG_EnviarMensajeUART_sizePDU+0, 0
 	MOVWF      R1+0
 	CLRF       R1+1
 	BTFSC      STATUS+0, 0
@@ -214,65 +214,65 @@ L_EnviarMensajeRS4859:
 	XORWF      R1+1, 0
 	SUBWF      R0+0, 0
 	BTFSS      STATUS+0, 2
-	GOTO       L__EnviarMensajeRS48560
+	GOTO       L__EnviarMensajeUART60
 	MOVF       R1+0, 0
-	SUBWF      EnviarMensajeRS485_i_L0+0, 0
-L__EnviarMensajeRS48560:
+	SUBWF      EnviarMensajeUART_i_L0+0, 0
+L__EnviarMensajeUART60:
 	BTFSC      STATUS+0, 0
-	GOTO       L_EnviarMensajeRS48510
+	GOTO       L_EnviarMensajeUART10
 ;EComunicacionPrueba.c,128 :: 		if ((i>=1)&&(i<=sizePDU)){
 	MOVLW      1
-	SUBWF      EnviarMensajeRS485_i_L0+0, 0
+	SUBWF      EnviarMensajeUART_i_L0+0, 0
 	BTFSS      STATUS+0, 0
-	GOTO       L_EnviarMensajeRS48514
-	MOVF       EnviarMensajeRS485_i_L0+0, 0
-	SUBWF      FARG_EnviarMensajeRS485_sizePDU+0, 0
+	GOTO       L_EnviarMensajeUART14
+	MOVF       EnviarMensajeUART_i_L0+0, 0
+	SUBWF      FARG_EnviarMensajeUART_sizePDU+0, 0
 	BTFSS      STATUS+0, 0
-	GOTO       L_EnviarMensajeRS48514
-L__EnviarMensajeRS48555:
+	GOTO       L_EnviarMensajeUART14
+L__EnviarMensajeUART55:
 ;EComunicacionPrueba.c,129 :: 		UART1_Write(tramaPDU[i-1]);                 //Envia el contenido de la trama PDU a travez del UART1
 	MOVLW      1
-	SUBWF      EnviarMensajeRS485_i_L0+0, 0
+	SUBWF      EnviarMensajeUART_i_L0+0, 0
 	MOVWF      R0+0
 	CLRF       R0+1
 	BTFSS      STATUS+0, 0
 	DECF       R0+1, 1
 	MOVF       R0+0, 0
-	ADDWF      FARG_EnviarMensajeRS485_tramaPDU+0, 0
+	ADDWF      FARG_EnviarMensajeUART_tramaPDU+0, 0
 	MOVWF      FSR
 	MOVF       INDF+0, 0
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
 ;EComunicacionPrueba.c,130 :: 		} else {
-	GOTO       L_EnviarMensajeRS48515
-L_EnviarMensajeRS48514:
-;EComunicacionPrueba.c,131 :: 		UART1_Write(tramaRS485[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
-	MOVF       EnviarMensajeRS485_i_L0+0, 0
-	ADDLW      _tramaRS485+0
+	GOTO       L_EnviarMensajeUART15
+L_EnviarMensajeUART14:
+;EComunicacionPrueba.c,131 :: 		UART1_Write(tramaUART[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
+	MOVF       EnviarMensajeUART_i_L0+0, 0
+	ADDLW      _tramaUART+0
 	MOVWF      FSR
 	MOVF       INDF+0, 0
 	MOVWF      FARG_UART1_Write_data_+0
 	CALL       _UART1_Write+0
 ;EComunicacionPrueba.c,132 :: 		}
-L_EnviarMensajeRS48515:
+L_EnviarMensajeUART15:
 ;EComunicacionPrueba.c,127 :: 		for (i=0;i<(sizePDU+5);i++){
-	INCF       EnviarMensajeRS485_i_L0+0, 1
+	INCF       EnviarMensajeUART_i_L0+0, 1
 ;EComunicacionPrueba.c,133 :: 		}
-	GOTO       L_EnviarMensajeRS4859
-L_EnviarMensajeRS48510:
+	GOTO       L_EnviarMensajeUART9
+L_EnviarMensajeUART10:
 ;EComunicacionPrueba.c,134 :: 		while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
-L_EnviarMensajeRS48516:
+L_EnviarMensajeUART16:
 	CALL       _UART1_Tx_Idle+0
 	MOVF       R0+0, 0
 	XORLW      0
 	BTFSS      STATUS+0, 2
-	GOTO       L_EnviarMensajeRS48517
-	GOTO       L_EnviarMensajeRS48516
-L_EnviarMensajeRS48517:
+	GOTO       L_EnviarMensajeUART17
+	GOTO       L_EnviarMensajeUART16
+L_EnviarMensajeUART17:
 ;EComunicacionPrueba.c,135 :: 		}
-L_end_EnviarMensajeRS485:
+L_end_EnviarMensajeUART:
 	RETURN
-; end of _EnviarMensajeRS485
+; end of _EnviarMensajeUART
 
 _VerificarCRC:
 
@@ -535,9 +535,9 @@ L_interrupt39:
 	XORLW      10
 	BTFSC      STATUS+0, 2
 	GOTO       L_interrupt41
-;EComunicacionPrueba.c,229 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+;EComunicacionPrueba.c,229 :: 		tramaUART[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
 	MOVF       _i1+0, 0
-	ADDLW      _tramaRS485+0
+	ADDLW      _tramaUART+0
 	MOVWF      FSR
 	MOVF       _byteTrama+0, 0
 	MOVWF      INDF+0
@@ -548,9 +548,9 @@ L_interrupt39:
 ;EComunicacionPrueba.c,232 :: 		} else {
 	GOTO       L_interrupt42
 L_interrupt41:
-;EComunicacionPrueba.c,233 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+;EComunicacionPrueba.c,233 :: 		tramaUART[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
 	MOVF       _i1+0, 0
-	ADDLW      _tramaRS485+0
+	ADDLW      _tramaUART+0
 	MOVWF      FSR
 	MOVF       _byteTrama+0, 0
 	MOVWF      INDF+0
@@ -569,8 +569,8 @@ L_interrupt42:
 ;EComunicacionPrueba.c,238 :: 		banTC = 1;                                //Activa la bandera de trama completa
 	MOVLW      1
 	MOVWF      _banTC+0
-;EComunicacionPrueba.c,239 :: 		t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
-	MOVF       _tramaRS485+2, 0
+;EComunicacionPrueba.c,239 :: 		t1Size = tramaUART[2];                   //Guarda el byte de longitud del campo PDU
+	MOVF       _tramaUART+2, 0
 	MOVWF      _t1Size+0
 ;EComunicacionPrueba.c,240 :: 		}
 L_interrupt43:
@@ -581,8 +581,8 @@ L_interrupt40:
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt44
-;EComunicacionPrueba.c,244 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
-	MOVLW      _tramaRS485+0
+;EComunicacionPrueba.c,244 :: 		tramaOk = VerificarCRC(tramaUART,t1Size);   //Calcula y verifica el CRC de la trama de peticion
+	MOVLW      _tramaUART+0
 	MOVWF      FARG_VerificarCRC_trama+0
 	MOVF       _t1Size+0, 0
 	MOVWF      FARG_VerificarCRC_tramaPDUSize+0
@@ -599,8 +599,8 @@ L_interrupt40:
 ;EComunicacionPrueba.c,248 :: 		petSPI[0] = 0xA0;                        //Cabecera de trama de solicitud de medicion
 	MOVLW      160
 	MOVWF      _petSPI+0
-;EComunicacionPrueba.c,249 :: 		petSPI[1] = 0x01;                        //Codigo del registro que se quiere leer
-	MOVLW      1
+;EComunicacionPrueba.c,249 :: 		petSPI[1] = 0x02;                        //Codigo del registro que se quiere leer
+	MOVLW      2
 	MOVWF      _petSPI+1
 ;EComunicacionPrueba.c,250 :: 		petSPI[2] = 0xA1;                        //Delimitador de final de trama
 	MOVLW      161

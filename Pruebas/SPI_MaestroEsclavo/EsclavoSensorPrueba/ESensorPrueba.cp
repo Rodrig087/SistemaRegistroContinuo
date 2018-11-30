@@ -1,5 +1,5 @@
-#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/Pruebas/SPI_MaestroEsclavo/V3/EsclavoSensorPrueba/ESensorPrueba.c"
-#line 10 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/Pruebas/SPI_MaestroEsclavo/V3/EsclavoSensorPrueba/ESensorPrueba.c"
+#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Pruebas/SPI_MaestroEsclavo/EsclavoSensorPrueba/ESensorPrueba.c"
+#line 10 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Pruebas/SPI_MaestroEsclavo/EsclavoSensorPrueba/ESensorPrueba.c"
 sbit AUX at RB3_bit;
 sbit AUX_Direction at TRISB3_bit;
 sbit ECINT at RC2_bit;
@@ -96,6 +96,7 @@ void interrupt(){
  if (buffer==0xA1){
  banPet = 1;
  banMed = 0;
+ banResp = 0;
  UART1_Write(registro);
  SSPBUF = 0xB0;
  }
@@ -105,7 +106,6 @@ void interrupt(){
  SSPBUF = resSPI[i];
  i++;
  }
-#line 120 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/Pruebas/SPI_MaestroEsclavo/V3/EsclavoSensorPrueba/ESensorPrueba.c"
  }
 
 
@@ -129,7 +129,6 @@ void main() {
  SSPBUF = 0xA0;
 
 
-
  while(1){
 
  if (banPet==1){
@@ -147,7 +146,7 @@ void main() {
  banResp = 1;
 
  }
-#line 202 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/Pruebas/SPI_MaestroEsclavo/V3/EsclavoSensorPrueba/ESensorPrueba.c"
+
  }
 
 }

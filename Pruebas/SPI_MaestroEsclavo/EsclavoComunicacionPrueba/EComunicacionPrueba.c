@@ -34,7 +34,7 @@ const unsigned int POLMODBUS = 0xA001;                  //Polinomio para el calc
 
 unsigned short byteTrama;                               //Variable de bytes de trama de datos
 unsigned short t1Size;                                  //Variables de longitud de trama para la comunicacion por el UART1
-unsigned char tramaRS485[30];                           //Vector de trama de datos del puerto UART1
+unsigned char tramaUART[30];                           //Vector de trama de datos del puerto UART1
 short i1;                                               //Subindices para el manejo de las tramas de datos
 
 unsigned short banTC, banTI, banTF, banPet;                     //Banderas de trama completa, inicio de trama y final de trama
@@ -111,24 +111,24 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de una trama de datos
-//Esta funcion recibe como parametros la trama PDU y su tamaño, y envia la trama de peticion completa a travez de RS485
-void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
+//Esta funcion recibe como parametros el id de esclavo, la trama de respuesta, y su tamaño
+void EnviarMensajeUART(unsigned char idEsclavo, unsigned char *tramaPDU, unsigned char sizePDU){
      unsigned char i;
      unsigned int CRCPDU;
      unsigned short *ptrCRCPDU;
      CRCPDU = CalcularCRC(tramaPDU, sizePDU);           //Calcula el CRC de la trama pdu
      ptrCRCPDU = &CRCPDU;                               //Asociacion del puntero CrcTramaError
      //Rellena la trama que se enviara por RS485 con los datos de la trama PDU
-     tramaRS485[0]=HDR;                                 //Añade la cabecera a la trama a enviar
-     tramaRS485[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
-     tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
-     tramaRS485[sizePDU+3]=END1;                        //Añade el primer delimitador de final de trama
-     tramaRS485[sizePDU+4]=END2;                        //Añade el segundo delimitador de final de trama
+     tramaUART[0] = HDR;                               //Añade la cabecera a la trama a enviar
+     tramaUART[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
+     tramaUART[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
+     tramaUART[sizePDU+3] = END1;                      //Añade el primer delimitador de final de trama
+     tramaUART[sizePDU+4] = END2;                      //Añade el segundo delimitador de final de trama
      for (i=0;i<(sizePDU+5);i++){
          if ((i>=1)&&(i<=sizePDU)){
             UART1_Write(tramaPDU[i-1]);                 //Envia el contenido de la trama PDU a travez del UART1
          } else {
-            UART1_Write(tramaRS485[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
+            UART1_Write(tramaUART[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
          }
      }
      while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
@@ -226,27 +226,27 @@ void interrupt(){
 
         if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
            if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
-              tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+              tramaUART[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
               i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
               banTF = 0;                                //Limpia la bandera de final de trama
            } else {
-              tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+              tramaUART[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
               banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
            }
            if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
               banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               banTC = 1;                                //Activa la bandera de trama completa
-              t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
+              t1Size = tramaUART[2];                   //Guarda el byte de longitud del campo PDU
            }
         }
 
         if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
-           tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
+           tramaOk = VerificarCRC(tramaUART,t1Size);   //Calcula y verifica el CRC de la trama de peticion
            if (tramaOk==1){
                EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
                
                petSPI[0] = 0xA0;                        //Cabecera de trama de solicitud de medicion
-               petSPI[1] = 0x01;                        //Codigo del registro que se quiere leer
+               petSPI[1] = 0x02;                        //Codigo del registro que se quiere leer
                petSPI[2] = 0xA1;                        //Delimitador de final de trama
                
                CS = 0;

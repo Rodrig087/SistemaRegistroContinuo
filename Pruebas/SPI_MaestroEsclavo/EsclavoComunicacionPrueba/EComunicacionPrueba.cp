@@ -1,5 +1,5 @@
-#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/Pruebas/SPI_MaestroEsclavo/V3/EsclavoComunicacionPrueba/EComunicacionPrueba.c"
-#line 23 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/Pruebas/SPI_MaestroEsclavo/V3/EsclavoComunicacionPrueba/EComunicacionPrueba.c"
+#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Pruebas/SPI_MaestroEsclavo/EsclavoComunicacionPrueba/EComunicacionPrueba.c"
+#line 23 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Pruebas/SPI_MaestroEsclavo/EsclavoComunicacionPrueba/EComunicacionPrueba.c"
 sbit AUX at RB3_bit;
 sbit AUX_Direction at TRISB3_bit;
 sbit CS at RC2_bit;
@@ -14,7 +14,7 @@ const unsigned int POLMODBUS = 0xA001;
 
 unsigned short byteTrama;
 unsigned short t1Size;
-unsigned char tramaRS485[30];
+unsigned char tramaUART[30];
 short i1;
 
 unsigned short banTC, banTI, banTF, banPet;
@@ -92,23 +92,23 @@ unsigned int CalcularCRC(unsigned char* trama, unsigned char tramaSize){
 
 
 
-void EnviarMensajeRS485(unsigned char *tramaPDU, unsigned char sizePDU){
+void EnviarMensajeUART(unsigned char idEsclavo, unsigned char *tramaPDU, unsigned char sizePDU){
  unsigned char i;
  unsigned int CRCPDU;
  unsigned short *ptrCRCPDU;
  CRCPDU = CalcularCRC(tramaPDU, sizePDU);
  ptrCRCPDU = &CRCPDU;
 
- tramaRS485[0]=HDR;
- tramaRS485[sizePDU+2] = *ptrCrcPdu;
- tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);
- tramaRS485[sizePDU+3]=END1;
- tramaRS485[sizePDU+4]=END2;
+ tramaUART[0] = HDR;
+ tramaUART[sizePDU+2] = *ptrCrcPdu;
+ tramaUART[sizePDU+1] = *(ptrCrcPdu+1);
+ tramaUART[sizePDU+3] = END1;
+ tramaUART[sizePDU+4] = END2;
  for (i=0;i<(sizePDU+5);i++){
  if ((i>=1)&&(i<=sizePDU)){
  UART1_Write(tramaPDU[i-1]);
  } else {
- UART1_Write(tramaRS485[i]);
+ UART1_Write(tramaUART[i]);
  }
  }
  while(UART1_Tx_Idle()==0);
@@ -206,27 +206,27 @@ void interrupt(){
 
  if (banTI==1){
  if (byteTrama!=END2){
- tramaRS485[i1] = byteTrama;
+ tramaUART[i1] = byteTrama;
  i1++;
  banTF = 0;
  } else {
- tramaRS485[i1] = byteTrama;
+ tramaUART[i1] = byteTrama;
  banTF = 1;
  }
  if (BanTF==1){
  banTI = 0;
  banTC = 1;
- t1Size = tramaRS485[2];
+ t1Size = tramaUART[2];
  }
  }
 
  if (banTC==1){
- tramaOk = VerificarCRC(tramaRS485,t1Size);
+ tramaOk = VerificarCRC(tramaUART,t1Size);
  if (tramaOk==1){
  EnviarACK();
 
  petSPI[0] = 0xA0;
- petSPI[1] = 0x01;
+ petSPI[1] = 0x02;
  petSPI[2] = 0xA1;
 
  CS = 0;

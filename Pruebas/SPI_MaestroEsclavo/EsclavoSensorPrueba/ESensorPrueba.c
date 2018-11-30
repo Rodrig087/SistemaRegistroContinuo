@@ -89,22 +89,23 @@ void interrupt(){
            registro = buffer;
            switch (registro){
                   case 1:
-                       numBytesSPI = 0x02;
-                       SSPBUF = numBytesSPI;
+                       numBytesSPI = 0x02;                //Si solicita leer el registro #1 establece que el numero de bytes que va a responder sera 2 (ejemplo)
+                       SSPBUF = numBytesSPI;              //Escribe la variable numBytesSPI en el buffer para enviarle al Maestro el numero de bytes que le va a responder
                        break;
                   case 2:
                        numBytesSPI = 0x04;
                        SSPBUF = numBytesSPI;
                        break;
                   default:
-                       SSPBUF = 0;
+                       SSPBUF = 0;                        //**Hay que revisar esto para que no de error**
            }
         }
-        if (buffer==0xA1){
-           banPet = 1;
-           banMed = 0;
-           UART1_Write(registro);
-           SSPBUF = 0xB0;
+        if (buffer==0xA1){                                //Si detecta el delimitador de final de trama:
+           banPet = 1;                                    //Activa la bandera de peticion
+           banMed = 0;                                    //Limpia la bandera de medicion
+           banResp = 0;                                   //Limpia la bandera de peticion. **Esto parece no ser necesario pero quiero asegurarme de que no entre al siguiente if sin antes pasar por el bucle
+           UART1_Write(registro);                         //Manda por UART el valor del registro que solicito el Maestro (Es un ejemplo, no es necesario y se puede eliminar)
+           SSPBUF = 0xB0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
         }
         
         if (banResp==1){                                  //Verifica que la bandera de respuesta este activa
@@ -112,11 +113,6 @@ void interrupt(){
               SSPBUF = resSPI[i];
               i++;
            }
-          /*if (x==(numBytesSPI+0)){
-              //SSPBUF = 0xA0;
-              i=0;
-              banResp=0;
-           }*/
         }
         
         
@@ -140,7 +136,6 @@ void main() {
      SSPBUF = 0xA0;                                   //Carga un valor inicial en el buffer
      
 
-
      while(1){
      
           if (banPet==1){                             //Verifica si se ha recibido una solicitud de medicion
@@ -158,46 +153,6 @@ void main() {
              banResp = 1;                             //Activa la bandera de respuesta SPI
              
           }
-
-       /*if ((i<4)&&(banPet==0)){
-           while (SSPSTAT.BF!=1);
-           buffer=SSPBUF;
-           tramaSPI[i]=buffer;
-           i++;
-           SSPCON.SSPOV=0;
-        } else if ((i==4)&&(banPet==0)) {
-           i=0;
-           SSPCON.SSPOV=0;
-           banPet = 1;
-        }*/
-        
-        /*if ((banPet==1)) {
-
-           for (x=0;x<3; x++){
-               UART1_Write(tramaSPI[x]);
-           }
-
-           Delay_ms(1000);
-
-
-           respSPI++;
-           SSPBUF = respSPI;
-           ECINT = 1;
-           Delay_ms(10);
-           ECINT = 0;
-           while (SSPSTAT.BF!=1);
-
-           banSPI = 0;
-           banPet = 0;
-        }*/
-        
-
-        /*Delay_ms(1);
-        SSPBUF = 0xC2;
-        Delay_ms(1);
-        SSPBUF = 0xC3;*/
-        
-        
 
      }
 
