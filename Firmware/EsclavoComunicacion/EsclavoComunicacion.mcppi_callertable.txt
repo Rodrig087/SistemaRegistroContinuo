@@ -15,6 +15,10 @@ interrupt
 		UART1_Write
 		UART1_Tx_Idle
 	EnviarSolicitudMedicion
+	EnviarMensajeError
+		CalcularCRC
+		UART1_Write
+		UART1_Tx_Idle
 	EnviarNACK
 		UART1_Write
 		UART1_Tx_Idle

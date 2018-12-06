@@ -6,6 +6,8 @@ sbit ECINT at RC2_bit;
 sbit ECINT_Direction at TRISC2_bit;
 
 const short idEsclavo = 0x09;
+const short funcEsclavo = 0x03;
+const short regEsclavo = 0x04;
 
 unsigned char tramaSPI[15];
 unsigned char petSPI[15];
@@ -62,44 +64,52 @@ void interrupt(){
 
 
  if (buffer==0xA0){
- banMed = 1;
+ banId = 1;
  SSPBUF = 0xA0;
  Delay_us(50);
  }
- if ((banMed==1)&&(buffer!=0xA0)){
- registro = buffer;
- switch (registro){
- case 1:
- numBytesSPI = 0x02;
- SSPBUF = numBytesSPI;
- break;
- case 2:
- numBytesSPI = 0x04;
- SSPBUF = numBytesSPI;
- break;
- default:
- SSPBUF = 0;
- }
- }
+ if ((banId==1)&&(buffer!=0xA3)){
  if (buffer==0xA1){
- banPet = 1;
- banMed = 0;
- banResp = 0;
+ SSPBUF = idEsclavo;
+ }
+ if (buffer==0xA2){
+ SSPBUF = funcEsclavo;
+ }
+ }
+ if (buffer==0xA3){
+ banId = 0;
  SSPBUF = 0xB0;
  }
 
 
- if (buffer==0xC0){
- banId = 1;
- SSPBUF = 0xC0;
+ if (buffer==0xB0){
+ banMed = 1;
+ SSPBUF = 0xB0;
  Delay_us(50);
  }
- if ((banId==1)&&(buffer==0xC1)){
- SSPBUF = idEsclavo;
+ if ((banMed==1)&&(buffer!=0xB0)){
+ registro = buffer;
+
+
+
+ switch (registro){
+ case 0:
+ numBytesSPI = 0x02;
+ SSPBUF = numBytesSPI;
+ break;
+ case 1:
+ numBytesSPI = 0x04;
+ SSPBUF = numBytesSPI;
+ break;
+ default:
+ SSPBUF = 0x01;
  }
- if (buffer==0xC2){
- banId = 0;
- SSPBUF = 0xA0;
+ }
+ if (buffer==0xB1){
+ banPet = 1;
+ banMed = 0;
+ banResp = 0;
+ SSPBUF = 0xC0;
  }
 
 
@@ -129,13 +139,14 @@ void main() {
  banMed = 0;
  banId = 0;
 
- respSPI = 0xC0;
- SSPBUF = 0xC0;
+
+ SSPBUF = 0xA0;
 
 
  while(1){
 
  if (banPet==1){
+
  Delay_ms(1000);
  resSPI[0] = 0x83;
  resSPI[1] = 0x58;

@@ -351,7 +351,7 @@ void interrupt(void){
            if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
               banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               banTC = 1;                                //Activa la bandera de trama completa
-              t1Size = tramaRS485[2];                   //Guarda el byte de longitud del campo PDU
+              t1Size = tramaRS485[2]+3;                 //calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
               PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
               T2CON.TMR2ON = 0;                         //Apaga el Timer2
            }
@@ -372,6 +372,7 @@ void interrupt(void){
                      ConfiguracionAPC220(tramaRS485,t1Size);  //Invoca a la funcion para realizar la configuracion del modulo APC con los parametros especificados en la trama
                   } else {
                      //Arma una trama de respuesta para indicar al Master que se produjo un error
+                     //Revisar
                      tramaPDU[1]=DIR;
                      tramaPDU[2]=0x04;                   //Establece en 4 el numero de elementos del PDU de la trama de respuesta de error
                      tramaPDU[3]=0xEE;                   //Cambia el campo de funcion por el codigo 0xEE para

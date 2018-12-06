@@ -209,14 +209,15 @@ void interrupt(){
      if (INTCON.INTF==1){
         INTCON.INTF=0;                                  //Limpia la badera de interrupcion externa
         //Aqui va la parte donde realiza la toma de datos que llegan por SPI desde la Rpi
-        tramaSPI[0]=0x09;                               //Ejemplo de trama de peticion enviada por la RPi
-        tramaSPI[1]=0x05;                               //CRC=0xF3C2
-        tramaSPI[2]=0x05;
-        tramaSPI[3]=0x06;
-        tramaSPI[4]=0x07;
+        //Ejemplo de trama de peticion enviada por la RPi
+        tramaSPI[0]=0x09;                               //Id esclavo
+        tramaSPI[1]=0x02;                               //# datos
+        tramaSPI[2]=0x05;                               //Funcion
+        tramaSPI[3]=0x06;                               //Dato 1
+        tramaSPI[4]=0x07;                               //Dato 2
 
         direccionRpi = tramaSPI[0];                     //Guarda el dato de la direccion del dispositvo con que se desea comunicar
-        sizeSPI = tramaSPI[1];                          //Guarda el dato de la longitud de la trama PDU
+        sizeSPI = tramaSPI[1] + 3;                      //Guarda el dato de la longitud de la trama PDU
         funcionRpi = tramaSPI[2];                       //Guarda el dato de la funcion requerida
 
         if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){

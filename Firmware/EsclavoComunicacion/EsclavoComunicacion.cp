@@ -1,7 +1,5 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 #line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
-sbit RE_DE at RB1_bit;
-sbit RE_DE_Direction at TRISB1_bit;
 sbit IU1 at RB2_bit;
 sbit IU1_Direction at TRISB2_bit;
 sbit AUX at RB3_bit;
@@ -15,7 +13,9 @@ const short END2 = 0x0A;
 const short ACK = 0xAA;
 const short NACK = 0xAF;
 const unsigned int POLMODBUS = 0xA001;
+
 unsigned short idEsclavo;
+unsigned short funcEsclavo;
 
 unsigned short byteTrama;
 unsigned short t1Size;
@@ -31,13 +31,11 @@ unsigned short BanAR, BanAP;
 
 unsigned short tramaOk;
 
-
-unsigned char petSPI[3];
+unsigned char petSPI[4];
 unsigned char resSPI[15];
-unsigned short sizeSPI;
 unsigned short direccionEsc;
-unsigned short funcionRpi;
 unsigned short numBytesSPI;
+unsigned short numDatos;
 unsigned short banMed;
 
 unsigned short contadorTOD;
@@ -56,7 +54,6 @@ unsigned short x;
 void ConfiguracionPrincipal(){
 
  TRISB0_bit = 1;
- TRISB1_bit = 0;
  TRISB2_bit = 0;
  TRISB3_bit = 0;
  TRISC2_bit = 0;
@@ -127,9 +124,8 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
  tramaSerial[0]=HDR;
  tramaSerial[sizePDU+2] = *ptrCrcPdu;
  tramaSerial[sizePDU+1] = *(ptrCrcPdu+1);
- tramaSerial[sizePDU+3]=END1;
- tramaSerial[sizePDU+4]=END2;
- RE_DE = 1;
+ tramaSerial[sizePDU+3] = END1;
+ tramaSerial[sizePDU+4] = END2;
  for (i=0;i<(sizePDU+5);i++){
  if ((i>=1)&&(i<=sizePDU)){
  UART1_Write(tramaPDU[i-1]);
@@ -138,8 +134,38 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  }
  while(UART1_Tx_Idle()==0);
- RE_DE = 0;
-#line 167 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 162 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+}
+
+
+
+
+
+void EnviarMensajeError(unsigned short codigoError){
+ unsigned char i;
+ unsigned int CRCerrorPDU;
+ unsigned short *ptrCRCerrorPDU;
+ unsigned char errorPDU[4];
+ errorPDU[0] = idEsclavo;
+ errorPDU[1] = 0x01;
+ errorPDU[2] = 0xEE;
+ errorPDU[3] = codigoError;
+ CRCerrorPDU = CalcularCRC(errorPDU,4);
+ ptrCRCerrorPDU = &CRCerrorPDU;
+
+ tramaSerial[0] = HDR;
+ tramaSerial[6] = *ptrCRCerrorPDU;
+ tramaSerial[5] = *(ptrCRCerrorPDU+1);
+ tramaSerial[7] = END1;
+ tramaSerial[8] = END2;
+ for (i=0;i<(9);i++){
+ if ((i>=1)&&(i<=4)){
+ UART1_Write(errorPDU[i-1]);
+ } else {
+ UART1_Write(tramaSerial[i]);
+ }
+ }
+ while(UART1_Tx_Idle()==0);
 }
 
 
@@ -180,10 +206,8 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
 
 
 void EnviarACK(){
- RE_DE = 1;
  UART1_Write(ACK);
  while(UART1_Tx_Idle()==0);
- RE_DE = 0;
 }
 
 
@@ -191,10 +215,8 @@ void EnviarACK(){
 
 
 void EnviarNACK(){
- RE_DE = 1;
  UART1_Write(NACK);
  while(UART1_Tx_Idle()==0);
- RE_DE = 0;
 }
 
 
@@ -202,9 +224,9 @@ void EnviarNACK(){
 
 
 void EnviarSolicitudMedicion(unsigned short registroEsclavo){
- petSPI[0] = 0xA0;
+ petSPI[0] = 0xB0;
  petSPI[1] = registroEsclavo;
- petSPI[2] = 0xA1;
+ petSPI[2] = 0xB1;
  CS = 0;
  for (x=0;x<3;x++){
  SSPBUF = petSPI[x];
@@ -223,15 +245,20 @@ void EnviarSolicitudMedicion(unsigned short registroEsclavo){
 
 
 void IdentificarEsclavo(){
- petSPI[0] = 0xC0;
- petSPI[1] = 0xC1;
- petSPI[2] = 0xC2;
+ petSPI[0] = 0xA0;
+ petSPI[1] = 0xA1;
+ petSPI[2] = 0xA2;
+ petSPI[3] = 0xA3;
  CS = 0;
- for (x=0;x<3;x++){
+ for (x=0;x<4;x++){
  SSPBUF = petSPI[x];
  if (x==2){
  while (SSPSTAT.BF!=1);
  idEsclavo = SSPBUF;
+ }
+ if (x==3){
+ while (SSPSTAT.BF!=1);
+ funcEsclavo = SSPBUF;
  }
  Delay_ms(1);
  }
@@ -249,9 +276,10 @@ void interrupt(){
  if (INTCON.INTF==1){
  INTCON.INTF=0;
  if (banMed==1){
+
  CS = 0;
  for (x=0;x<(numBytesSPI+1);x++){
- SSPBUF = 0xBB;
+ SSPBUF = 0xCC;
  if ((x>0)){
  while (SSPSTAT.BF!=1);
  resSPI[x+2] = SSPBUF;
@@ -342,12 +370,19 @@ void interrupt(){
 
  if (banTC==1){
  if (t1IdEsclavo==IdEsclavo){
- t1Size = tramaSerial[2];
+ t1Size = tramaSerial[2]+3;
  t1Funcion = tramaSerial[3];
  tramaOk = VerificarCRC(tramaSerial,t1Size);
  if (tramaOk==1){
  EnviarACK();
- EnviarSolicitudMedicion(0x01);
+
+
+ if (t1Funcion<=funcEsclavo){
+ EnviarSolicitudMedicion(tramaSerial[4]);
+ } else {
+ EnviarMensajeError(0xE0);
+ }
+
  } else if (tramaOk==0) {
  EnviarNACK();
  }
@@ -402,7 +437,6 @@ void main() {
 
  ConfiguracionPrincipal();
  IdentificarEsclavo();
- RE_DE = 1;
  CS = 1;
  AUX = 0;
  IU1 = 0;

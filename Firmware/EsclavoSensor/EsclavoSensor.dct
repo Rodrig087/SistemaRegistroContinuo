@@ -231,6 +231,7 @@ ferr_bit
 fixsign32
 fsr
 fsrptr
+funcesclavo
 funcionrpi
 gcen
 gcen_bit
@@ -433,6 +434,7 @@ rd
 rd_bit
 read_write
 read_write_bit
+regesclavo
 registro
 res032
 respspi

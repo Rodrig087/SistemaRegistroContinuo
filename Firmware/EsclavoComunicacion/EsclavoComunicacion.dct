@@ -234,6 +234,7 @@ eepgd_bit
 end1
 end2
 enviarack
+enviarmensajeerror
 enviarmensajeuart
 enviarnack
 enviarsolicitudmedicion
@@ -244,7 +245,7 @@ ferr_bit
 fixsign32
 fsr
 fsrptr
-funcionrpi
+funcesclavo
 gcen
 gcen_bit
 get_fosc_khz
@@ -326,6 +327,7 @@ not_write_bit
 nrm3232
 nrm4032
 numbytesspi
+numdatos
 oerr
 oerr_bit
 option_reg
@@ -450,8 +452,6 @@ rcreg
 rcsta
 rd
 rd_bit
-re_de
-re_de_direction
 read_write
 read_write_bit
 res032
@@ -475,7 +475,6 @@ setfdz32
 setfov32
 setfun32
 setiov3224
-sizespi
 smp
 smp_bit
 soft_spi_init

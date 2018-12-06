@@ -12,7 +12,9 @@ sbit AUX_Direction at TRISB3_bit;
 sbit ECINT at RC2_bit;                                  //Definicion del pin de indicador auxiliar para hacer pruebas
 sbit ECINT_Direction at TRISC2_bit;
 
-const short idEsclavo = 0x09;                                 //Constante de identificador de esclavo
+const short idEsclavo = 0x09;                           //Constante de identificador de esclavo
+const short funcEsclavo = 0x03;                         //Constante de numero de funciones del esclavo
+const short regEsclavo = 0x04;                          //Numero de registros de datos del esclavo
 
 unsigned char tramaSPI[15];                             //Vector para almacenar la peticion proveniente de la Rpi
 unsigned char petSPI[15];
@@ -66,47 +68,58 @@ void interrupt(){
         AUX = 0;
 
         buffer =  SSPBUF;                                 //Guarda el contenido del bufeer (lectura)
-
-        //Rutina para procesar la Solicitud de Medicion
+        
+        //Rutina para procesar la solicitud de envio de informacion de este esclavo
         if (buffer==0xA0){                                //Verifica si el primer byte es la cabecera de datos
-           banMed = 1;
+           banId = 1;                                     //Activa la bandera de escritura de Id
            SSPBUF = 0xA0;                                 //Guarda en el buffer un valor de cabecera (puede ser cuaquier valor, igual el Maaestro ignora este byte)
            Delay_us(50);
         }
-        if ((banMed==1)&&(buffer!=0xA0)){
+        if ((banId==1)&&(buffer!=0xA3)){                  //Envia los bytes de informacion de este esclavo: [IdEsclavo, regEsclavo, funcEsclavo]
+           if (buffer==0xA1){
+              SSPBUF = idEsclavo;
+           }
+           if (buffer==0xA2){
+              SSPBUF = funcEsclavo;
+           }
+           
+           
+           
+        }
+        if (buffer==0xA3){                                //Si detecta el delimitador de final de trama:
+           banId = 0;                                     //Limpia la bandera de escritura de Id
+           SSPBUF = 0xB0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
+        }
+
+        //Rutina para procesar la Solicitud de Medicion
+        if (buffer==0xB0){                                //Verifica si el primer byte es la cabecera de datos
+           banMed = 1;
+           SSPBUF = 0xB0;                                 //Guarda en el buffer un valor de cabecera (puede ser cuaquier valor, igual el Maaestro ignora este byte)
+           Delay_us(50);
+        }
+        if ((banMed==1)&&(buffer!=0xB0)){
            registro = buffer;
+           //Aqui devuelve el numero de bytes para cada caso, por ejemplo, este esclavo solo tiene 2 registros para leer, el registro 0x00 tiene 2 bytes de longitud y el registro 1 tiene 4 bytes
+           //El byte de error es una mera precaucion, ya que la intencion es que al iniciar el esclavoSensor envie toda su informacion al esclavoComunicacion (id, registros, funciones) para que 
+           //sea este quien realice las validaciones y asi evite que este dispositivo realice tareas inecesarias
            switch (registro){
-                  case 1:
+                  case 0:
                        numBytesSPI = 0x02;                //Si solicita leer el registro #1 establece que el numero de bytes que va a responder sera 3 (ejemplo), uno de direccion y dos de datos
                        SSPBUF = numBytesSPI;              //Escribe la variable numBytesSPI en el buffer para enviarle al Maestro el numero de bytes que le va a responder
                        break;
-                  case 2:
+                  case 1:
                        numBytesSPI = 0x04;
                        SSPBUF = numBytesSPI;
                        break;
                   default:
-                       SSPBUF = 0;                        //**Hay que revisar esto para que no de error**
+                       SSPBUF = 0x01;                     //Si solicita leer un registro inexixtente devuelve una longitud de un solo byte para mandar el mensaje de error
            }
         }
-        if (buffer==0xA1){                                //Si detecta el delimitador de final de trama:
+        if (buffer==0xB1){                                //Si detecta el delimitador de final de trama:
            banPet = 1;                                    //Activa la bandera de peticion
            banMed = 0;                                    //Limpia la bandera de medicion
            banResp = 0;                                   //Limpia la bandera de peticion. **Esto parece no ser necesario pero quiero asegurarme de que no entre al siguiente if sin antes pasar por el bucle
-           SSPBUF = 0xB0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
-        }
-        
-        //Rutina para procesar la solicitud de envio de Id de Esclavo
-        if (buffer==0xC0){                                //Verifica si el primer byte es la cabecera de datos
-           banId = 1;                                     //Activa la bandera de escritura de Id
-           SSPBUF = 0xC0;                                 //Guarda en el buffer un valor de cabecera (puede ser cuaquier valor, igual el Maaestro ignora este byte)
-           Delay_us(50);
-        }
-        if ((banId==1)&&(buffer==0xC1)){
-           SSPBUF = idEsclavo;
-        }
-        if (buffer==0xC2){                                //Si detecta el delimitador de final de trama:
-           banId = 0;                                     //Limpia la bandera de escritura de Id
-           SSPBUF = 0xA0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
+           SSPBUF = 0xC0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
         }
 
         //Rutina para enviar la respuesta de la Solicitud de Mediciion
@@ -136,13 +149,14 @@ void main() {
      banMed = 0;
      banId = 0;
      
-     respSPI = 0xC0;
-     SSPBUF = 0xC0;                                   //Carga un valor inicial en el buffer
+     //respSPI = 0xC0;
+     SSPBUF = 0xA0;                                   //Carga un valor inicial en el buffer
 
 
      while(1){
 
           if (banPet==1){                             //Verifica si se ha recibido una solicitud de medicion
+             
              Delay_ms(1000);                          //Simula un tiempo de procesamiento de la peticion
              resSPI[0] = 0x83;                        //Llena el vector de respuesta con un valor de ejemplo (float 27.07)
              resSPI[1] = 0x58;

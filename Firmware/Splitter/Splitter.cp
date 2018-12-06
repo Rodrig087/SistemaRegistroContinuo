@@ -333,7 +333,7 @@ void interrupt(void){
  if (BanTF==1){
  banTI = 0;
  banTC = 1;
- t1Size = tramaRS485[2];
+ t1Size = tramaRS485[2]+3;
  PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
  }
@@ -353,6 +353,7 @@ void interrupt(void){
  } else if (tramaRS485[3]==0x03){
  ConfiguracionAPC220(tramaRS485,t1Size);
  } else {
+
 
  tramaPDU[1]=DIR;
  tramaPDU[2]=0x04;
@@ -376,7 +377,7 @@ void interrupt(void){
  IU1 = 0;
 
  }
-#line 491 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
+#line 492 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
  if (TMR1IF_bit==1){
  TMR1IF_bit = 0;
  T1CON.TMR1ON = 0;
