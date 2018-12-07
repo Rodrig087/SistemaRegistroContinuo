@@ -6,6 +6,24 @@ Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
 
+///////////////////////////////////// Formato de la trama de datos ////////////////////////////////////
+//|  Cabecera  |                        PDU                        |        CRC        |      Fin     |
+//|   1 byte   |   1 byte  |              n bytes                  |      2 bytes      |    2 bytes   |
+//|    3Ah     | Dirección | Función | Registro | #Datos  | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
+//|      0     |     1     |    2    |    3     |   4     |   n    |   n+4   |   n+5   |  n+4  |  n+5 |
+
+// Registros de Lectura //
+//|   00   |   Caudal   |
+//|   01   |   Nivel    |
+//|   02   |    TOF     |
+//|   03   |    Temp    |
+
+//          Registros de Escritura          //
+//|   00   |   Altura instalacion           |
+//|   01   |   Factor calibracion altura    |
+//|   02   |   Factor calibracion TOF       |
+
+
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 sbit AUX at RB3_bit;                                    //Definicion del pin de indicador auxiliar para hacer pruebas
 sbit AUX_Direction at TRISB3_bit;
@@ -13,8 +31,9 @@ sbit ECINT at RC2_bit;                                  //Definicion del pin de 
 sbit ECINT_Direction at TRISC2_bit;
 
 const short idEsclavo = 0x09;                           //Constante de identificador de esclavo
-const short funcEsclavo = 0x03;                         //Constante de numero de funciones del esclavo
-const short regEsclavo = 0x04;                          //Numero de registros de datos del esclavo
+const short funcEsclavo = 0x01;                         //Constante de numero de funciones del esclavo (0x00 = Solo lectura , 0x01 = Lectura y escritura)
+const short regLectura = 0x04;                          //Numero de registros de lectura del esclavo
+const short regEscritura = 0x03;                        //Numero de registros de escritura del esclavo
 
 unsigned char tramaSPI[15];                             //Vector para almacenar la peticion proveniente de la Rpi
 unsigned char petSPI[15];
@@ -75,18 +94,21 @@ void interrupt(){
            SSPBUF = 0xA0;                                 //Guarda en el buffer un valor de cabecera (puede ser cuaquier valor, igual el Maaestro ignora este byte)
            Delay_us(50);
         }
-        if ((banId==1)&&(buffer!=0xA3)){                  //Envia los bytes de informacion de este esclavo: [IdEsclavo, regEsclavo, funcEsclavo]
+        if ((banId==1)&&(buffer!=0xA5)){                  //Envia los bytes de informacion de este esclavo: [IdEsclavo, regEsclavo, funcEsclavo]
            if (buffer==0xA1){
               SSPBUF = idEsclavo;
            }
            if (buffer==0xA2){
               SSPBUF = funcEsclavo;
            }
-           
-           
-           
+           if (buffer==0xA3){
+              SSPBUF = regLectura;
+           }
+           if (buffer==0xA4){
+              SSPBUF = regEscritura;
+           }
         }
-        if (buffer==0xA3){                                //Si detecta el delimitador de final de trama:
+        if (buffer==0xA5){                                //Si detecta el delimitador de final de trama:
            banId = 0;                                     //Limpia la bandera de escritura de Id
            SSPBUF = 0xB0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
         }
@@ -99,7 +121,8 @@ void interrupt(){
         }
         if ((banMed==1)&&(buffer!=0xB0)){
            registro = buffer;
-           //Aqui devuelve el numero de bytes para cada caso, por ejemplo, este esclavo solo tiene 2 registros para leer, el registro 0x00 tiene 2 bytes de longitud y el registro 1 tiene 4 bytes
+           //Aqui devuelve el numero de bytes necesarios para cada registro de lectura, por ejemplo, este esclavo tiene 4 registros para leer:
+           
            //El byte de error es una mera precaucion, ya que la intencion es que al iniciar el esclavoSensor envie toda su informacion al esclavoComunicacion (id, registros, funciones) para que 
            //sea este quien realice las validaciones y asi evite que este dispositivo realice tareas inecesarias
            switch (registro){
@@ -108,6 +131,14 @@ void interrupt(){
                        SSPBUF = numBytesSPI;              //Escribe la variable numBytesSPI en el buffer para enviarle al Maestro el numero de bytes que le va a responder
                        break;
                   case 1:
+                       numBytesSPI = 0x02;
+                       SSPBUF = numBytesSPI;
+                       break;
+                  case 2:
+                       numBytesSPI = 0x04;
+                       SSPBUF = numBytesSPI;
+                       break;
+                  case 3:
                        numBytesSPI = 0x04;
                        SSPBUF = numBytesSPI;
                        break;

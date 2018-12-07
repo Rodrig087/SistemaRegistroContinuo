@@ -1,8 +1,8 @@
 0	1	mikroCPIC1618.exe -MSF -DBG -pP16F876A -DL -O11111114 -fo8 -N"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\EsclavoSensor\EsclavoSensor.mcppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Uses\P16\" -SP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\EsclavoSensor\" "EsclavoSensor.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_SPI_c345.mcl"	 
 diagnostics: 0	122	Compilation Started	EsclavoSensor.c
-diagnostics: 174	123	Compiled Successfully	EsclavoSensor.c
-diagnostics: 0	127	All files Compiled in 47 ms	 
+diagnostics: 208	123	Compiled Successfully	EsclavoSensor.c
+diagnostics: 0	127	All files Compiled in 31 ms	 
 diagnostics: 0	125	Project Linked Successfully	EsclavoSensor.mcppi
-diagnostics: 0	128	Linked in 31 ms	 
+diagnostics: 0	128	Linked in 32 ms	 
 diagnostics: 0	129	Project 'EsclavoSensor.mcppi' completed: 94 ms	 
-diagnostics: 0	103	Finished successfully: 05 dic. 2018, 09:55:20	EsclavoSensor.mcppi
+diagnostics: 0	103	Finished successfully: 06 dic. 2018, 17:43:24	EsclavoSensor.mcppi

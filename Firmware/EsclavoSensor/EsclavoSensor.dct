@@ -434,8 +434,9 @@ rd
 rd_bit
 read_write
 read_write_bit
-regesclavo
+regescritura
 registro
+reglectura
 res032
 respspi
 resspi

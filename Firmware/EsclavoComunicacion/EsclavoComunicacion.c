@@ -6,11 +6,11 @@ Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
 
-/////////////////////////////////// Formato de la trama de datos ///////////////////////////////////
-//|  Cabecera  |                      PDU                       |        CRC        |      Fin     |
-//|   1 byte   |   1 byte  |              n bytes               |      2 bytes      |    2 bytes   |
-//|    3Ah     | Dirección | #Datos  | Función | Data1 | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
-//|      0     |     1     |    2    |    3    |   4   |    n   |   n+4   |   n+5   |  n+4  |  n+5 |
+///////////////////////////////////// Formato de la trama de datos ////////////////////////////////////
+//|  Cabecera  |                        PDU                        |        CRC        |      Fin     |
+//|   1 byte   |   1 byte  |              n bytes                  |      2 bytes      |    2 bytes   |
+//|    3Ah     | Dirección | Función | Registro | #Datos  | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
+//|      0     |     1     |    2    |    3     |   4     |   n    |   n+4   |   n+5   |  n+4  |  n+5 |
 
 // Codigo ACK: AAh
 // Codigo NACK: AFh
@@ -32,14 +32,17 @@ const short ACK = 0xAA;                                 //Constante de mensaje A
 const short NACK = 0xAF;                                //Constante de mensaje NACK
 const unsigned int POLMODBUS = 0xA001;                  //Polinomio para el calculo del CRC
 
-unsigned short idEsclavo;                               //Constante para almacenar el ID del esclavo conectado por SPI
-unsigned short funcEsclavo;                             //Constante para almacenar las funciones disponibles del esclavo conectado por SPI
+unsigned short idEsclavo;                               //Variable para almacenar el ID del modulo EsclavoSensor
+unsigned short funcEsclavo;                             //Variable para almacenar las funciones disponibles del modulo EsclavoSensor
+unsigned short regLecturaEsclavo;                       //Variable para almacenar los registros de lectura disponibles del modulo EsclavoSensor
+unsigned short regEscrituraEsclavo;                     //Variable para almacenar los registros de escritura disponibles del modulo EsclavoSensor
 
 unsigned short byteTrama;                               //Variable de bytes de trama de datos
 unsigned short t1Size;                                  //Variables de longitud de trama para la comunicacion por el UART1
 unsigned short t1IdEsclavo;                             //Variable para almacenar el Id de esclavo de la trama de peticion
-unsigned short t1Funcion;
-unsigned char tramaSerial[50];                          //Vector de trama de datos del puerto UART1
+unsigned short t1Funcion;                               //Variable para almacenar la funcion requerida en la trama de peticion
+unsigned short t1Registro;                              //Variable para almacenar el registro requerido en la trama de peticion
+unsigned char tramaSerial[15];                          //Vector de trama de datos del puerto UART1
 short i1;                                               //Subindices para el manejo de las tramas de datos
 
 unsigned short banTC, banTI, banTF;                     //Banderas de trama completa, inicio de trama y final de trama
@@ -50,7 +53,7 @@ unsigned short BanAR, BanAP;                            //Banderas de almacenami
 unsigned short tramaOk;                                 //Variable para indicar si la trama de datos llego correctamente;
 
 unsigned char petSPI[4];                                //Vector para realizar la solicitud SPI al EsclavoSensor
-unsigned char resSPI[15];                               //Vector para almacenar la respuesta devuelta por el EsclavoSensor
+unsigned char resSPI[10];                               //Vector para almacenar la respuesta devuelta por el EsclavoSensor
 unsigned short direccionEsc;                            //Variable para almacenar la direccion del esclavo requerido por el Master
 unsigned short numBytesSPI;                             //Variable para guardar el numero de bytes que se necesita para almacenar la respuesta del EsclavoSensor
 unsigned short numDatos;                                //Variable para guardar el numero de datos del Payload de la trama PDU
@@ -165,28 +168,29 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de un mensaje de respuest de error
 //Esta funcion recibe como parametros el codigo de error
-void EnviarMensajeError(unsigned short codigoError){
+void EnviarMensajeError(unsigned short codigoError, unsigned short numRegistro){
      unsigned char i;
      unsigned int CRCerrorPDU;
      unsigned short *ptrCRCerrorPDU;
      unsigned char errorPDU[4];
      errorPDU[0] = idEsclavo;
-     errorPDU[1] = 0x01;                                //Numero de datos del campo #Datos de la trama PDU
-     errorPDU[2] = 0xEE;                                //Cambia el valor del campo Funcion por el codigo 0xEE para indicar que se ha producido un error
-     errorPDU[3] = codigoError;                         //Carga el campo de datos con el codigo del error producido
-     CRCerrorPDU = CalcularCRC(errorPDU,4);             //Calcula el CRC de la trama errorPDU
+     errorPDU[1] = 0xEE;                                //Cambia el valor del campo Funcion por el codigo 0xEE para indicar que se ha producido un error
+     errorPDU[2] = numRegistro;                         //Numero de registro que se solocito leer/escribir
+     errorPDU[3] = 0x01;                                //Numero de datos del pyload de la trama PDU
+     errorPDU[4] = codigoError;                         //Codigo de error producido
+     CRCerrorPDU = CalcularCRC(errorPDU,5);             //Calcula el CRC de la trama errorPDU
      ptrCRCerrorPDU = &CRCerrorPDU;                     //Asociacion del puntero CrcTramaError
      //Rellena la trama que se enviara por serial con los datos de la trama PDU
      tramaSerial[0] = HDR;                              //Añade la cabecera a la trama a enviar
-     tramaSerial[6] = *ptrCRCerrorPDU;                  //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
-     tramaSerial[5] = *(ptrCRCerrorPDU+1);              //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
-     tramaSerial[7] = END1;                             //Añade el primer delimitador de final de trama
-     tramaSerial[8] = END2;                             //Añade el segundo delimitador de final de trama
-     for (i=0;i<(9);i++){
-         if ((i>=1)&&(i<=4)){
+     tramaSerial[6] = *(ptrCRCerrorPDU+1);              //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
+     tramaSerial[7] = *ptrCRCerrorPDU;                  //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
+     tramaSerial[8] = END1;                             //Añade el primer delimitador de final de trama
+     tramaSerial[9] = END2;                             //Añade el segundo delimitador de final de trama
+     for (i=0;i<(10);i++){
+         if ((i>=1)&&(i<=5)){
             UART1_Write(errorPDU[i-1]);                 //Envia el contenido de la trama PDU a travez del UART1
          } else {
-            UART1_Write(tramaSerial[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
+            UART1_Write(tramaSerial[i]);                //Envia el contenido del resto de la trama de peticion a travez del UART1
          }
      }
      while(UART1_Tx_Idle()==0);                         //Espera hasta que se haya terminado de enviar todo el dato por UART antes de continuar
@@ -245,9 +249,45 @@ void EnviarNACK(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para identificar el Esclavo conecatdo por SPI
+//Esta funcion envia una solicitud al EsclavoSensor y este le devuelve su codigo identificador, el numero de funciones disponibles, el numero de registros de lectura y el numero de registros de escritura Esta funcion sera ejecutada una sola vez al encender este modulo.
+void IdentificarEsclavo(){
+     petSPI[0] = 0xA0;
+     petSPI[1] = 0xA1;
+     petSPI[2] = 0xA2;
+     petSPI[3] = 0xA3;
+     petSPI[4] = 0xA4;
+     petSPI[5] = 0xA5;
+     CS = 0;
+     for (x=0;x<6;x++){
+         SSPBUF = petSPI[x];                  //Llena el buffer de salida con cada valor de la tramaSPI
+         if (x==2){
+            while (SSPSTAT.BF!=1);
+            idEsclavo = SSPBUF;               //Recupera el valor de # de bytes que el Esclavo enviara en la solicitud de respuesta, (esto ocurre al enviar el tercer byte)
+         }
+         if (x==3){
+            while (SSPSTAT.BF!=1);
+            funcEsclavo = SSPBUF;              //Recupera el numero de funciones disponibles en el modulo EsclavoSensor
+         }
+         if (x==4){
+            while (SSPSTAT.BF!=1);
+            regLecturaEsclavo = SSPBUF;        //Recupera el numero de registros de lectura disponibles en el modulo EsclavoSensor
+         }
+         if (x==5){
+            while (SSPSTAT.BF!=1);
+            regEscrituraEsclavo = SSPBUF;      //Recupera el numero de registros de escritura disponibles en el modulo EsclavoSensor
+         }
+
+         Delay_ms(1);
+     }
+     CS = 1;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de una peticion al EsclavoSensor por SPI
 //Esta funcion envia una solicitud de medicion al dispositivo EsclavoSensor, recibe como parametro el codigo del registro que se quiere leer en el EsclavoSensor
-void EnviarSolicitudMedicion(unsigned short registroEsclavo){
+void EnviarSolicitudLectura(unsigned short registroEsclavo){
      petSPI[0] = 0xB0;                        //Cabecera de trama de solicitud de medicion
      petSPI[1] = registroEsclavo;             //Codigo del registro que se quiere leer
      petSPI[2] = 0xB1;                        //Delimitador de final de trama
@@ -265,38 +305,13 @@ void EnviarSolicitudMedicion(unsigned short registroEsclavo){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Funcion para identificar el Esclavo conecatdo por SPI
-//Esta funcion envia una solicitud al EsclavoSensor y este le devuelve su codigo identificador. Esta funcion sera ejecutada una sola vez al encender este modulo.
-void IdentificarEsclavo(){
-     petSPI[0] = 0xA0;
-     petSPI[1] = 0xA1;
-     petSPI[2] = 0xA2;
-     petSPI[3] = 0xA3;
-     CS = 0;
-     for (x=0;x<4;x++){
-         SSPBUF = petSPI[x];                  //Llena el buffer de salida con cada valor de la tramaSPI
-         if (x==2){
-            while (SSPSTAT.BF!=1);
-            idEsclavo = SSPBUF;               //Recupera el valor de # de bytes que el Esclavo enviara en la solicitud de respuesta, (esto ocurre al enviar el tercer byte)
-         }
-         if (x==3){
-            while (SSPSTAT.BF!=1);
-            funcEsclavo = SSPBUF;              //Recupera el valor de # de bytes que el Esclavo enviara en la solicitud de respuesta, (esto ocurre al enviar el tercer byte)
-         }
-         Delay_ms(1);
-     }
-     CS = 1;
-}
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 
 ////////////////////////////////////////////////////////////// Interrupciones //////////////////////////////////////////////////////////////
 void interrupt(){
 
 //Interrupcion Externa
-//Esta interrupcion simula lo que debe hacer el dipositivo MasterComunicacion al recibir una peticion del RPi por SPI
+//Al detectar la interrupcion externa generada por el dispositivo EsclavoSensor recibe los datos de este a travez del SPI y los reenvia en forma de trama completa a travez del puerto uart
      if (INTCON.INTF==1){
         INTCON.INTF=0;                                  //Limpia la badera de interrupcion externa
         if (banMed==1){
@@ -306,20 +321,21 @@ void interrupt(){
                SSPBUF = 0xCC;                           //Envia x cantidad de bytes al esclavo segun el numero de bytes+1 que haya solicitado en la respuesta de la solicitud de medicion
                if ((x>0)){
                   while (SSPSTAT.BF!=1);
-                  resSPI[x+2] = SSPBUF;                 //Guarda la respuesta del EsclavoSensor en el vector resSPI a partir de la cuarta posicion
+                  resSPI[x+3] = SSPBUF;                 //Guarda la respuesta del EsclavoSensor en el vector resSPI a partir de la cuarta posicion
                }
                Delay_us(200);
            }
            CS = 1;                                      //Coloca en alto el pin CS para cerrar la transmision
            
            resSPI[0] = idEsclavo;                       //Guarda en la primera posicion del vector PDU de respuesta el id del Esclavo
-           resSPI[1] = numBytesSPI + 3;                 //Guarda en la primera posicion del vector PDU de respuesta el numero de bytes de la trama PDU
-           resSPI[2] = t1Funcion;
+           resSPI[1] = t1Funcion;                       //Guarda en la segunda posicion del vector PDU el codigo de funcion requerido
+           resSPI[2] = t1Registro;                      //Guarda en la tercera posicion del vector PDU el # de registro requerido
+           resSPI[3] = numBytesSPI;                     //Guarda en la cuarta posicion del vector PDU de respuesta el numero de bytes del payload
         
         }
         banMed=0;
         
-        EnviarMensajeUART(resSPI,(numBytesSPI+3));
+        EnviarMensajeUART(resSPI,(numBytesSPI+4));
         
      }
 
@@ -392,23 +408,35 @@ void interrupt(){
            }
         }
 
-        if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
-           if (t1IdEsclavo==IdEsclavo){                 //Verifica si coincide el Id de esclavo para seguir con el procesamiento de la peticion
-               t1Size = tramaSerial[2]+3;               //Calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
-               t1Funcion = tramaSerial[3];              //Guarda el byte de funcion reequerida del campo PDU
-               tramaOk = VerificarCRC(tramaSerial,t1Size);   //Calcula y verifica el CRC de la trama de peticion
+        if (banTC==1){                                             //Verifica que se haya completado de llenar la trama de peticion
+           if (t1IdEsclavo==IdEsclavo){                            //Verifica si coincide el Id de esclavo para seguir con el procesamiento de la peticion
+               t1Size = tramaSerial[4]+4;                          //Calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
+               t1Funcion = tramaSerial[2];                         //Guarda el byte de funcion reequerida del campo PDU
+               t1Registro = tramaSerial[3];                        //Guarda el byte de # de registro que se quiere leer/escribir
+               tramaOk = VerificarCRC(tramaSerial,t1Size);         //Calcula y verifica el CRC de la trama de peticion
                if (tramaOk==1){
-                   EnviarACK();                         //Si la trama llego sin errores responde con un ACK al esclavo
+                   EnviarACK();                                    //Si la trama llego sin errores responde con un ACK al esclavo
                    //Aqui comprueba si existe la funcion solicitada, como todas las funciones estan ordenadas en forma secuencial basta con verificar 
-                   //si el numero de la funcion solicitada es mayor al numero de funciones disponibles en el EsclavoSensor
+                   //si el numero de la funcion solicitada es mayor al numero de funciones disponibles en el EsclavoSensor envia un mensaje de error
                    if (t1Funcion<=funcEsclavo){
-                      EnviarSolicitudMedicion(tramaSerial[4]);       //Envia una solicitud de medicion al EsclavoSensor
+                      if (t1Funcion==0){                           //Verifica si se solicito una funcion de lectura
+                         if (t1Registro<regLecturaEsclavo){        //Verifica si existe el registro de lectura solicitado
+                            EnviarSolicitudLectura(t1Registro);    //Envia una solicitud de lectura del registro especificado al modulo EsclavoSensor
+                         } else {
+                            EnviarMensajeError(0xE1,t1Registro);   //Envia un mensaje de error con el codigo de "Registro no disponible"
+                         }
+                      } else {                                     //Caso contrario se trata de una funcion de escritura
+                         if (t1Registro<regEscrituraEsclavo){      //Verifica si existe el registro de lectura solicitado
+                            //EnviarSolicitudEscritura(t1Registro);  //Envia una solicitud de lectura del registro especificado al modulo EsclavoSensor
+                         } else {
+                            EnviarMensajeError(0xE1,t1Registro);   //Envia un mensaje de error con el codigo de "Registro no disponible"
+                         }
+                      }
                    } else {
-                      EnviarMensajeError(0xE0);         //Envia un mensaje de error con el codigo de "Funcion no disponible"
+                      EnviarMensajeError(0xE0,t1Registro);         //Envia un mensaje de error con el codigo de "Funcion no disponible"
                    }
-
                } else if (tramaOk==0) {
-                   EnviarNACK();                        //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
+                   EnviarNACK();                                   //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
                }
            }
            banTC = 0;                               //Limpia la bandera de trama completa

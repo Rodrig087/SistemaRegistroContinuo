@@ -16,12 +16,15 @@ const unsigned int POLMODBUS = 0xA001;
 
 unsigned short idEsclavo;
 unsigned short funcEsclavo;
+unsigned short regLecturaEsclavo;
+unsigned short regEscrituraEsclavo;
 
 unsigned short byteTrama;
 unsigned short t1Size;
 unsigned short t1IdEsclavo;
 unsigned short t1Funcion;
-unsigned char tramaSerial[50];
+unsigned short t1Registro;
+unsigned char tramaSerial[15];
 short i1;
 
 unsigned short banTC, banTI, banTF;
@@ -32,7 +35,7 @@ unsigned short BanAR, BanAP;
 unsigned short tramaOk;
 
 unsigned char petSPI[4];
-unsigned char resSPI[15];
+unsigned char resSPI[10];
 unsigned short direccionEsc;
 unsigned short numBytesSPI;
 unsigned short numDatos;
@@ -134,32 +137,33 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  }
  while(UART1_Tx_Idle()==0);
-#line 162 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 165 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 }
 
 
 
 
 
-void EnviarMensajeError(unsigned short codigoError){
+void EnviarMensajeError(unsigned short codigoError, unsigned short numRegistro){
  unsigned char i;
  unsigned int CRCerrorPDU;
  unsigned short *ptrCRCerrorPDU;
  unsigned char errorPDU[4];
  errorPDU[0] = idEsclavo;
- errorPDU[1] = 0x01;
- errorPDU[2] = 0xEE;
- errorPDU[3] = codigoError;
- CRCerrorPDU = CalcularCRC(errorPDU,4);
+ errorPDU[1] = 0xEE;
+ errorPDU[2] = numRegistro;
+ errorPDU[3] = 0x01;
+ errorPDU[4] = codigoError;
+ CRCerrorPDU = CalcularCRC(errorPDU,5);
  ptrCRCerrorPDU = &CRCerrorPDU;
 
  tramaSerial[0] = HDR;
- tramaSerial[6] = *ptrCRCerrorPDU;
- tramaSerial[5] = *(ptrCRCerrorPDU+1);
- tramaSerial[7] = END1;
- tramaSerial[8] = END2;
- for (i=0;i<(9);i++){
- if ((i>=1)&&(i<=4)){
+ tramaSerial[6] = *(ptrCRCerrorPDU+1);
+ tramaSerial[7] = *ptrCRCerrorPDU;
+ tramaSerial[8] = END1;
+ tramaSerial[9] = END2;
+ for (i=0;i<(10);i++){
+ if ((i>=1)&&(i<=5)){
  UART1_Write(errorPDU[i-1]);
  } else {
  UART1_Write(tramaSerial[i]);
@@ -223,7 +227,43 @@ void EnviarNACK(){
 
 
 
-void EnviarSolicitudMedicion(unsigned short registroEsclavo){
+void IdentificarEsclavo(){
+ petSPI[0] = 0xA0;
+ petSPI[1] = 0xA1;
+ petSPI[2] = 0xA2;
+ petSPI[3] = 0xA3;
+ petSPI[4] = 0xA4;
+ petSPI[5] = 0xA5;
+ CS = 0;
+ for (x=0;x<6;x++){
+ SSPBUF = petSPI[x];
+ if (x==2){
+ while (SSPSTAT.BF!=1);
+ idEsclavo = SSPBUF;
+ }
+ if (x==3){
+ while (SSPSTAT.BF!=1);
+ funcEsclavo = SSPBUF;
+ }
+ if (x==4){
+ while (SSPSTAT.BF!=1);
+ regLecturaEsclavo = SSPBUF;
+ }
+ if (x==5){
+ while (SSPSTAT.BF!=1);
+ regEscrituraEsclavo = SSPBUF;
+ }
+
+ Delay_ms(1);
+ }
+ CS = 1;
+}
+
+
+
+
+
+void EnviarSolicitudLectura(unsigned short registroEsclavo){
  petSPI[0] = 0xB0;
  petSPI[1] = registroEsclavo;
  petSPI[2] = 0xB1;
@@ -244,31 +284,6 @@ void EnviarSolicitudMedicion(unsigned short registroEsclavo){
 
 
 
-void IdentificarEsclavo(){
- petSPI[0] = 0xA0;
- petSPI[1] = 0xA1;
- petSPI[2] = 0xA2;
- petSPI[3] = 0xA3;
- CS = 0;
- for (x=0;x<4;x++){
- SSPBUF = petSPI[x];
- if (x==2){
- while (SSPSTAT.BF!=1);
- idEsclavo = SSPBUF;
- }
- if (x==3){
- while (SSPSTAT.BF!=1);
- funcEsclavo = SSPBUF;
- }
- Delay_ms(1);
- }
- CS = 1;
-}
-
-
-
-
-
 void interrupt(){
 
 
@@ -282,20 +297,21 @@ void interrupt(){
  SSPBUF = 0xCC;
  if ((x>0)){
  while (SSPSTAT.BF!=1);
- resSPI[x+2] = SSPBUF;
+ resSPI[x+3] = SSPBUF;
  }
  Delay_us(200);
  }
  CS = 1;
 
  resSPI[0] = idEsclavo;
- resSPI[1] = numBytesSPI + 3;
- resSPI[2] = t1Funcion;
+ resSPI[1] = t1Funcion;
+ resSPI[2] = t1Registro;
+ resSPI[3] = numBytesSPI;
 
  }
  banMed=0;
 
- EnviarMensajeUART(resSPI,(numBytesSPI+3));
+ EnviarMensajeUART(resSPI,(numBytesSPI+4));
 
  }
 
@@ -370,19 +386,31 @@ void interrupt(){
 
  if (banTC==1){
  if (t1IdEsclavo==IdEsclavo){
- t1Size = tramaSerial[2]+3;
- t1Funcion = tramaSerial[3];
+ t1Size = tramaSerial[4]+4;
+ t1Funcion = tramaSerial[2];
+ t1Registro = tramaSerial[3];
  tramaOk = VerificarCRC(tramaSerial,t1Size);
  if (tramaOk==1){
  EnviarACK();
 
 
  if (t1Funcion<=funcEsclavo){
- EnviarSolicitudMedicion(tramaSerial[4]);
+ if (t1Funcion==0){
+ if (t1Registro<regLecturaEsclavo){
+ EnviarSolicitudLectura(t1Registro);
  } else {
- EnviarMensajeError(0xE0);
+ EnviarMensajeError(0xE1,t1Registro);
  }
+ } else {
+ if (t1Registro<regEscrituraEsclavo){
 
+ } else {
+ EnviarMensajeError(0xE1,t1Registro);
+ }
+ }
+ } else {
+ EnviarMensajeError(0xE0,t1Registro);
+ }
  } else if (tramaOk==0) {
  EnviarNACK();
  }

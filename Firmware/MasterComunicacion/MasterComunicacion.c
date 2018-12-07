@@ -6,11 +6,11 @@ Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
 
-/////////////////////////////////// Formato de la trama de datos ///////////////////////////////////
-//|  Cabecera  |                      PDU                       |        CRC        |      Fin     |
-//|   1 byte   |   1 byte  |              n bytes               |      2 bytes      |    2 bytes   |
-//|    3Ah     | Dirección | #Datos  | Función | Data1 | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
-//|      0     |     1     |    2    |    3    |   4   |    n   |   n+4   |   n+5   |  n+4  |  n+5 |
+///////////////////////////////////// Formato de la trama de datos ////////////////////////////////////
+//|  Cabecera  |                        PDU                        |        CRC        |      Fin     |
+//|   1 byte   |   1 byte  |              n bytes                  |      2 bytes      |    2 bytes   |
+//|    3Ah     | Dirección | Función | Registro | #Datos  | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
+//|      0     |     1     |    2    |    3     |   4     |   n    |   n+4   |   n+5   |  n+4  |  n+5 |
 
 // Codigo ACK: AAh
 // Codigo NACK: AFh
@@ -211,14 +211,13 @@ void interrupt(){
         //Aqui va la parte donde realiza la toma de datos que llegan por SPI desde la Rpi
         //Ejemplo de trama de peticion enviada por la RPi
         tramaSPI[0]=0x09;                               //Id esclavo
-        tramaSPI[1]=0x02;                               //# datos
-        tramaSPI[2]=0x05;                               //Funcion
-        tramaSPI[3]=0x06;                               //Dato 1
-        tramaSPI[4]=0x07;                               //Dato 2
+        tramaSPI[1]=0x00;                               //Codigo de funcion que se quiere ejecutar (00=Lectura, 01=Escritura)
+        tramaSPI[2]=0x01;                               //# de registro que se quiere leer/escribir
+        tramaSPI[3]=0x00;                               //# de datos del payload, como se trata de una solicitud de escritura no es necesario ningun dato adicioanl al registro que se quiere leer
 
         direccionRpi = tramaSPI[0];                     //Guarda el dato de la direccion del dispositvo con que se desea comunicar
-        sizeSPI = tramaSPI[1] + 3;                      //Guarda el dato de la longitud de la trama PDU
-        funcionRpi = tramaSPI[2];                       //Guarda el dato de la funcion requerida
+        funcionRpi = tramaSPI[1];                       //Guarda el dato de la funcion requerida
+        sizeSPI = tramaSPI[3] + 4;                      //Guarda el dato de la longitud de la trama PDU
 
         if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
            if (funcionRpi==0x01){                       //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos

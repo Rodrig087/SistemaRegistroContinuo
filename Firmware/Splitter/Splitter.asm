@@ -1055,9 +1055,9 @@ L_interrupt70:
 ;Splitter.c,353 :: 		banTC = 1;                                //Activa la bandera de trama completa
 	MOVLW       1
 	MOVWF       _banTC+0 
-;Splitter.c,354 :: 		t1Size = tramaRS485[2]+3;                 //calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
-	MOVLW       3
-	ADDWF       _tramaRS485+2, 0 
+;Splitter.c,354 :: 		t1Size = tramaRS485[4]+4;                 //calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
+	MOVLW       4
+	ADDWF       _tramaRS485+4, 0 
 	MOVWF       _t1Size+0 
 ;Splitter.c,355 :: 		PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
 	BCF         PIR1+0, 1 

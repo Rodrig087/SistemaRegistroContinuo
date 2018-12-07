@@ -333,7 +333,7 @@ void interrupt(void){
  if (BanTF==1){
  banTI = 0;
  banTC = 1;
- t1Size = tramaRS485[2]+3;
+ t1Size = tramaRS485[4]+4;
  PIR1.TMR2IF = 0;
  T2CON.TMR2ON = 0;
  }

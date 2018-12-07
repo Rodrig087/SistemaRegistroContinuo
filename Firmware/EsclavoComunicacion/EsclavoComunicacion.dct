@@ -237,7 +237,7 @@ enviarack
 enviarmensajeerror
 enviarmensajeuart
 enviarnack
-enviarsolicitudmedicion
+enviarsolicitudlectura
 equals_double
 f
 ferr
@@ -454,6 +454,8 @@ rd
 rd_bit
 read_write
 read_write_bit
+regescrituraesclavo
+reglecturaesclavo
 res032
 resspi
 rp0
@@ -534,6 +536,7 @@ t1insync
 t1insync_bit
 t1oscen
 t1oscen_bit
+t1registro
 t1size
 t1sync
 t1sync_bit

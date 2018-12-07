@@ -1,13 +1,14 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoSensor/EsclavoSensor.c"
-#line 10 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoSensor/EsclavoSensor.c"
+#line 28 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoSensor/EsclavoSensor.c"
 sbit AUX at RB3_bit;
 sbit AUX_Direction at TRISB3_bit;
 sbit ECINT at RC2_bit;
 sbit ECINT_Direction at TRISC2_bit;
 
 const short idEsclavo = 0x09;
-const short funcEsclavo = 0x03;
-const short regEsclavo = 0x04;
+const short funcEsclavo = 0x01;
+const short regLectura = 0x04;
+const short regEscritura = 0x03;
 
 unsigned char tramaSPI[15];
 unsigned char petSPI[15];
@@ -68,15 +69,21 @@ void interrupt(){
  SSPBUF = 0xA0;
  Delay_us(50);
  }
- if ((banId==1)&&(buffer!=0xA3)){
+ if ((banId==1)&&(buffer!=0xA5)){
  if (buffer==0xA1){
  SSPBUF = idEsclavo;
  }
  if (buffer==0xA2){
  SSPBUF = funcEsclavo;
  }
- }
  if (buffer==0xA3){
+ SSPBUF = regLectura;
+ }
+ if (buffer==0xA4){
+ SSPBUF = regEscritura;
+ }
+ }
+ if (buffer==0xA5){
  banId = 0;
  SSPBUF = 0xB0;
  }
@@ -92,12 +99,21 @@ void interrupt(){
 
 
 
+
  switch (registro){
  case 0:
  numBytesSPI = 0x02;
  SSPBUF = numBytesSPI;
  break;
  case 1:
+ numBytesSPI = 0x02;
+ SSPBUF = numBytesSPI;
+ break;
+ case 2:
+ numBytesSPI = 0x04;
+ SSPBUF = numBytesSPI;
+ break;
+ case 3:
  numBytesSPI = 0x04;
  SSPBUF = numBytesSPI;
  break;

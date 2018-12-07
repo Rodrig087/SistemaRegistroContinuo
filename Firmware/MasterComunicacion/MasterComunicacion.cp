@@ -193,14 +193,13 @@ void interrupt(){
 
 
  tramaSPI[0]=0x09;
- tramaSPI[1]=0x02;
- tramaSPI[2]=0x05;
- tramaSPI[3]=0x06;
- tramaSPI[4]=0x07;
+ tramaSPI[1]=0x00;
+ tramaSPI[2]=0x01;
+ tramaSPI[3]=0x00;
 
  direccionRpi = tramaSPI[0];
- sizeSPI = tramaSPI[1] + 3;
- funcionRpi = tramaSPI[2];
+ funcionRpi = tramaSPI[1];
+ sizeSPI = tramaSPI[3] + 4;
 
  if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
  if (funcionRpi==0x01){

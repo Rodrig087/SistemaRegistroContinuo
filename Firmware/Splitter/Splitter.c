@@ -6,11 +6,11 @@ Observaciones:
 Lo ultimo que hice el miercoles 31 de octubre fue revisar la secuencia de instrucciones de la bandera banTC=1 de la interrupcion UART1
 ---------------------------------------------------------------------------------------------------------------------------*/
 
-/////////////////////////////////// Formato de la trama de datos ///////////////////////////////////
-//|  Cabecera  |                      PDU                       |        CRC        |      Fin     |
-//|   1 byte   |   1 byte  |              n bytes               |      2 bytes      |    2 bytes   |
-//|    3Ah     | Dirección | #Datos  | Función | Data1 | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
-//|      0     |     1     |    2    |    3    |   4   |    n   |   n+4   |   n+5   |  n+4  |  n+5 |
+///////////////////////////////////// Formato de la trama de datos ////////////////////////////////////
+//|  Cabecera  |                        PDU                        |        CRC        |      Fin     |
+//|   1 byte   |   1 byte  |              n bytes                  |      2 bytes      |    2 bytes   |
+//|    3Ah     | Dirección | Función | Registro | #Datos  | DataN  | CRC_MSB | CRC_LSB |  0Dh  |  0Ah |
+//|      0     |     1     |    2    |    3     |   4     |   n    |   n+4   |   n+5   |  n+4  |  n+5 |
 
 // Codigo ACK: AAh
 // Codigo NACK: AFh
@@ -351,7 +351,7 @@ void interrupt(void){
            if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
               banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               banTC = 1;                                //Activa la bandera de trama completa
-              t1Size = tramaRS485[2]+3;                 //calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
+              t1Size = tramaRS485[4]+4;                 //calcula la longitud de la trama PDU sumando 4 al valor del campo #Datos
               PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
               T2CON.TMR2ON = 0;                         //Apaga el Timer2
            }
