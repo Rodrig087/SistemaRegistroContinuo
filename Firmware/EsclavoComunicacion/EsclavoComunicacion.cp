@@ -25,6 +25,7 @@ unsigned short t1IdEsclavo;
 unsigned short t1Funcion;
 unsigned short t1Registro;
 unsigned char tramaSerial[15];
+unsigned char datosEscritura[4];
 short i1;
 
 unsigned short banTC, banTI, banTF;
@@ -137,14 +138,14 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  }
  while(UART1_Tx_Idle()==0);
-#line 165 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 166 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 }
 
 
 
 
 
-void EnviarMensajeError(unsigned short codigoError, unsigned short numRegistro){
+void EnviarMensajeError(unsigned short numRegistro,unsigned short codigoError){
  unsigned char i;
  unsigned int CRCerrorPDU;
  unsigned short *ptrCRCerrorPDU;
@@ -263,9 +264,9 @@ void IdentificarEsclavo(){
 
 
 
-void EnviarSolicitudLectura(unsigned short registroEsclavo){
+void EnviarSolicitudLectura(unsigned short registroLectura){
  petSPI[0] = 0xB0;
- petSPI[1] = registroEsclavo;
+ petSPI[1] = registroLectura;
  petSPI[2] = 0xB1;
  CS = 0;
  for (x=0;x<3;x++){
@@ -278,6 +279,21 @@ void EnviarSolicitudLectura(unsigned short registroEsclavo){
  }
  CS = 1;
  banMed = 1;
+}
+
+
+
+
+
+void EnviarSolicitudEscritura(unsigned short registroEscritura,unsigned char* datos, unsigned short sizeDatos){
+ CS = 0;
+ SSPBUF = registroEscritura;
+ Delay_ms(1);
+ for (x=0;x<sizeDatos;x++){
+ SSPBUF = datos[x];
+ Delay_ms(1);
+ }
+ CS = 1;
 }
 
 
@@ -399,17 +415,21 @@ void interrupt(){
  if (t1Registro<regLecturaEsclavo){
  EnviarSolicitudLectura(t1Registro);
  } else {
- EnviarMensajeError(0xE1,t1Registro);
+ EnviarMensajeError(t1Registro,0xE1);
  }
  } else {
  if (t1Registro<regEscrituraEsclavo){
+ for (x=0;x<(tramaSerial[4]);x++){
+ datosEscritura[x]=tramaSerial[x+5];
+ }
 
+ EnviarSolicitudEscritura(t1Registro,datosEscritura,tramaSerial[4]);
  } else {
- EnviarMensajeError(0xE1,t1Registro);
+ EnviarMensajeError(t1Registro,0xE1);
  }
  }
  } else {
- EnviarMensajeError(0xE0,t1Registro);
+ EnviarMensajeError(t1Registro,0xE0);
  }
  } else if (tramaOk==0) {
  EnviarNACK();

@@ -211,9 +211,13 @@ void interrupt(){
         //Aqui va la parte donde realiza la toma de datos que llegan por SPI desde la Rpi
         //Ejemplo de trama de peticion enviada por la RPi
         tramaSPI[0]=0x09;                               //Id esclavo
-        tramaSPI[1]=0x00;                               //Codigo de funcion que se quiere ejecutar (00=Lectura, 01=Escritura)
-        tramaSPI[2]=0x01;                               //# de registro que se quiere leer/escribir
-        tramaSPI[3]=0x00;                               //# de datos del payload, como se trata de una solicitud de escritura no es necesario ningun dato adicioanl al registro que se quiere leer
+        tramaSPI[1]=0x01;                               //Codigo de funcion que se quiere ejecutar (00=Lectura, 01=Escritura)
+        tramaSPI[2]=0x02;                               //# de registro que se quiere leer/escribir
+        tramaSPI[3]=0x04;                               //# de datos del payload, como se trata de una solicitud de escritura no es necesario ningun dato adicioanl al registro que se quiere leer
+        tramaSPI[4]=0xD1;                               //Datos ejemplo
+        tramaSPI[5]=0xD2;
+        tramaSPI[6]=0xD3;
+        tramaSPI[7]=0xD4;
 
         direccionRpi = tramaSPI[0];                     //Guarda el dato de la direccion del dispositvo con que se desea comunicar
         funcionRpi = tramaSPI[1];                       //Guarda el dato de la funcion requerida

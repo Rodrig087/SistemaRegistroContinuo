@@ -43,6 +43,7 @@ unsigned short t1IdEsclavo;                             //Variable para almacena
 unsigned short t1Funcion;                               //Variable para almacenar la funcion requerida en la trama de peticion
 unsigned short t1Registro;                              //Variable para almacenar el registro requerido en la trama de peticion
 unsigned char tramaSerial[15];                          //Vector de trama de datos del puerto UART1
+unsigned char datosEscritura[4];                        //Vector para almacenar los datos necesarios para las solicitudes de escritura
 short i1;                                               //Subindices para el manejo de las tramas de datos
 
 unsigned short banTC, banTI, banTF;                     //Banderas de trama completa, inicio de trama y final de trama
@@ -168,7 +169,7 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de un mensaje de respuest de error
 //Esta funcion recibe como parametros el codigo de error
-void EnviarMensajeError(unsigned short codigoError, unsigned short numRegistro){
+void EnviarMensajeError(unsigned short numRegistro,unsigned short codigoError){
      unsigned char i;
      unsigned int CRCerrorPDU;
      unsigned short *ptrCRCerrorPDU;
@@ -287,9 +288,9 @@ void IdentificarEsclavo(){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de una peticion al EsclavoSensor por SPI
 //Esta funcion envia una solicitud de medicion al dispositivo EsclavoSensor, recibe como parametro el codigo del registro que se quiere leer en el EsclavoSensor
-void EnviarSolicitudLectura(unsigned short registroEsclavo){
+void EnviarSolicitudLectura(unsigned short registroLectura){
      petSPI[0] = 0xB0;                        //Cabecera de trama de solicitud de medicion
-     petSPI[1] = registroEsclavo;             //Codigo del registro que se quiere leer
+     petSPI[1] = registroLectura;             //Codigo del registro que se quiere leer
      petSPI[2] = 0xB1;                        //Delimitador de final de trama
      CS = 0;
      for (x=0;x<3;x++){
@@ -302,6 +303,22 @@ void EnviarSolicitudLectura(unsigned short registroEsclavo){
      }
      CS = 1;
      banMed = 1;                              //Activa la bandera de medicion para evitar que existan falsos positivos en la interrupcion externa
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para el envio de una peticion al EsclavoSensor por SPI
+//Esta funcion envia una solicitud de medicion al dispositivo EsclavoSensor, recibe como parametro el codigo del registro que se quiere leer en el EsclavoSensor
+void EnviarSolicitudEscritura(unsigned short registroEscritura,unsigned char* datos, unsigned short sizeDatos){
+     CS = 0;
+     SSPBUF = registroEscritura;              //Llena el buffer de salida con el valor del registro que se quiere leer
+     Delay_ms(1);
+     for (x=0;x<sizeDatos;x++){
+         SSPBUF = datos[x];                   //Llena el buffer de salida con cada valor de la tramaSPI
+         Delay_ms(1);
+     }
+     CS = 1;
+     //Aqui tal vez seria bueno agregar una rutina que verifique si tuvo respuesta
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -423,17 +440,21 @@ void interrupt(){
                          if (t1Registro<regLecturaEsclavo){        //Verifica si existe el registro de lectura solicitado
                             EnviarSolicitudLectura(t1Registro);    //Envia una solicitud de lectura del registro especificado al modulo EsclavoSensor
                          } else {
-                            EnviarMensajeError(0xE1,t1Registro);   //Envia un mensaje de error con el codigo de "Registro no disponible"
+                            EnviarMensajeError(t1Registro,0xE1);   //Envia un mensaje de error con el codigo de "Registro no disponible"
                          }
                       } else {                                     //Caso contrario se trata de una funcion de escritura
                          if (t1Registro<regEscrituraEsclavo){      //Verifica si existe el registro de lectura solicitado
-                            //EnviarSolicitudEscritura(t1Registro);  //Envia una solicitud de lectura del registro especificado al modulo EsclavoSensor
+                             for (x=0;x<(tramaSerial[4]);x++){
+                                 datosEscritura[x]=tramaSerial[x+5];      //Carga el vector payload con los valores de la trama serial
+                             }
+                            //Envia una solicitud de lectura del registro especificado al modulo EsclavoSensor:
+                            EnviarSolicitudEscritura(t1Registro,datosEscritura,tramaSerial[4]);
                          } else {
-                            EnviarMensajeError(0xE1,t1Registro);   //Envia un mensaje de error con el codigo de "Registro no disponible"
+                            EnviarMensajeError(t1Registro,0xE1);   //Envia un mensaje de error con el codigo de "Registro no disponible"
                          }
                       }
                    } else {
-                      EnviarMensajeError(0xE0,t1Registro);         //Envia un mensaje de error con el codigo de "Funcion no disponible"
+                      EnviarMensajeError(t1Registro,0xE0);         //Envia un mensaje de error con el codigo de "Funcion no disponible"
                    }
                } else if (tramaOk==0) {
                    EnviarNACK();                                   //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama

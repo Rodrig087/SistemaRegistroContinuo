@@ -19,6 +19,7 @@ interrupt
 		CalcularCRC
 		UART1_Write
 		UART1_Tx_Idle
+	EnviarSolicitudEscritura
 	EnviarNACK
 		UART1_Write
 		UART1_Tx_Idle

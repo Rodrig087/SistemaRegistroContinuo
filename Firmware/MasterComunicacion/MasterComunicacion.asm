@@ -492,22 +492,37 @@ _interrupt:
 ;MasterComunicacion.c,213 :: 		tramaSPI[0]=0x09;                               //Id esclavo
 	MOVLW      9
 	MOVWF      _tramaSPI+0
-;MasterComunicacion.c,214 :: 		tramaSPI[1]=0x00;                               //Codigo de funcion que se quiere ejecutar (00=Lectura, 01=Escritura)
-	CLRF       _tramaSPI+1
-;MasterComunicacion.c,215 :: 		tramaSPI[2]=0x01;                               //# de registro que se quiere leer/escribir
+;MasterComunicacion.c,214 :: 		tramaSPI[1]=0x01;                               //Codigo de funcion que se quiere ejecutar (00=Lectura, 01=Escritura)
 	MOVLW      1
+	MOVWF      _tramaSPI+1
+;MasterComunicacion.c,215 :: 		tramaSPI[2]=0x02;                               //# de registro que se quiere leer/escribir
+	MOVLW      2
 	MOVWF      _tramaSPI+2
-;MasterComunicacion.c,216 :: 		tramaSPI[3]=0x00;                               //# de datos del payload, como se trata de una solicitud de escritura no es necesario ningun dato adicioanl al registro que se quiere leer
-	CLRF       _tramaSPI+3
-;MasterComunicacion.c,218 :: 		direccionRpi = tramaSPI[0];                     //Guarda el dato de la direccion del dispositvo con que se desea comunicar
+;MasterComunicacion.c,216 :: 		tramaSPI[3]=0x04;                               //# de datos del payload, como se trata de una solicitud de escritura no es necesario ningun dato adicioanl al registro que se quiere leer
+	MOVLW      4
+	MOVWF      _tramaSPI+3
+;MasterComunicacion.c,217 :: 		tramaSPI[4]=0xD1;                               //Datos ejemplo
+	MOVLW      209
+	MOVWF      _tramaSPI+4
+;MasterComunicacion.c,218 :: 		tramaSPI[5]=0xD2;
+	MOVLW      210
+	MOVWF      _tramaSPI+5
+;MasterComunicacion.c,219 :: 		tramaSPI[6]=0xD3;
+	MOVLW      211
+	MOVWF      _tramaSPI+6
+;MasterComunicacion.c,220 :: 		tramaSPI[7]=0xD4;
+	MOVLW      212
+	MOVWF      _tramaSPI+7
+;MasterComunicacion.c,222 :: 		direccionRpi = tramaSPI[0];                     //Guarda el dato de la direccion del dispositvo con que se desea comunicar
 	MOVF       _tramaSPI+0, 0
 	MOVWF      _direccionRpi+0
-;MasterComunicacion.c,219 :: 		funcionRpi = tramaSPI[1];                       //Guarda el dato de la funcion requerida
-	CLRF       _funcionRpi+0
-;MasterComunicacion.c,220 :: 		sizeSPI = tramaSPI[3] + 4;                      //Guarda el dato de la longitud de la trama PDU
-	MOVLW      4
+;MasterComunicacion.c,223 :: 		funcionRpi = tramaSPI[1];                       //Guarda el dato de la funcion requerida
+	MOVLW      1
+	MOVWF      _funcionRpi+0
+;MasterComunicacion.c,224 :: 		sizeSPI = tramaSPI[3] + 4;                      //Guarda el dato de la longitud de la trama PDU
+	MOVLW      8
 	MOVWF      _sizeSPI+0
-;MasterComunicacion.c,222 :: 		if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
+;MasterComunicacion.c,226 :: 		if (direccionRpi==0xFD || direccionRpi==0xFE || direccionRpi==0xFF){
 	MOVF       _tramaSPI+0, 0
 	XORLW      253
 	BTFSC      STATUS+0, 2
@@ -522,53 +537,53 @@ _interrupt:
 	GOTO       L__interrupt60
 	GOTO       L_interrupt30
 L__interrupt60:
-;MasterComunicacion.c,223 :: 		if (funcionRpi==0x01){                       //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
+;MasterComunicacion.c,227 :: 		if (funcionRpi==0x01){                       //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
 	MOVF       _funcionRpi+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt31
-;MasterComunicacion.c,225 :: 		} else if (funcionRpi==0x02){                //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
+;MasterComunicacion.c,229 :: 		} else if (funcionRpi==0x02){                //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
 	GOTO       L_interrupt32
 L_interrupt31:
 	MOVF       _funcionRpi+0, 0
 	XORLW      2
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt33
-;MasterComunicacion.c,227 :: 		} else {
+;MasterComunicacion.c,231 :: 		} else {
 	GOTO       L_interrupt34
 L_interrupt33:
-;MasterComunicacion.c,228 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);    //Invoca a la funcion para enviar la peticion
+;MasterComunicacion.c,232 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);    //Invoca a la funcion para enviar la peticion
 	MOVLW      _tramaSPI+0
 	MOVWF      FARG_EnviarMensajeRS485_tramaPDU+0
 	MOVF       _sizeSPI+0, 0
 	MOVWF      FARG_EnviarMensajeRS485_sizePDU+0
 	CALL       _EnviarMensajeRS485+0
-;MasterComunicacion.c,229 :: 		}
+;MasterComunicacion.c,233 :: 		}
 L_interrupt34:
 L_interrupt32:
-;MasterComunicacion.c,230 :: 		} else {
+;MasterComunicacion.c,234 :: 		} else {
 	GOTO       L_interrupt35
 L_interrupt30:
-;MasterComunicacion.c,231 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);       //Invoca a la funcion para enviar la peticion
+;MasterComunicacion.c,235 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);       //Invoca a la funcion para enviar la peticion
 	MOVLW      _tramaSPI+0
 	MOVWF      FARG_EnviarMensajeRS485_tramaPDU+0
 	MOVF       _sizeSPI+0, 0
 	MOVWF      FARG_EnviarMensajeRS485_sizePDU+0
 	CALL       _EnviarMensajeRS485+0
-;MasterComunicacion.c,232 :: 		}
+;MasterComunicacion.c,236 :: 		}
 L_interrupt35:
-;MasterComunicacion.c,234 :: 		}
+;MasterComunicacion.c,238 :: 		}
 L_interrupt27:
-;MasterComunicacion.c,242 :: 		if (PIR1.F5==1){
+;MasterComunicacion.c,246 :: 		if (PIR1.F5==1){
 	BTFSS      PIR1+0, 5
 	GOTO       L_interrupt36
-;MasterComunicacion.c,244 :: 		IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
+;MasterComunicacion.c,248 :: 		IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
 	BSF        RC4_bit+0, BitPos(RC4_bit+0)
-;MasterComunicacion.c,245 :: 		byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
+;MasterComunicacion.c,249 :: 		byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
 	CALL       _UART1_Read+0
 	MOVF       R0+0, 0
 	MOVWF      _byteTrama+0
-;MasterComunicacion.c,247 :: 		if ((byteTrama==ACK)&&(banTI==0)){              //Verifica si recibio un ACK
+;MasterComunicacion.c,251 :: 		if ((byteTrama==ACK)&&(banTI==0)){              //Verifica si recibio un ACK
 	MOVF       R0+0, 0
 	XORLW      170
 	BTFSS      STATUS+0, 2
@@ -578,17 +593,17 @@ L_interrupt27:
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt39
 L__interrupt59:
-;MasterComunicacion.c,249 :: 		TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;MasterComunicacion.c,253 :: 		TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF        TMR1IF_bit+0, BitPos(TMR1IF_bit+0)
-;MasterComunicacion.c,250 :: 		T1CON.TMR1ON = 0;                            //Apaga el Timer1
+;MasterComunicacion.c,254 :: 		T1CON.TMR1ON = 0;                            //Apaga el Timer1
 	BCF        T1CON+0, 0
-;MasterComunicacion.c,251 :: 		banTI=0;                                     //Limpia la bandera de inicio de trama
+;MasterComunicacion.c,255 :: 		banTI=0;                                     //Limpia la bandera de inicio de trama
 	CLRF       _banTI+0
-;MasterComunicacion.c,252 :: 		byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
+;MasterComunicacion.c,256 :: 		byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
 	CLRF       _byteTrama+0
-;MasterComunicacion.c,253 :: 		}
+;MasterComunicacion.c,257 :: 		}
 L_interrupt39:
-;MasterComunicacion.c,255 :: 		if ((byteTrama==NACK)&&(banTI==0)){             //Verifica si recibio un NACK
+;MasterComunicacion.c,259 :: 		if ((byteTrama==NACK)&&(banTI==0)){             //Verifica si recibio un NACK
 	MOVF       _byteTrama+0, 0
 	XORLW      175
 	BTFSS      STATUS+0, 2
@@ -598,39 +613,39 @@ L_interrupt39:
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt42
 L__interrupt58:
-;MasterComunicacion.c,257 :: 		TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;MasterComunicacion.c,261 :: 		TMR1IF_bit = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF        TMR1IF_bit+0, BitPos(TMR1IF_bit+0)
-;MasterComunicacion.c,258 :: 		T1CON.TMR1ON = 0;                            //Apaga el Timer1
+;MasterComunicacion.c,262 :: 		T1CON.TMR1ON = 0;                            //Apaga el Timer1
 	BCF        T1CON+0, 0
-;MasterComunicacion.c,259 :: 		if (contadorNACK<3){
+;MasterComunicacion.c,263 :: 		if (contadorNACK<3){
 	MOVLW      3
 	SUBWF      _contadorNACK+0, 0
 	BTFSC      STATUS+0, 0
 	GOTO       L_interrupt43
-;MasterComunicacion.c,260 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);    //Si recibe un NACK como respuesta, le renvia la trama
+;MasterComunicacion.c,264 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);    //Si recibe un NACK como respuesta, le renvia la trama
 	MOVLW      _tramaSPI+0
 	MOVWF      FARG_EnviarMensajeRS485_tramaPDU+0
 	MOVF       _sizeSPI+0, 0
 	MOVWF      FARG_EnviarMensajeRS485_sizePDU+0
 	CALL       _EnviarMensajeRS485+0
-;MasterComunicacion.c,261 :: 		contadorNACK++;                           //Incrrmenta en una unidad el valor del contador de NACK
+;MasterComunicacion.c,265 :: 		contadorNACK++;                           //Incrrmenta en una unidad el valor del contador de NACK
 	INCF       _contadorNACK+0, 1
-;MasterComunicacion.c,262 :: 		} else {
+;MasterComunicacion.c,266 :: 		} else {
 	GOTO       L_interrupt44
 L_interrupt43:
-;MasterComunicacion.c,264 :: 		contadorNACK = 0;                         //Limpia el contador de Time-Out-Trama
+;MasterComunicacion.c,268 :: 		contadorNACK = 0;                         //Limpia el contador de Time-Out-Trama
 	CLRF       _contadorNACK+0
-;MasterComunicacion.c,265 :: 		EnviarACK();
+;MasterComunicacion.c,269 :: 		EnviarACK();
 	CALL       _EnviarACK+0
-;MasterComunicacion.c,266 :: 		}
+;MasterComunicacion.c,270 :: 		}
 L_interrupt44:
-;MasterComunicacion.c,267 :: 		banTI=0;                                     //Limpia la bandera de inicio de trama
+;MasterComunicacion.c,271 :: 		banTI=0;                                     //Limpia la bandera de inicio de trama
 	CLRF       _banTI+0
-;MasterComunicacion.c,268 :: 		byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
+;MasterComunicacion.c,272 :: 		byteTrama=0;                                 //Limpia la variable del byte de la trama de peticion
 	CLRF       _byteTrama+0
-;MasterComunicacion.c,269 :: 		}
+;MasterComunicacion.c,273 :: 		}
 L_interrupt42:
-;MasterComunicacion.c,271 :: 		if ((byteTrama==HDR)&&(banTI==0)){
+;MasterComunicacion.c,275 :: 		if ((byteTrama==HDR)&&(banTI==0)){
 	MOVF       _byteTrama+0, 0
 	XORLW      58
 	BTFSS      STATUS+0, 2
@@ -640,32 +655,32 @@ L_interrupt42:
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt47
 L__interrupt57:
-;MasterComunicacion.c,272 :: 		tramaRS485[0]=byteTrama;                     //Guarda el primer byte de la trama en la primera posicion de la trama de peticion
+;MasterComunicacion.c,276 :: 		tramaRS485[0]=byteTrama;                     //Guarda el primer byte de la trama en la primera posicion de la trama de peticion
 	MOVF       _byteTrama+0, 0
 	MOVWF      _tramaRS485+0
-;MasterComunicacion.c,273 :: 		banTI = 1;                                   //Activa la bandera de inicio de trama
+;MasterComunicacion.c,277 :: 		banTI = 1;                                   //Activa la bandera de inicio de trama
 	MOVLW      1
 	MOVWF      _banTI+0
-;MasterComunicacion.c,274 :: 		i1 = 1;                                      //Define en 1 el subindice de la trama de peticion
+;MasterComunicacion.c,278 :: 		i1 = 1;                                      //Define en 1 el subindice de la trama de peticion
 	MOVLW      1
 	MOVWF      _i1+0
-;MasterComunicacion.c,275 :: 		tramaOk = 0;                                 //Limpia la variable que indica si la trama ha llegado correctamente
+;MasterComunicacion.c,279 :: 		tramaOk = 0;                                 //Limpia la variable que indica si la trama ha llegado correctamente
 	CLRF       _tramaOk+0
-;MasterComunicacion.c,279 :: 		}
+;MasterComunicacion.c,283 :: 		}
 L_interrupt47:
-;MasterComunicacion.c,281 :: 		if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
+;MasterComunicacion.c,285 :: 		if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
 	MOVF       _banTI+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt48
-;MasterComunicacion.c,283 :: 		}
+;MasterComunicacion.c,287 :: 		}
 L_interrupt48:
-;MasterComunicacion.c,286 :: 		if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
+;MasterComunicacion.c,290 :: 		if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
 	MOVF       _banTC+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt49
-;MasterComunicacion.c,288 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
+;MasterComunicacion.c,292 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
 	MOVLW      _tramaRS485+0
 	MOVWF      FARG_VerificarCRC_trama+0
 	MOVF       _t1Size+0, 0
@@ -673,79 +688,79 @@ L_interrupt48:
 	CALL       _VerificarCRC+0
 	MOVF       R0+0, 0
 	MOVWF      _tramaOk+0
-;MasterComunicacion.c,290 :: 		if (tramaOk==1){
+;MasterComunicacion.c,294 :: 		if (tramaOk==1){
 	MOVF       R0+0, 0
 	XORLW      1
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt50
-;MasterComunicacion.c,291 :: 		EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
+;MasterComunicacion.c,295 :: 		EnviarACK();                             //Si la trama llego sin errores responde con un ACK al esclavo
 	CALL       _EnviarACK+0
-;MasterComunicacion.c,293 :: 		} else {
+;MasterComunicacion.c,297 :: 		} else {
 	GOTO       L_interrupt51
 L_interrupt50:
-;MasterComunicacion.c,294 :: 		EnviarNACK();                            //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
+;MasterComunicacion.c,298 :: 		EnviarNACK();                            //Si hubo algun error en la trama se envia un ACK al H/S para que reenvie la trama
 	CALL       _EnviarNACK+0
-;MasterComunicacion.c,295 :: 		}
-L_interrupt51:
-;MasterComunicacion.c,296 :: 		banTC = 0;                                   //Limpia la bandera de trama completa
-	CLRF       _banTC+0
-;MasterComunicacion.c,297 :: 		i1 = 0;                                      //Limpia el subindice de trama
-	CLRF       _i1+0
 ;MasterComunicacion.c,299 :: 		}
+L_interrupt51:
+;MasterComunicacion.c,300 :: 		banTC = 0;                                   //Limpia la bandera de trama completa
+	CLRF       _banTC+0
+;MasterComunicacion.c,301 :: 		i1 = 0;                                      //Limpia el subindice de trama
+	CLRF       _i1+0
+;MasterComunicacion.c,303 :: 		}
 L_interrupt49:
-;MasterComunicacion.c,301 :: 		PIR1.F5 = 0;                                    //Limpia la bandera de interrupcion de UART2
+;MasterComunicacion.c,305 :: 		PIR1.F5 = 0;                                    //Limpia la bandera de interrupcion de UART2
 	BCF        PIR1+0, 5
-;MasterComunicacion.c,302 :: 		IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
+;MasterComunicacion.c,306 :: 		IU1 = 0;                                        //Apaga el indicador de interrupcion por UART2
 	BCF        RC4_bit+0, BitPos(RC4_bit+0)
-;MasterComunicacion.c,305 :: 		}
+;MasterComunicacion.c,309 :: 		}
 L_interrupt36:
-;MasterComunicacion.c,311 :: 		if (PIR1.TMR1IF==1){
+;MasterComunicacion.c,315 :: 		if (PIR1.TMR1IF==1){
 	BTFSS      PIR1+0, 0
 	GOTO       L_interrupt52
-;MasterComunicacion.c,312 :: 		TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;MasterComunicacion.c,316 :: 		TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF        TMR1IF_bit+0, BitPos(TMR1IF_bit+0)
-;MasterComunicacion.c,313 :: 		T1CON.TMR1ON = 0;                               //Apaga el Timer1
+;MasterComunicacion.c,317 :: 		T1CON.TMR1ON = 0;                               //Apaga el Timer1
 	BCF        T1CON+0, 0
-;MasterComunicacion.c,315 :: 		if (contadorTOD<3){
+;MasterComunicacion.c,319 :: 		if (contadorTOD<3){
 	MOVLW      3
 	SUBWF      _contadorTOD+0, 0
 	BTFSC      STATUS+0, 0
 	GOTO       L_interrupt53
-;MasterComunicacion.c,316 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);       //Reenvia la trama por el bus RS485
+;MasterComunicacion.c,320 :: 		EnviarMensajeRS485(tramaSPI, sizeSPI);       //Reenvia la trama por el bus RS485
 	MOVLW      _tramaSPI+0
 	MOVWF      FARG_EnviarMensajeRS485_tramaPDU+0
 	MOVF       _sizeSPI+0, 0
 	MOVWF      FARG_EnviarMensajeRS485_sizePDU+0
 	CALL       _EnviarMensajeRS485+0
-;MasterComunicacion.c,317 :: 		contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
+;MasterComunicacion.c,321 :: 		contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
 	INCF       _contadorTOD+0, 1
-;MasterComunicacion.c,318 :: 		} else {
+;MasterComunicacion.c,322 :: 		} else {
 	GOTO       L_interrupt54
 L_interrupt53:
-;MasterComunicacion.c,320 :: 		contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
+;MasterComunicacion.c,324 :: 		contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
 	CLRF       _contadorTOD+0
-;MasterComunicacion.c,321 :: 		}
+;MasterComunicacion.c,325 :: 		}
 L_interrupt54:
-;MasterComunicacion.c,322 :: 		}
+;MasterComunicacion.c,326 :: 		}
 L_interrupt52:
-;MasterComunicacion.c,329 :: 		if (PIR1.TMR2IF==1){
+;MasterComunicacion.c,333 :: 		if (PIR1.TMR2IF==1){
 	BTFSS      PIR1+0, 1
 	GOTO       L_interrupt55
-;MasterComunicacion.c,330 :: 		TMR2IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR2
+;MasterComunicacion.c,334 :: 		TMR2IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR2
 	BCF        TMR2IF_bit+0, BitPos(TMR2IF_bit+0)
-;MasterComunicacion.c,331 :: 		T2CON.TMR2ON = 0;                               //Apaga el Timer2
+;MasterComunicacion.c,335 :: 		T2CON.TMR2ON = 0;                               //Apaga el Timer2
 	BCF        T2CON+0, 2
-;MasterComunicacion.c,332 :: 		banTI = 0;                                      //Limpia la bandera de inicio de trama
+;MasterComunicacion.c,336 :: 		banTI = 0;                                      //Limpia la bandera de inicio de trama
 	CLRF       _banTI+0
-;MasterComunicacion.c,333 :: 		i1 = 0;                                         //Limpia el subindice de la trama de peticion
+;MasterComunicacion.c,337 :: 		i1 = 0;                                         //Limpia el subindice de la trama de peticion
 	CLRF       _i1+0
-;MasterComunicacion.c,334 :: 		banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
+;MasterComunicacion.c,338 :: 		banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
 	CLRF       _banTC+0
-;MasterComunicacion.c,335 :: 		EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
+;MasterComunicacion.c,339 :: 		EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
 	CALL       _EnviarNACK+0
-;MasterComunicacion.c,336 :: 		}
+;MasterComunicacion.c,340 :: 		}
 L_interrupt55:
-;MasterComunicacion.c,338 :: 		}
+;MasterComunicacion.c,342 :: 		}
 L_end_interrupt:
 L__interrupt70:
 	MOVF       ___savePCLATH+0, 0
@@ -759,26 +774,26 @@ L__interrupt70:
 
 _main:
 
-;MasterComunicacion.c,342 :: 		void main() {
-;MasterComunicacion.c,344 :: 		ConfiguracionPrincipal();
+;MasterComunicacion.c,346 :: 		void main() {
+;MasterComunicacion.c,348 :: 		ConfiguracionPrincipal();
 	CALL       _ConfiguracionPrincipal+0
-;MasterComunicacion.c,345 :: 		RE_DE = 1;                                         //Establece el Max485-1 en modo de lectura;
+;MasterComunicacion.c,349 :: 		RE_DE = 1;                                         //Establece el Max485-1 en modo de lectura;
 	BSF        RB1_bit+0, BitPos(RB1_bit+0)
-;MasterComunicacion.c,346 :: 		i1=0;
+;MasterComunicacion.c,350 :: 		i1=0;
 	CLRF       _i1+0
-;MasterComunicacion.c,347 :: 		contadorTOD = 0;                                   //Inicia el contador de Time-Out-Dispositivo
+;MasterComunicacion.c,351 :: 		contadorTOD = 0;                                   //Inicia el contador de Time-Out-Dispositivo
 	CLRF       _contadorTOD+0
-;MasterComunicacion.c,348 :: 		contadorNACK = 0;                                  //Inicia el contador de NACK
+;MasterComunicacion.c,352 :: 		contadorNACK = 0;                                  //Inicia el contador de NACK
 	CLRF       _contadorNACK+0
-;MasterComunicacion.c,349 :: 		byteTrama=0;                                       //Limpia la variable del byte de la trama de peticion
+;MasterComunicacion.c,353 :: 		byteTrama=0;                                       //Limpia la variable del byte de la trama de peticion
 	CLRF       _byteTrama+0
-;MasterComunicacion.c,350 :: 		banTI=0;                                           //Limpia la bandera de inicio de trama
+;MasterComunicacion.c,354 :: 		banTI=0;                                           //Limpia la bandera de inicio de trama
 	CLRF       _banTI+0
-;MasterComunicacion.c,351 :: 		banTC=0;                                           //Limpia la bandera de trama completa
+;MasterComunicacion.c,355 :: 		banTC=0;                                           //Limpia la bandera de trama completa
 	CLRF       _banTC+0
-;MasterComunicacion.c,352 :: 		banTF=0;                                           //Limpia la bandera de final de trama
+;MasterComunicacion.c,356 :: 		banTF=0;                                           //Limpia la bandera de final de trama
 	CLRF       _banTF+0
-;MasterComunicacion.c,354 :: 		}
+;MasterComunicacion.c,358 :: 		}
 L_end_main:
 	GOTO       $+0
 ; end of _main

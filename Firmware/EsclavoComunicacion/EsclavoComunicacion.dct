@@ -189,6 +189,7 @@ d_not_a
 d_not_a_bit
 data_address
 data_address_bit
+datosescritura
 dc
 dc_bit
 delay_100ms
@@ -237,6 +238,7 @@ enviarack
 enviarmensajeerror
 enviarmensajeuart
 enviarnack
+enviarsolicitudescritura
 enviarsolicitudlectura
 equals_double
 f

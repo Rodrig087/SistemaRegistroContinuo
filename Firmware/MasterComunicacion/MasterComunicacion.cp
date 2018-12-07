@@ -193,9 +193,13 @@ void interrupt(){
 
 
  tramaSPI[0]=0x09;
- tramaSPI[1]=0x00;
- tramaSPI[2]=0x01;
- tramaSPI[3]=0x00;
+ tramaSPI[1]=0x01;
+ tramaSPI[2]=0x02;
+ tramaSPI[3]=0x04;
+ tramaSPI[4]=0xD1;
+ tramaSPI[5]=0xD2;
+ tramaSPI[6]=0xD3;
+ tramaSPI[7]=0xD4;
 
  direccionRpi = tramaSPI[0];
  funcionRpi = tramaSPI[1];
