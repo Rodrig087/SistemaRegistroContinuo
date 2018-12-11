@@ -26,6 +26,7 @@ unsigned short t1Funcion;
 unsigned short t1Registro;
 unsigned char tramaSerial[15];
 unsigned char datosEscritura[4];
+unsigned short numDatosEsc;
 short i1;
 
 unsigned short banTC, banTI, banTF;
@@ -138,7 +139,7 @@ void EnviarMensajeUART(unsigned char *tramaPDU, unsigned char sizePDU){
  }
  }
  while(UART1_Tx_Idle()==0);
-#line 166 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
+#line 167 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoComunicacion/EsclavoComunicacion.c"
 }
 
 
@@ -285,15 +286,20 @@ void EnviarSolicitudLectura(unsigned short registroLectura){
 
 
 
-void EnviarSolicitudEscritura(unsigned short registroEscritura,unsigned char* datos, unsigned short sizeDatos){
+void EnviarSolicitudEscritura(unsigned short registroEscritura, unsigned short numDatos, unsigned char* datos){
  CS = 0;
+ SSPBUF = 0XD0;
+ Delay_ms(1);
  SSPBUF = registroEscritura;
  Delay_ms(1);
- for (x=0;x<sizeDatos;x++){
+ SSPBUF = numDatos;
+ Delay_ms(1);
+ for (x=0;x<numDatos;x++){
  SSPBUF = datos[x];
  Delay_ms(1);
  }
  CS = 1;
+
 }
 
 
@@ -402,7 +408,8 @@ void interrupt(){
 
  if (banTC==1){
  if (t1IdEsclavo==IdEsclavo){
- t1Size = tramaSerial[4]+4;
+ numDatosEsc = tramaSerial[4];
+ t1Size = numDatosEsc+4;
  t1Funcion = tramaSerial[2];
  t1Registro = tramaSerial[3];
  tramaOk = VerificarCRC(tramaSerial,t1Size);
@@ -423,7 +430,7 @@ void interrupt(){
  datosEscritura[x]=tramaSerial[x+5];
  }
 
- EnviarSolicitudEscritura(t1Registro,datosEscritura,tramaSerial[4]);
+ EnviarSolicitudEscritura(t1Registro,numDatosEsc,datosEscritura);
  } else {
  EnviarMensajeError(t1Registro,0xE1);
  }
@@ -495,4 +502,5 @@ void main() {
  banTC = 0;
  banTF = 0;
  banMed = 0;
+ numDatosEsc = 0;
 }

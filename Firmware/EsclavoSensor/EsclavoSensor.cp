@@ -10,15 +10,15 @@ const short funcEsclavo = 0x01;
 const short regLectura = 0x04;
 const short regEscritura = 0x03;
 
-unsigned char tramaSPI[15];
-unsigned char petSPI[15];
+unsigned char datosEscritura[10];
 unsigned char resSPI[15];
-unsigned short sizeSPI;
-unsigned short direccionRpi;
-unsigned short funcionRpi;
-unsigned short i, x;
+unsigned short regEsc;
+unsigned short numDatosEsc;
+unsigned short
+unsigned short i, x, j;
 unsigned short respSPI, buffer, registro, numBytesSPI;
-unsigned short banPet, banResp, banSPI, banMed, banId;
+unsigned short banPet, banResp, banSPI, banLec, banId, banEsc;
+
 
 
 
@@ -40,6 +40,8 @@ void ConfiguracionPrincipal(){
 
  SPI1_Init_Advanced(_SPI_SLAVE_SS_ENABLE,_SPI_DATA_SAMPLE_MIDDLE,_SPI_CLK_IDLE_HIGH,_SPI_LOW_2_HIGH);
  PIE1.SSPIE = 1;
+
+ UART1_Init(19200);
 
  Delay_ms(100);
 
@@ -64,7 +66,7 @@ void interrupt(){
  buffer = SSPBUF;
 
 
- if (buffer==0xA0){
+ if ((buffer==0xA0)&&(banEsc==0)){
  banId = 1;
  SSPBUF = 0xA0;
  Delay_us(50);
@@ -83,18 +85,18 @@ void interrupt(){
  SSPBUF = regEscritura;
  }
  }
- if (buffer==0xA5){
+ if ((banId==1)&&(buffer==0xA5)){
  banId = 0;
  SSPBUF = 0xB0;
  }
 
 
- if (buffer==0xB0){
- banMed = 1;
+ if ((buffer==0xB0)&&(banEsc==0)){
+ banLec = 1;
  SSPBUF = 0xB0;
  Delay_us(50);
  }
- if ((banMed==1)&&(buffer!=0xB0)){
+ if ((banLec==1)&&(buffer!=0xB0)){
  registro = buffer;
 
 
@@ -121,9 +123,9 @@ void interrupt(){
  SSPBUF = 0x01;
  }
  }
- if (buffer==0xB1){
+ if ((banLec==1)&&(buffer==0xB1)){
  banPet = 1;
- banMed = 0;
+ banLec = 0;
  banResp = 0;
  SSPBUF = 0xC0;
  }
@@ -136,6 +138,26 @@ void interrupt(){
  }
  }
 
+
+ if ((buffer==0xD0)&&(banEsc==0)){
+ banEsc = 1;
+ j=0;
+ }
+ if ((banEsc==1)&&(buffer!=0xD0)){
+ datosEscritura[j] = buffer;
+ if (j>1){
+ regEsc = datosEscritura[1];
+ numDatosEsc = datosEscritura[1];
+ if ((j-1)==numDatosEsc){
+ banEsc = 0;
+ numDatosEsc = 0;
+ for (x=0;x<6;x++){
+ UART1_Write(datosEscritura[x]);
+ }
+ }
+ }
+ j++;
+ }
 
  }
 
@@ -152,12 +174,14 @@ void main() {
  banPet = 0;
  banResp = 0;
  banSPI = 0;
- banMed = 0;
+ banLec = 0;
  banId = 0;
+ banEsc = 0;
 
 
  SSPBUF = 0xA0;
-
+ numDatosEsc = 0;
+ regEsc = 0;
 
  while(1){
 

@@ -44,6 +44,7 @@ unsigned short t1Funcion;                               //Variable para almacena
 unsigned short t1Registro;                              //Variable para almacenar el registro requerido en la trama de peticion
 unsigned char tramaSerial[15];                          //Vector de trama de datos del puerto UART1
 unsigned char datosEscritura[4];                        //Vector para almacenar los datos necesarios para las solicitudes de escritura
+unsigned short numDatosEsc;                             //Variable para almacenar el numero de datos de escritura
 short i1;                                               //Subindices para el manejo de las tramas de datos
 
 unsigned short banTC, banTI, banTF;                     //Banderas de trama completa, inicio de trama y final de trama
@@ -309,11 +310,15 @@ void EnviarSolicitudLectura(unsigned short registroLectura){
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de una peticion al EsclavoSensor por SPI
 //Esta funcion envia una solicitud de medicion al dispositivo EsclavoSensor, recibe como parametro el codigo del registro que se quiere leer en el EsclavoSensor
-void EnviarSolicitudEscritura(unsigned short registroEscritura,unsigned char* datos, unsigned short sizeDatos){
+void EnviarSolicitudEscritura(unsigned short registroEscritura, unsigned short numDatos, unsigned char* datos){
      CS = 0;
+     SSPBUF = 0XD0;                           //Llena el buffer de salida con el valor de la cabecera de solicitud de escritura
+     Delay_ms(1);
      SSPBUF = registroEscritura;              //Llena el buffer de salida con el valor del registro que se quiere leer
      Delay_ms(1);
-     for (x=0;x<sizeDatos;x++){
+     SSPBUF = numDatos;                       //Llena el buffer de salida con el valor del numero de datos
+     Delay_ms(1);
+     for (x=0;x<numDatos;x++){
          SSPBUF = datos[x];                   //Llena el buffer de salida con cada valor de la tramaSPI
          Delay_ms(1);
      }
@@ -427,7 +432,8 @@ void interrupt(){
 
         if (banTC==1){                                             //Verifica que se haya completado de llenar la trama de peticion
            if (t1IdEsclavo==IdEsclavo){                            //Verifica si coincide el Id de esclavo para seguir con el procesamiento de la peticion
-               t1Size = tramaSerial[4]+4;                          //Calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
+               numDatosEsc = tramaSerial[4];
+               t1Size = numDatosEsc+4;                             //Calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
                t1Funcion = tramaSerial[2];                         //Guarda el byte de funcion reequerida del campo PDU
                t1Registro = tramaSerial[3];                        //Guarda el byte de # de registro que se quiere leer/escribir
                tramaOk = VerificarCRC(tramaSerial,t1Size);         //Calcula y verifica el CRC de la trama de peticion
@@ -448,7 +454,7 @@ void interrupt(){
                                  datosEscritura[x]=tramaSerial[x+5];      //Carga el vector payload con los valores de la trama serial
                              }
                             //Envia una solicitud de lectura del registro especificado al modulo EsclavoSensor:
-                            EnviarSolicitudEscritura(t1Registro,datosEscritura,tramaSerial[4]);
+                            EnviarSolicitudEscritura(t1Registro,numDatosEsc,datosEscritura);
                          } else {
                             EnviarMensajeError(t1Registro,0xE1);   //Envia un mensaje de error con el codigo de "Registro no disponible"
                          }
@@ -520,4 +526,5 @@ void main() {
      banTC = 0;
      banTF = 0;
      banMed = 0;
+     numDatosEsc = 0;
 }

@@ -35,15 +35,15 @@ const short funcEsclavo = 0x01;                         //Constante de numero de
 const short regLectura = 0x04;                          //Numero de registros de lectura del esclavo
 const short regEscritura = 0x03;                        //Numero de registros de escritura del esclavo
 
-unsigned char tramaSPI[15];                             //Vector para almacenar la peticion proveniente de la Rpi
-unsigned char petSPI[15];
+unsigned char datosEscritura[10];                       //Vector para almacenar los valores que se requiere escribir en los registros de escritura
 unsigned char resSPI[15];
-unsigned short sizeSPI;                                 //Variable para la longitud de trama de comunicacion con la Rpi
-unsigned short direccionRpi;                            //Variable para almacenar la direccion del esclavo requerido por el Master
-unsigned short funcionRpi;                              //Variable para alamacenar el tipo de funcion requerida por el Master
-unsigned short i, x;
+unsigned short regEsc;                                  //Variable para almacenar el registro que se quiere escribir
+unsigned short numDatosEsc;                             //Variable para almacenar el numero de datos que se desea escribir en un registro de escritura
+unsigned short
+unsigned short i, x, j;
 unsigned short respSPI, buffer, registro, numBytesSPI;
-unsigned short banPet, banResp, banSPI, banMed, banId;
+unsigned short banPet, banResp, banSPI, banLec, banId, banEsc;
+
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -64,7 +64,9 @@ void ConfiguracionPrincipal(){
 
      //Configuracion del puerto SPI en modo Esclavo
      SPI1_Init_Advanced(_SPI_SLAVE_SS_ENABLE,_SPI_DATA_SAMPLE_MIDDLE,_SPI_CLK_IDLE_HIGH,_SPI_LOW_2_HIGH);
-     PIE1.SSPIE = 1;                                  //Habilita la interrupcion por SPI
+     PIE1.SSPIE = 1;                                    //Habilita la interrupcion por SPI
+     
+     UART1_Init(19200);
 
      Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
 
@@ -89,12 +91,12 @@ void interrupt(){
         buffer =  SSPBUF;                                 //Guarda el contenido del bufeer (lectura)
         
         //Rutina para procesar la solicitud de envio de informacion de este esclavo
-        if (buffer==0xA0){                                //Verifica si el primer byte es la cabecera de datos
+        if ((buffer==0xA0)&&(banEsc==0)){                 //Verifica si el primer byte es la cabecera de solicitud de informacion y si la bandera de escritura esta desactivada
            banId = 1;                                     //Activa la bandera de escritura de Id
            SSPBUF = 0xA0;                                 //Guarda en el buffer un valor de cabecera (puede ser cuaquier valor, igual el Maaestro ignora este byte)
            Delay_us(50);
         }
-        if ((banId==1)&&(buffer!=0xA5)){                  //Envia los bytes de informacion de este esclavo: [IdEsclavo, regEsclavo, funcEsclavo]
+        if ((banId==1)&&(buffer!=0xA5)){     //Envia los bytes de informacion de este esclavo: [IdEsclavo, regEsclavo, funcEsclavo]
            if (buffer==0xA1){
               SSPBUF = idEsclavo;
            }
@@ -108,18 +110,18 @@ void interrupt(){
               SSPBUF = regEscritura;
            }
         }
-        if (buffer==0xA5){                                //Si detecta el delimitador de final de trama:
+        if ((banId==1)&&(buffer==0xA5)){                  //Si detecta el delimitador de final de trama:
            banId = 0;                                     //Limpia la bandera de escritura de Id
            SSPBUF = 0xB0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
         }
 
-        //Rutina para procesar la Solicitud de Medicion
-        if (buffer==0xB0){                                //Verifica si el primer byte es la cabecera de datos
-           banMed = 1;
+        //Rutina para procesar la Solicitud de Lectura de un registro especifico
+        if ((buffer==0xB0)&&(banEsc==0)){                 //Verifica si el primer byte es la cabecera de datos
+           banLec = 1;                                    //Activa la bandera de lectura
            SSPBUF = 0xB0;                                 //Guarda en el buffer un valor de cabecera (puede ser cuaquier valor, igual el Maaestro ignora este byte)
            Delay_us(50);
         }
-        if ((banMed==1)&&(buffer!=0xB0)){
+        if ((banLec==1)&&(buffer!=0xB0)){
            registro = buffer;
            //Aqui devuelve el numero de bytes necesarios para cada registro de lectura, por ejemplo, este esclavo tiene 4 registros para leer:
            
@@ -146,21 +148,41 @@ void interrupt(){
                        SSPBUF = 0x01;                     //Si solicita leer un registro inexixtente devuelve una longitud de un solo byte para mandar el mensaje de error
            }
         }
-        if (buffer==0xB1){                                //Si detecta el delimitador de final de trama:
+        if ((banLec==1)&&(buffer==0xB1)){                 //Si detecta el delimitador de final de trama:
            banPet = 1;                                    //Activa la bandera de peticion
-           banMed = 0;                                    //Limpia la bandera de medicion
+           banLec = 0;                                    //Limpia la bandera de medicion
            banResp = 0;                                   //Limpia la bandera de peticion. **Esto parece no ser necesario pero quiero asegurarme de que no entre al siguiente if sin antes pasar por el bucle
            SSPBUF = 0xC0;                                 //Escribe el buffer el primer valor que se va a embiar cuando se embie la trama de respuesta
         }
 
-        //Rutina para enviar la respuesta de la Solicitud de Mediciion
+        //Rutina para enviar la respuesta de la Solicitud de Lectura
         if (banResp==1){                                  //Verifica que la bandera de respuesta este activa
            if (i<numBytesSPI){
               SSPBUF = resSPI[i];
               i++;
            }
         }
-
+        
+        //Rutina para procesar la Solicitud de Escritura de un registro especifico
+        if ((buffer==0xD0)&&(banEsc==0)){                 //Verifica si el primer byte es la cabecera de datos y si la bandera de escritura esta desactivada
+           banEsc = 1;                                    //Activa la bandera de escritura de Id
+           j=0;
+        }
+        if ((banEsc==1)&&(buffer!=0xD0)){
+           datosEscritura[j] = buffer;                    //Guarda en el vector el registro que se quiere escribir y los datos correspondientes
+           if (j>1){
+              regEsc = datosEscritura[1];                 //Guarda en la variable el valor del registro que se quiere escribir
+              numDatosEsc = datosEscritura[1];            //Si el subindice es mayor a 1 guarda en la variable numDatosEsc el valor del numero de datos que se desea escribir en el registro
+              if ((j-1)==numDatosEsc){
+                 banEsc = 0;
+                 numDatosEsc = 0;
+                 for (x=0;x<6;x++){
+                      UART1_Write(datosEscritura[x]);
+                 }
+              }
+           }
+           j++;
+        }
 
      }
 
@@ -177,12 +199,14 @@ void main() {
      banPet = 0;
      banResp = 0;
      banSPI = 0;
-     banMed = 0;
+     banLec = 0;
      banId = 0;
+     banEsc = 0;
      
      //respSPI = 0xC0;
      SSPBUF = 0xA0;                                   //Carga un valor inicial en el buffer
-
+     numDatosEsc = 0;
+     regEsc = 0;
 
      while(1){
 

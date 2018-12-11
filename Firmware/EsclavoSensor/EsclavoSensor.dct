@@ -61,8 +61,9 @@ b4
 b5
 b6
 b7
+banesc
 banid
-banmed
+banlec
 banpet
 banresp
 banspi
@@ -180,6 +181,7 @@ d_not_a
 d_not_a_bit
 data_address
 data_address_bit
+datosescritura
 dc
 dc_bit
 delay_100ms
@@ -196,7 +198,6 @@ delay_5ms
 delay_80us
 delay_8ms
 delay_cyc
-direccionrpi
 div_16x16_s
 div_16x16_s_l
 div_16x16_u
@@ -232,7 +233,6 @@ fixsign32
 fsr
 fsrptr
 funcesclavo
-funcionrpi
 gcen
 gcen_bit
 get_fosc_khz
@@ -268,6 +268,7 @@ intf
 intf_bit
 irp
 irp_bit
+j
 longint2double
 longword2double
 main
@@ -309,6 +310,7 @@ not_write_bit
 nrm3232
 nrm4032
 numbytesspi
+numdatosesc
 oerr
 oerr_bit
 option_reg
@@ -329,7 +331,6 @@ peie
 peie_bit
 pen
 pen_bit
-petspi
 pie1
 pie2
 pir1
@@ -434,6 +435,7 @@ rd
 rd_bit
 read_write
 read_write_bit
+regesc
 regescritura
 registro
 reglectura
@@ -459,7 +461,6 @@ setfdz32
 setfov32
 setfun32
 setiov3224
-sizespi
 smp
 smp_bit
 spbrg
@@ -551,7 +552,6 @@ toutps2
 toutps2_bit
 toutps3
 toutps3_bit
-tramaspi
 trisa
 trisa0
 trisa0_bit
@@ -619,6 +619,13 @@ txreg
 txsta
 ua
 ua_bit
+uart1_data_ready
+uart1_init
+uart1_read
+uart1_read_text
+uart1_tx_idle
+uart1_write
+uart1_write_text
 vdelay_advanced_ms
 vdelay_ms
 w
