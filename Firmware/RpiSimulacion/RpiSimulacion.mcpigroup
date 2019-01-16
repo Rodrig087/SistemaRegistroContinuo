@@ -1,7 +1,0 @@
-[PROJECTS]
-Count=3
-Project0=..\MasterComunicacion\MasterComunicacion.mcppi
-Project1=..\EsclavoSensor\EsclavoSensor.mcppi
-Project2=RpiSimulacion.mcppi
-[ActiveProject]
-Index=2

@@ -1,0 +1,6 @@
+main
+	ConfiguracionPrincipal
+		UART1_Init
+interrupt
+	UART1_Read
+	UART1_Write

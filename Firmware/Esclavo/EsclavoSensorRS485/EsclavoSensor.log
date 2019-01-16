@@ -1,0 +1,12 @@
+0	1	mikroCPIC1618.exe -MSF -DBG -pP16F876A -DL -O11111114 -fo8 -N"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\Esclavo\EsclavoSensorRS485\EsclavoSensor.mcppi" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for PIC\Uses\P16\" -SP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Firmware\Esclavo\EsclavoSensorRS485\" "EsclavoSensor.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_UART_c67.mcl"	 
+hint: 0	1139	Available RAM: 352 [bytes], Available ROM: 8192 [bytes]	 
+diagnostics: 0	122	Compilation Started	EsclavoSensor.c
+warning: 87	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	EsclavoSensor.c
+diagnostics: 194	123	Compiled Successfully	EsclavoSensor.c
+diagnostics: 0	127	All files Compiled in 78 ms	 
+hint: 0	1144	Used RAM (bytes): 26 (7%)  Free RAM (bytes): 326 (93%)	Used RAM (bytes): 26 (7%)  Free RAM (bytes): 326 (93%)
+hint: 0	1144	Used ROM (program words): 174 (2%)  Free ROM (program words): 8018 (98%)	Used ROM (program words): 174 (2%)  Free ROM (program words): 8018 (98%)
+diagnostics: 0	125	Project Linked Successfully	EsclavoSensor.mcppi
+diagnostics: 0	128	Linked in 31 ms	 
+diagnostics: 0	129	Project 'EsclavoSensor.mcppi' completed: 125 ms	 
+diagnostics: 0	103	Finished successfully: 19 dic. 2018, 12:47:31	EsclavoSensor.mcppi

@@ -1,0 +1,22 @@
+main
+	ConfiguracionPrincipal
+		UART1_Init
+		UART2_Init
+interrupt
+	UART2_Read
+	VerificarCRC
+		CalcularCRC
+	EnviarACK
+		UART1_Write
+		UART1_Tx_Idle
+		UART2_Write
+		UART2_Tx_Idle
+	EnviarSolicitudEsclavo
+		UART1_Write
+		UART1_Tx_Idle
+	EnviarNACK
+		UART1_Write
+		UART1_Tx_Idle
+		UART2_Write
+		UART2_Tx_Idle
+	UART1_Read

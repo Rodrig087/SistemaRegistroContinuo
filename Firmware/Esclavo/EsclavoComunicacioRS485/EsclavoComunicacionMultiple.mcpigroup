@@ -1,0 +1,6 @@
+[PROJECTS]
+Count=2
+Project0=..\..\..\..\..\..\..\Ivan Palacios\Estaciones RSA\Controlador de Carga\Controlador de Carga\Programa Controlador de Carga BQ\Controlador.mcppi
+Project1=EsclavoComunicacionMultiple.mcppi
+[ActiveProject]
+Index=1
