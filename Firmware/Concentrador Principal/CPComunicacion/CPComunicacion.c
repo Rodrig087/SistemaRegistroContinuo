@@ -36,16 +36,13 @@ const short NACK = 0xAF;                                //Constante de mensaje N
 const unsigned int POLMODBUS = 0xA001;                  //Polinomio para el calculo del CRC
 
 unsigned short byteTrama;                               //Variable de bytes de trama de datos
-unsigned short t1Size, t2Size, pduSize;            //Variables de longitud de tramas de peticion, respuesta y PDU
-unsigned char tramaRS485[50];                           //Vector de trama de datos del puerto UART1
+unsigned short t1Size, t2Size, pduSize;                 //Variables de longitud de tramas de peticion, respuesta y PDU
+unsigned char tramaRS485[25];                           //Vector de trama de datos del puerto UART1
 unsigned char tramaPDU[15];                             //Vector para almacenar los valores de la trama PDU creada localmente
-unsigned char u2Trama[50];                              //Vector de trama de datos del puerto UART2
+unsigned char pduSPI[10];                               //Vector de trama de datos del puerto UART2
 short i1, i2;                                           //Subindices para el manejo de las tramas de datos
 
 unsigned short banTC, banTI, banTF;                     //Banderas de trama completa, inicio de trama y final de trama
-
-unsigned short BanLP, BanLR;                            //Banderas de lectura de tramas de peticion y respuesta
-unsigned short BanAR, BanAP;                            //Banderas de almacenamiento de tramas de peticion y respuesta
 
 unsigned short tramaOk;                                 //Variable para indicar si la trama de datos llego correctamente;
 unsigned short contadorTOD;                             //Contador de Time-Out-Dispositivo
@@ -87,7 +84,7 @@ void ConfiguracionPrincipal(){
      
      //Configuracion del puerto SPI en modo Esclavo
      SPI1_Init_Advanced(_SPI_SLAVE_SS_ENABLE,_SPI_DATA_SAMPLE_MIDDLE,_SPI_CLK_IDLE_HIGH,_SPI_LOW_2_HIGH);
-     PIE1.SSP1IE = 1;                                    //Habilita la interrupcion por SPI
+     PIE1.SSP1IE = 1;                                  //Habilita la interrupcion por SPI
 
      //Configuracion del TMR1 con un tiempo de 250ms
      T1CON = 0x30;                                     //Timer1 Input Clock Prescale Select bits
@@ -197,7 +194,7 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
      CRCPDU = CalcularCRC(PDU, sizePDU);                //Calcula el CRC de la trama PDU
      ptrCRCPDU = &CRCPDU;                               //Asociacion del puntero CrcTramaError
      //Rellena la trama que se enviara por RS485 con los datos de la trama PDU
-     tramaRS485[0]=HDR;                                 //Añade la cabecera a la trama a enviar
+     tramaRS485[0] = HDR;                               //Añade la cabecera a la trama a enviar
      tramaRS485[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
      tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
      tramaRS485[sizePDU+3] = END1;                      //Añade el primer delimitador de final de trama
@@ -223,19 +220,16 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de datos a la RPi por medio del puerto SPI
 //Esta funcion recibe como parametros la trama de datos que se recibio por RS485 y su numero de elementos
-void EnviarMensajeSPI(unsigned char *trama, unsigned char tramaPDUSize){
-     unsigned char pdu[15];
+void EnviarMensajeSPI(unsigned char *trama, unsigned char pduSize2){
      unsigned short j;
-     for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
-         pdu[j] = trama[j+1];
-         UART1_Write(pdu[j]);
+     for (j=0;j<pduSize2;j++){                          //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
+         pduSPI[j] = trama[j+1];
+         UART1_Write(pduSPI[j]);
      }
      RInt = 1;                                          //Envia el pulso para generar la interrupcion externa en la RPi
      Delay_ms(1);
      RInt = 0;
-     
 }
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -246,12 +240,10 @@ void interrupt(void){
      if (PIR1.SSP1IF){
 
         PIR1.SSP1IF = 0;                                //Limpia la bandera de interrupcion por SPI
-        AUX = 1;
-        AUX = 0;
 
         buffer = SSPBUF;                                //Guarda el contenido del bufeer (lectura)
 
-        //Rutina para procesar la Solicitud de Lectura de un registro especifico
+        //Rutina para procesar recibir la trama de Peticion de la RPi y reenviarla al H/S
         if ((buffer==0xB0)&&(banEsc==0)){               //Verifica si el primer byte es la cabecera de datos
            banLec = 1;                                  //Activa la bandera de lectura
            i = 0;
@@ -262,12 +254,38 @@ void interrupt(void){
         }
         if ((banLec==1)&&(buffer==0xB1)){               //Si detecta el delimitador de final de trama:
            banLec = 0;                                  //Limpia la bandera de medicion
+           banResp = 0;                                 //Activa la bandera de respuesta
            pduSize = i-1;
            EnviarMensajeRS485(tramaPDU,pduSize);
         }
+        
+        //Rutina para enviar a la Rpi el numero de bytes de la trama PDU
+        if ((buffer==0xC0)&&(banResp==0)){              //
+           banResp = 1;
+        }
+        if ((buffer==0xCC)&&(banResp==1)){              //
+           banResp = 0;
+           banSPI = 1;
+           i = 0;
+           SSPBUF = t1Size;
+           Delay_ms(1);
+        }
+        
+        //Rutina para enviar a la Rpi el contenido de la trama PDU a travez del puerto SPI
+        if ((buffer==0xD0)&&(banSPI==1)){
+           banSPI = 2;
+        }
+        if ((buffer!=0xD1)&&(banSPI==2)){              //
+           SSPBUF = pduSPI[i];
+           Delay_ms(1);
+           i++;
+        }
+        if ((buffer==0xD1)&&(banSPI==2)){
+           banSPI = 0;
+           i = 0;
+        }
 
      }
-     
 
 //Interrupcion UART1
 //Esta interrupcion supervisa el estado del bus RS485, cuando detecta un mensaje procedente de un H/S revisa si el primer byte de la trama es
@@ -293,7 +311,7 @@ void interrupt(void){
                TMR1IF_bit = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR1
                if (contadorNACK<3){
                   //EnviarMensajeRS485(tramaSPI, sizeSPI);    //Si recibe un NACK como respuesta, le renvia la trama
-                  contadorNACK++;                             //Incrrmenta en una unidad el valor del contador de NACK
+                  contadorNACK++;                             //Incrementa en una unidad el valor del contador de NACK
                } else {
                   contadorNACK = 0;                           //Limpia el contador de Time-Out-Trama
                }
@@ -341,9 +359,8 @@ void interrupt(void){
            tramaOk = 0;
            tramaOk = VerificarCRC(tramaRS485,t1Size);         //Calcula y verifica el CRC de la trama de peticion
            if (tramaOk==1){
-               //Delay_ms(300);                               //Sirve para probar el Time-Out-Dispositivo en el dispositivo que recibe el ACK
                EnviarACK(1);                                  //Si la trama llego sin errores responde con un ACK al H/S
-               EnviarMensajeSPI(tramaRS485,t1Size);           //Invoca esta funcion para enviar los datos a la RPi por SPI
+               EnviarMensajeSPI(tramaRS485,t1Size);         //Invoca esta funcion para enviar los datos a la RPi por SPI
            } else {
                EnviarNACK(1);                                 //Si hubo algun error en la trama se envia un NACK al H/S
            }
@@ -406,6 +423,8 @@ void main() {
      banTI=0;                                                 //Limpia la bandera de inicio de trama
      banTC=0;                                                 //Limpia la bandera de trama completa
      banTF=0;                                                 //Limpia la bandera de final de trama
+     
      AUX = 0;
-
+     t1Size = 0;
+     
 }

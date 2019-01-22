@@ -19,15 +19,12 @@ const unsigned int POLMODBUS = 0xA001;
 
 unsigned short byteTrama;
 unsigned short t1Size, t2Size, pduSize;
-unsigned char tramaRS485[50];
+unsigned char tramaRS485[25];
 unsigned char tramaPDU[15];
-unsigned char u2Trama[50];
+unsigned char pduSPI[10];
 short i1, i2;
 
 unsigned short banTC, banTI, banTF;
-
-unsigned short BanLP, BanLR;
-unsigned short BanAR, BanAP;
 
 unsigned short tramaOk;
 unsigned short contadorTOD;
@@ -179,7 +176,7 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
  CRCPDU = CalcularCRC(PDU, sizePDU);
  ptrCRCPDU = &CRCPDU;
 
- tramaRS485[0]=HDR;
+ tramaRS485[0] = HDR;
  tramaRS485[sizePDU+2] = *ptrCrcPdu;
  tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);
  tramaRS485[sizePDU+3] = END1;
@@ -205,19 +202,16 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
 
 
 
-void EnviarMensajeSPI(unsigned char *trama, unsigned char tramaPDUSize){
- unsigned char pdu[15];
+void EnviarMensajeSPI(unsigned char *trama, unsigned char pduSize2){
  unsigned short j;
- for (j=0;j<tramaPDUSize;j++){
- pdu[j] = trama[j+1];
- UART1_Write(pdu[j]);
+ for (j=0;j<pduSize2;j++){
+ pduSPI[j] = trama[j+1];
+ UART1_Write(pduSPI[j]);
  }
  RInt = 1;
  Delay_ms(1);
  RInt = 0;
-
 }
-
 
 
 
@@ -228,8 +222,6 @@ void interrupt(void){
  if (PIR1.SSP1IF){
 
  PIR1.SSP1IF = 0;
- AUX = 1;
- AUX = 0;
 
  buffer = SSPBUF;
 
@@ -244,12 +236,38 @@ void interrupt(void){
  }
  if ((banLec==1)&&(buffer==0xB1)){
  banLec = 0;
+ banResp = 0;
  pduSize = i-1;
  EnviarMensajeRS485(tramaPDU,pduSize);
  }
 
+
+ if ((buffer==0xC0)&&(banResp==0)){
+ banResp = 1;
+ }
+ if ((buffer==0xCC)&&(banResp==1)){
+ banResp = 0;
+ banSPI = 1;
+ i = 0;
+ SSPBUF = t1Size;
+ Delay_ms(1);
  }
 
+
+ if ((buffer==0xD0)&&(banSPI==1)){
+ banSPI = 2;
+ }
+ if ((buffer!=0xD1)&&(banSPI==2)){
+ SSPBUF = pduSPI[i];
+ Delay_ms(1);
+ i++;
+ }
+ if ((buffer==0xD1)&&(banSPI==2)){
+ banSPI = 0;
+ i = 0;
+ }
+
+ }
 
 
 
@@ -323,7 +341,6 @@ void interrupt(void){
  tramaOk = 0;
  tramaOk = VerificarCRC(tramaRS485,t1Size);
  if (tramaOk==1){
-
  EnviarACK(1);
  EnviarMensajeSPI(tramaRS485,t1Size);
  } else {
@@ -388,6 +405,8 @@ void main() {
  banTI=0;
  banTC=0;
  banTF=0;
+
  AUX = 0;
+ t1Size = 0;
 
 }

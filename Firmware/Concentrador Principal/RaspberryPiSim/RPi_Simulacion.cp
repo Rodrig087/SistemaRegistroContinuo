@@ -15,7 +15,8 @@ unsigned short BanAR, BanAP;
 
 unsigned short tramaOk;
 
-unsigned char tramaSPI[50];
+unsigned char tramaSPI[15];
+unsigned char tramaRespuesta[15];
 unsigned short sizeSPI;
 unsigned short direccionRpi;
 unsigned short funcionRpi;
@@ -76,6 +77,50 @@ void EnviarMensajeSPI(unsigned char *trama, unsigned short sizePDU){
 
 
 
+
+
+unsigned short RecuperarRespuestaSPI(){
+#line 110 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Concentrador Principal/RaspberryPiSim/RPi_Simulacion.c"
+ unsigned short numBytes;
+ tramaSPI[0] = 0xC0;
+ tramaSPI[1] = 0xCC;
+ tramaSPI[2] = 0xC1;
+ CS = 0;
+ for (x=0;x<3;x++){
+ SSPBUF = tramaSPI[x];
+ if (x==2){
+ while (SSP1STAT.BF!=1);
+ numBytes = SSPBUF;
+ }
+ Delay_ms(1);
+ }
+ CS = 1;
+
+ Delay_ms(100);
+
+ if ((numbytes!=0xC0)||(numbytes!=0xCC)||(numbytes!=0xC1)||(numbytes!=0x00)){
+ CS = 0;
+ SSPBUF = 0xD0;
+ Delay_ms(1);
+ for (x=0;x<(numBytes);x++){
+ SSPBUF = 0xDD;
+ while (SSP1STAT.BF!=1);
+ tramaRespuesta[x] = SSPBUF;
+ Delay_ms(1);
+ }
+ SSPBUF = 0xD1;
+ Delay_ms(1);
+ CS = 1;
+ }
+
+ for (x=0;x<(numBytes);x++){
+ UART1_Write(tramaRespuesta[x]);
+ }
+
+}
+
+
+
 void interrupt(){
 
 
@@ -85,7 +130,7 @@ void interrupt(){
 
 
 
- funcionRpi = 0x01;
+ funcionRpi = 0x00;
  direccionRpi = 0x09;
  registroRPi = 0x02;
 
@@ -120,10 +165,10 @@ void interrupt(){
  case 2:
  numDatos = 4;
  tramaSPI[4] = numDatos;
- tramaSPI[5] = 0x5C;
- tramaSPI[6] = 0x8F;
- tramaSPI[7] = 0x58;
- tramaSPI[8] = 0x83;
+ tramaSPI[5] = 0xE1;
+ tramaSPI[6] = 0xE2;
+ tramaSPI[7] = 0xE3;
+ tramaSPI[8] = 0xE4;
  tramaSPI[numDatos+5] = 0xB1;
  break;
  }
@@ -133,6 +178,15 @@ void interrupt(){
  }
 
  }
+
+
+
+
+ if (INTCON.INT0IF==1){
+ INTCON.INT0IF = 0;
+ RecuperarRespuestaSPI();
+ }
+
  }
 
 

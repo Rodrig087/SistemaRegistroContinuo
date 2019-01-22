@@ -177,14 +177,10 @@ b4
 b5
 b6
 b7
-banap
-banar
 banesc
 banid
 banked
 banlec
-banlp
-banlr
 banpet
 banresp
 banspi
@@ -1274,6 +1270,7 @@ pdc5_bit
 pdc6
 pdc6_bit
 pdusize
+pduspi
 peie
 peie_bit
 peie_giel
@@ -2258,7 +2255,6 @@ txreg2
 txsta
 txsta1
 txsta2
-u2trama
 ua
 ua_bit
 ua_ssp1stat_bit

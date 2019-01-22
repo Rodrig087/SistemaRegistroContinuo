@@ -1,0 +1,17 @@
+main
+	ConfiguracionPrincipal
+		UART1_Init
+interrupt
+	UART1_Read
+	VerificarCRC
+		CalcularCRC
+	EnviarACK
+		UART1_Write
+		UART1_Tx_Idle
+	EnviarMensajeRS485
+		CalcularCRC
+		UART1_Write
+		UART1_Tx_Idle
+	EnviarNACK
+		UART1_Write
+		UART1_Tx_Idle

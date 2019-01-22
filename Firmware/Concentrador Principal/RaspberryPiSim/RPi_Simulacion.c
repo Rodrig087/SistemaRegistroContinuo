@@ -1,7 +1,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------
 Autor: Milton Munoz
 Fecha de creacion: 5/11/2018
-Configuracion: PIC16F876A XT=8MHz
+Configuracion: 18F25K22 XT=8MHz
 Descripcion:
 
 ---------------------------------------------------------------------------------------------------------------------------*/
@@ -33,7 +33,8 @@ unsigned short BanAR, BanAP;                            //Banderas de almacenami
 
 unsigned short tramaOk;                                 //Variable para indicar si la trama de datos llego correctamente;
 
-unsigned char tramaSPI[50];                             //Vector para almacenar la peticion proveniente de la Rpi
+unsigned char tramaSPI[15];                             //Vector para almacenar la peticion proveniente de la Rpi
+unsigned char tramaRespuesta[15];
 unsigned short sizeSPI;                                 //Variable para la longitud de trama de comunicacion con la Rpi
 unsigned short direccionRpi;                            //Variable para almacenar la direccion del esclavo requerido por el Master
 unsigned short funcionRpi;                              //Variable para alamacenar el tipo de funcion requerida por el Master
@@ -51,8 +52,8 @@ unsigned short numDatos;                                //Variable para alamcena
 // Funcion para realizar la Configuracion de parametros
 void ConfiguracionPrincipal(){
 
-     ANSELB = 0;                                       //Configura PORTB como digital
-     ANSELC = 0;                                       //Configura PORTC como digital
+     ANSELB = 0;                                        //Configura PORTB como digital
+     ANSELC = 0;                                        //Configura PORTC como digital
      
      TRISB0_bit = 1;
      TRISB1_bit = 1;
@@ -72,8 +73,8 @@ void ConfiguracionPrincipal(){
      INTCON.INT0IF = 0;                                 //Limpia la bandera de interrupcion externa INT0
      INTCON3.INT1IE = 1;                                //Habilita la interrupcion externa INT1
      INTCON3.INT1IF = 0;                                //Limpia la bandera de interrupcion externa INT1
-     //INTCON2.INTEDG0 = 0;                               //Interrupcion INT0 en flanco de bajada
-     //INTCON2.INTEDG1 = 0;                               //Interrupcion INT1 en flanco de bajada
+     //INTCON2.INTEDG0 = 0;                             //Interrupcion INT0 en flanco de bajada
+     //INTCON2.INTEDG1 = 0;                             //Interrupcion INT1 en flanco de bajada
 
      Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
 
@@ -93,17 +94,69 @@ void EnviarMensajeSPI(unsigned char *trama, unsigned short sizePDU){
 }
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para recuperar los datos que le envia el CPcomunicacion
+//Esta funcion primero envia una trama de 3 dummy bytes para recuperar el numero de bytes
+unsigned short RecuperarRespuestaSPI(){
+      /*CS = 0;
+      SSPBUF = 0xC0;
+      Delay_ms(1);
+      SSPBUF = 0xCC;
+      Delay_ms(1);
+      SSPBUF = 0xC1;
+      Delay_ms(1);
+      CS = 1;*/
+     
+     unsigned short numBytes;
+     tramaSPI[0] = 0xC0;
+     tramaSPI[1] = 0xCC;
+     tramaSPI[2] = 0xC1;
+     CS = 0;
+     for (x=0;x<3;x++){
+         SSPBUF = tramaSPI[x];                          //Llena el buffer de salida con cada valor de la tramaSPI
+         if (x==2){
+            while (SSP1STAT.BF!=1);
+            numBytes = SSPBUF;                          //Recupera el numero de bytes de la trama de respuesta
+         }
+         Delay_ms(1);
+     }
+     CS = 1;
+     
+     Delay_ms(100);
+     
+     if ((numbytes!=0xC0)||(numbytes!=0xCC)||(numbytes!=0xC1)||(numbytes!=0x00)){
+        CS = 0;
+        SSPBUF = 0xD0;
+        Delay_ms(1);
+        for (x=0;x<(numBytes);x++){
+            SSPBUF = 0xDD;
+            while (SSP1STAT.BF!=1);
+            tramaRespuesta[x] = SSPBUF;
+            Delay_ms(1);
+        }
+        SSPBUF = 0xD1;
+        Delay_ms(1);
+        CS = 1;
+     }
+     
+     for (x=0;x<(numBytes);x++){
+         UART1_Write(tramaRespuesta[x]);
+     }
+     
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 ////////////////////////////////////////////////////////////// Interrupciones //////////////////////////////////////////////////////////////
 void interrupt(){
 
-//Interrupcion Externa
+//Interrupcion Externa 1
 //Esta interrupcion simula lo que envia la RPi al dispositivo CPComunicacion
      if (INTCON3.INT1IF==1){
         INTCON3.INT1IF = 0;                             //Limpia la badera de interrupcion externa
         
         //Aqui va la parte donde realiza la toma de datos que llegan por SPI desde la Rpi
         //Ejemplo de trama de peticion enviada por la RPi:
-        funcionRpi = 0x01;                              //Funcion que se requiere realizar. 0x00:Lectura  0x01:Escritura
+        funcionRpi = 0x00;                              //Funcion que se requiere realizar. 0x00:Lectura  0x01:Escritura
         direccionRpi = 0x09;                            //Direccion del esclavo destinatario de la peticion
         registroRPi = 0x02;                             //Registro que se desea leer o escribir
 
@@ -138,10 +191,10 @@ void interrupt(){
                   case 2:
                        numDatos = 4;
                        tramaSPI[4] = numDatos;          //#Datos
-                       tramaSPI[5] = 0x5C;              //Datos
-                       tramaSPI[6] = 0x8F;
-                       tramaSPI[7] = 0x58;
-                       tramaSPI[8] = 0x83;
+                       tramaSPI[5] = 0xE1;              //Datos
+                       tramaSPI[6] = 0xE2;
+                       tramaSPI[7] = 0xE3;
+                       tramaSPI[8] = 0xE4;
                        tramaSPI[numDatos+5] = 0xB1;
                        break;
            }
@@ -151,6 +204,15 @@ void interrupt(){
         }
 
      }
+ 
+ //Interrupcion Externa 0
+//Esta interrupcion se activa cuando el CPComunicacion le envia un pulso para indicarle que tiene lista la trama de respuesta,
+//entonces la RPi primero genera 3 dummy bytes  para recuperar el numero de bytes que va a recuperar, para despues generar el numero de dummy bytes necesarios para recuperar la trama de respuesta
+     if (INTCON.INT0IF==1){
+        INTCON.INT0IF = 0;                                //Limpia la badera de interrupcion externa
+        RecuperarRespuestaSPI();
+     }
+     
  }
 
 
