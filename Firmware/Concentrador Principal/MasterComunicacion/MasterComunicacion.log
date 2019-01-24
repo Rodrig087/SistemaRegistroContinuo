@@ -2,13 +2,13 @@
 hint: 0	1139	Available RAM: 352 [bytes], Available ROM: 8192 [bytes]	 
 diagnostics: 0	122	Compilation Started	MasterComunicacion.c
 warning: 72	1509	Generated baud rate is 19231 bps (error = 0.16 percent)	MasterComunicacion.c
-warning: 105	1505	Suspicious pointer conversion	MasterComunicacion.c
-warning: 150	1505	Suspicious pointer conversion	MasterComunicacion.c
-diagnostics: 274	123	Compiled Successfully	MasterComunicacion.c
-diagnostics: 0	127	All files Compiled in 63 ms	 
+warning: 119	1505	Suspicious pointer conversion	MasterComunicacion.c
+warning: 164	1505	Suspicious pointer conversion	MasterComunicacion.c
+diagnostics: 329	123	Compiled Successfully	MasterComunicacion.c
+diagnostics: 0	127	All files Compiled in 78 ms	 
 hint: 0	1144	Used RAM (bytes): 140 (40%)  Free RAM (bytes): 212 (60%)	Used RAM (bytes): 140 (40%)  Free RAM (bytes): 212 (60%)
-hint: 0	1144	Used ROM (program words): 530 (6%)  Free ROM (program words): 7662 (94%)	Used ROM (program words): 530 (6%)  Free ROM (program words): 7662 (94%)
+hint: 0	1144	Used ROM (program words): 591 (7%)  Free ROM (program words): 7601 (93%)	Used ROM (program words): 591 (7%)  Free ROM (program words): 7601 (93%)
 diagnostics: 0	125	Project Linked Successfully	MasterComunicacion.mcppi
-diagnostics: 0	128	Linked in 47 ms	 
-diagnostics: 0	129	Project 'MasterComunicacion.mcppi' completed: 141 ms	 
-diagnostics: 0	103	Finished successfully: 22 ene. 2019, 17:02:02	MasterComunicacion.mcppi
+diagnostics: 0	128	Linked in 31 ms	 
+diagnostics: 0	129	Project 'MasterComunicacion.mcppi' completed: 125 ms	 
+diagnostics: 0	103	Finished successfully: 24 ene. 2019, 10:11:02	MasterComunicacion.mcppi

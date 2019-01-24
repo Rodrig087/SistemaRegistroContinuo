@@ -178,10 +178,8 @@ b5
 b6
 b7
 banesc
-banid
 banked
 banlec
-banpet
 banresp
 banspi
 bantc
@@ -729,6 +727,7 @@ eepgd_bit
 end1
 end2
 enviarack
+enviarerrorspi
 enviarmensajers485
 enviarmensajespi
 enviarnack
@@ -810,7 +809,6 @@ hlvdl3
 hlvdl3_bit
 i
 i1
-i2
 ics_auto
 ics_off
 idissen
@@ -917,7 +915,6 @@ iu1
 iu1_direction
 ivrst
 ivrst_bit
-j
 kbi0
 kbi0_bit
 kbi1
@@ -1101,8 +1098,6 @@ not_write_bit
 not_write_ssp1stat_bit
 nrm3232
 nrm4032
-numbytesspi
-numdatosesc
 nvcfg0
 nvcfg0_bit
 nvcfg1
@@ -1366,7 +1361,6 @@ pstr1con
 pstr2con
 pstr3con
 pstrcon
-puertotot
 pvcfg0
 pvcfg0_bit
 pvcfg1
@@ -1504,10 +1498,7 @@ re_de
 re_de_direction
 re3
 re3_bit
-regesc
-registro
 res032
-respspi
 ri
 ri_bit
 rint
@@ -1900,7 +1891,6 @@ t2outps2
 t2outps2_bit
 t2outps3
 t2outps3_bit
-t2size
 t3cki_portb
 t3cki_portb_bit
 t3cki_portc

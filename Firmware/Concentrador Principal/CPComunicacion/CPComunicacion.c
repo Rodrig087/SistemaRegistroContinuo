@@ -16,13 +16,23 @@ Observaciones:
 // Codigo NACK: AFh
 // Direccion H/S: FDh, FEh, FFh
 
+// Codigos de Error:                 //Quien detecta:
+// E0: H/S inalcansable              //Concentrador principal
+// E1: Error en canal RS485          //Concentrado principal
+// E2: Esclavo inalcansable          //Hub/Splitter
+// E3: Error en canal inalambrico    //Hub/Splitter
+// E4: Funcion no disponible         //Esclavo
+// E5: Registro no diponible         //Esclavo
+// E6: Cantidad fuera de rango       //Esclavo
+
+
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 //Variables y contantes para la peticion y respuesta de datos
 sbit AUX at RB3_bit;                                    //Definicion del pin de indicador auxiliar para hacer pruebas
 sbit AUX_Direction at TRISB3_bit;
 sbit IU1 at RB4_bit;                                    //Definicion del pin de indicador de interrupcion por UART1
 sbit IU1_Direction at TRISB4_bit;
-sbit RInt at RC1_bit;                                      //Definicion del pin RInt
+sbit RInt at RC1_bit;                                   //Definicion del pin RInt
 sbit RInt_Direction at TRISC1_bit;
 sbit RE_DE at RC2_bit;                                  //Definicion del pin RE_DE
 sbit RE_DE_Direction at TRISC2_bit;
@@ -36,25 +46,21 @@ const short NACK = 0xAF;                                //Constante de mensaje N
 const unsigned int POLMODBUS = 0xA001;                  //Polinomio para el calculo del CRC
 
 unsigned short byteTrama;                               //Variable de bytes de trama de datos
-unsigned short t1Size, t2Size, pduSize;                 //Variables de longitud de tramas de peticion, respuesta y PDU
+unsigned short t1Size,pduSize;                          //Variables de longitud de tramas de peticion, respuesta y PDU
 unsigned char tramaRS485[25];                           //Vector de trama de datos del puerto UART1
 unsigned char tramaPDU[15];                             //Vector para almacenar los valores de la trama PDU creada localmente
 unsigned char pduSPI[10];                               //Vector de trama de datos del puerto UART2
-short i1, i2;                                           //Subindices para el manejo de las tramas de datos
+unsigned short i1;                                      //Subindices para el manejo de las tramas de datos
 
 unsigned short banTC, banTI, banTF;                     //Banderas de trama completa, inicio de trama y final de trama
 
 unsigned short tramaOk;                                 //Variable para indicar si la trama de datos llego correctamente;
 unsigned short contadorTOD;                             //Contador de Time-Out-Dispositivo
 unsigned short contadorNACK;                            //Contador de NACK
-unsigned short puertoTOT;                               //Especifica el puerto por cual enviar el NACK en caso de producirse un Time-Out-Trama
 
-unsigned short regEsc;                                  //Variable para almacenar el registro que se quiere escribir
-unsigned short numDatosEsc;                             //Variable para almacenar el numero de datos que se desea escribir en un registro de escritura
-unsigned short
-unsigned short i, x, j;
-unsigned short respSPI, buffer, registro, numBytesSPI;
-unsigned short banPet, banResp, banSPI, banLec, banId, banEsc;
+unsigned short i, x;
+unsigned short  buffer;
+unsigned short  banResp, banSPI, banLec, banEsc;
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -66,40 +72,40 @@ unsigned short banPet, banResp, banSPI, banLec, banId, banEsc;
 // Funcion para realizar la Configuracion de parametros
 void ConfiguracionPrincipal(){
 
-     ANSELB = 0;                                       //Configura PORTB como digital
-     ANSELC = 0;                                       //Configura PORTC como digital
+     ANSELB = 0;                                        //Configura PORTB como digital
+     ANSELC = 0;                                        //Configura PORTC como digital
 
-     TRISB1_bit = 1;                                   //Configura el pin B1 como entrada
-     TRISB3_bit = 0;                                   //Configura el pin B3 como salida
-     TRISB4_bit = 0;                                   //Configura el pin B4 como salida
-     TRISC1_bit = 0;                                   //Configura el pin C1 como salida
-     TRISC2_bit = 0;                                   //Configura el pin C2 como salida
+     TRISB1_bit = 1;                                    //Configura el pin B1 como entrada
+     TRISB3_bit = 0;                                    //Configura el pin B3 como salida
+     TRISB4_bit = 0;                                    //Configura el pin B4 como salida
+     TRISC1_bit = 0;                                    //Configura el pin C1 como salida
+     TRISC2_bit = 0;                                    //Configura el pin C2 como salida
 
-     INTCON.GIE = 1;                                   //Habilita las interrupciones globales
-     INTCON.PEIE = 1;                                  //Habilita las interrupciones perifericas
+     INTCON.GIE = 1;                                    //Habilita las interrupciones globales
+     INTCON.PEIE = 1;                                   //Habilita las interrupciones perifericas
 
      //Configuracion del USART
-     PIE1.RC1IE = 1;                                   //Habilita la interrupcion en UART1 receive
-     UART1_Init(19200);                                //Inicializa el UART1 a 19200 bps
+     PIE1.RC1IE = 1;                                    //Habilita la interrupcion en UART1 receive
+     UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
      
      //Configuracion del puerto SPI en modo Esclavo
      SPI1_Init_Advanced(_SPI_SLAVE_SS_ENABLE,_SPI_DATA_SAMPLE_MIDDLE,_SPI_CLK_IDLE_HIGH,_SPI_LOW_2_HIGH);
-     PIE1.SSP1IE = 1;                                  //Habilita la interrupcion por SPI
+     PIE1.SSP1IE = 1;                                   //Habilita la interrupcion por SPI
 
      //Configuracion del TMR1 con un tiempo de 250ms
-     T1CON = 0x30;                                     //Timer1 Input Clock Prescale Select bits
+     T1CON = 0x30;                                      //Timer1 Input Clock Prescale Select bits
      TMR1H = 0x0B;
      TMR1L = 0xDC;
-     PIR1.TMR1IF = 0;                                  //Limpia la bandera de interrupcion del TMR1
-     PIE1.TMR1IE = 1;                                  //Habilita la interrupción de desbordamiento TMR1
+     PIR1.TMR1IF = 0;                                   //Limpia la bandera de interrupcion del TMR1
+     PIE1.TMR1IE = 1;                                   //Habilita la interrupción de desbordamiento TMR1
 
      //Configuracion del TMR2 con un tiempo de 2ms
-     T2CON = 0x78;                                     //Timer2 Output Postscaler Select bits
+     T2CON = 0x78;                                      //Timer2 Output Postscaler Select bits
      PR2 = 249;
-     PIR1.TMR2IF = 0;                                  //Limpia la bandera de interrupcion del TMR2
-     PIE1.TMR2IE = 1;                                  //Habilita la interrupción de desbordamiento TMR2
+     PIR1.TMR2IF = 0;                                   //Limpia la bandera de interrupcion del TMR2
+     PIE1.TMR2IE = 1;                                   //Habilita la interrupción de desbordamiento TMR2
 
-     Delay_ms(100);                                    //Espera hasta que se estabilicen los cambios
+     Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -136,7 +142,6 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
      crcTrama = 1;
      for (j=0;j<tramaPDUSize;j++){                      //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
          pdu[j] = trama[j+1];
-        //UART1_Write(pdu[j]);
      }
      crcCalculado = CalcularCRC(pdu, tramaPDUSize);     //Invoca la funcion para el calculo del CRC de la trama PDU
      ptrCRCTrama = &CRCTrama;                           //Asociacion del puntero CRCPDU
@@ -154,7 +159,6 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
 //Funcion para el envio de una trama ACK
 //Esta funcion indica que el mensaje fue recibido satisfactoriamente
 void EnviarACK(unsigned char puerto){
-     unsigned short i;
      if (puerto==1){
         RE_DE = 1;                                      //Establece el Max485 en modo escritura
         UART1_Write(ACK);                               //Envia el valor de la Cabecera de la trama ACK por el puerto UART1
@@ -171,7 +175,6 @@ void EnviarACK(unsigned char puerto){
 //Funcion para el envio de una trama NACK
 //Esta funcion indica que el mensaje recibido esta corrompido
 void EnviarNACK(unsigned char puerto){
-     unsigned short i;
      if (puerto==1){
         RE_DE = 1;                                      //Establece el Max485 en modo escritura
         UART1_Write(NACK);                              //Envia el valor de la Cabecera de la trama ACK por el puerto UART1
@@ -193,7 +196,7 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
      unsigned short *ptrCRCPDU;
      CRCPDU = CalcularCRC(PDU, sizePDU);                //Calcula el CRC de la trama PDU
      ptrCRCPDU = &CRCPDU;                               //Asociacion del puntero CrcTramaError
-     //Rellena la trama que se enviara por RS485 con los datos de la trama PDU
+     //Rellena la trama que se enviara por RS485 con los datos de la trama PDU:
      tramaRS485[0] = HDR;                               //Añade la cabecera a la trama a enviar
      tramaRS485[sizePDU+2] = *ptrCrcPdu;                //Asigna al elemento CRC_LSB de la trama de respuesta el LSB de la variable crcTramaError
      tramaRS485[sizePDU+1] = *(ptrCrcPdu+1);            //Asigna al elemento CRC_MSB de la trama de respuesta el MSB de la variable crcTramaError
@@ -202,6 +205,7 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
      RE_DE = 1;                                         //Establece el Max485 en modo escritura
      for (i=0;i<(sizePDU+5);i++){
          if ((i>=1)&&(i<=sizePDU)){
+            //Delay_ms(3);
             UART1_Write(PDU[i-1]);                      //Envia el contenido de la trama PDU a travez del UART1
          } else {
             UART1_Write(tramaRS485[i]);                 //Envia el contenido del resto de la trama de peticion a travez del UART1
@@ -219,13 +223,30 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para el envio de datos a la RPi por medio del puerto SPI
-//Esta funcion recibe como parametros la trama de datos que se recibio por RS485 y su numero de elementos
+//Esta funcion recibe como parametros la trama de datos que se recibio por RS485 y su numero de elementos. Se encarga de recuperar la trama PDU que se enviara por SPI
+//ademas de generar el pulso necesario que producira la interrupcion en la RPi
 void EnviarMensajeSPI(unsigned char *trama, unsigned char pduSize2){
      unsigned short j;
      for (j=0;j<pduSize2;j++){                          //Rellena la trama de PDU con los datos de interes de la trama de peticion, es decir, obviando los ultimos 2 bytes de CRC y los 2 de End
          pduSPI[j] = trama[j+1];
          UART1_Write(pduSPI[j]);
      }
+     RInt = 1;                                          //Envia el pulso para generar la interrupcion externa en la RPi
+     Delay_ms(1);
+     RInt = 0;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para el envio de un mensaje de error a la RPi por medio del puerto SPI
+//Esta funcion llena la trama PDU que se enviara a la RPi con la informacion del error ocurrido
+void EnviarErrorSPI(unsigned char *trama, unsigned short codigoError){
+     pduSPI[0] = trama[0];                              //Guarda el identificador de la trama PDU de peticion
+     pduSPI[1] = 0xEE;                                  //Agrega el codigo 0xEE para indicar que se trata de un mensaje de error
+     pduSPI[2] = trama[2];                              //Guarda el numero de registro que se queria leer o escribir
+     pduSPI[3] = 0x01;                                  //Indica eñ numero de bytes de pyload que se va a enviar
+     pduSPI[4] = codigoError;                           //Agrega el codigo de error producido
+     t1Size = 5;
      RInt = 1;                                          //Envia el pulso para generar la interrupcion externa en la RPi
      Delay_ms(1);
      RInt = 0;
@@ -275,7 +296,7 @@ void interrupt(void){
         if ((buffer==0xD0)&&(banSPI==1)){
            banSPI = 2;
         }
-        if ((buffer!=0xD1)&&(banSPI==2)){              //
+        if ((buffer!=0xD1)&&(banSPI==2)){                     //
            SSPBUF = pduSPI[i];
            Delay_ms(1);
            i++;
@@ -310,10 +331,11 @@ void interrupt(void){
                T1CON.TMR1ON = 0;                              //Apaga el Timer1
                TMR1IF_bit = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR1
                if (contadorNACK<3){
-                  //EnviarMensajeRS485(tramaSPI, sizeSPI);    //Si recibe un NACK como respuesta, le renvia la trama
+                  EnviarMensajeRS485(tramaPDU,pduSize);       //Si recibe un NACK como respuesta, le renvia la trama
                   contadorNACK++;                             //Incrementa en una unidad el valor del contador de NACK
                } else {
                   contadorNACK = 0;                           //Limpia el contador de Time-Out-Trama
+                  EnviarErrorSPI(tramaPDU,0xE1);              //Responde al Master notificandole del error
                }
                banTI=0;                                       //Limpia la bandera de inicio de trama
                byteTrama=0;                                   //Limpia la variable del byte de la trama de peticion
@@ -360,7 +382,7 @@ void interrupt(void){
            tramaOk = VerificarCRC(tramaRS485,t1Size);         //Calcula y verifica el CRC de la trama de peticion
            if (tramaOk==1){
                EnviarACK(1);                                  //Si la trama llego sin errores responde con un ACK al H/S
-               EnviarMensajeSPI(tramaRS485,t1Size);         //Invoca esta funcion para enviar los datos a la RPi por SPI
+               EnviarMensajeSPI(tramaRS485,t1Size);           //Invoca esta funcion para enviar los datos a la RPi por SPI
            } else {
                EnviarNACK(1);                                 //Si hubo algun error en la trama se envia un NACK al H/S
            }
@@ -380,10 +402,10 @@ void interrupt(void){
         TMR1IF_bit = 0;                                       //Limpia la bandera de interrupcion por desbordamiento del TMR1
         T1CON.TMR1ON = 0;                                     //Apaga el Timer1
         if (contadorTOD<3){
-           //EnviarMensajeRS485(tramaPDU, sizeTramaPDU);      //Reenvia la trama por el bus RS485
+           EnviarMensajeRS485(tramaPDU,pduSize);              //Reenvia la trama por el bus RS485
            contadorTOD++;                                     //Incrementa el contador de Time-Out-Dispositivo en una unidad
         } else {
-           //EnviarMensajeSPI()                               //Responde al Master notificandole del error
+           EnviarErrorSPI(tramaPDU,0xE0);                     //Responde al Master notificandole del error
            contadorTOD = 0;                                   //Limpia el contador de Time-Out-Dispositivo
         }
      }
@@ -399,12 +421,7 @@ void interrupt(void){
         banTI = 0;                                            //Limpia la bandera de inicio de trama
         i1 = 0;                                               //Limpia el subindice de la trama de peticion
         banTC = 0;                                            //Limpia la bandera de trama completa(Por si acaso)
-        if (puertoTOT==1){
-            EnviarNACK(1);                                    //Envia un NACK por el puerto UART1 para solicitar el reenvio de la trama
-        } else if (puertoTOT==2) {
-            EnviarNACK(2);                                    //Envia un NACK por el puerto UART2 para solicitar el reenvio de la trama
-        }
-        puertoTOT = 0;                                        //Encera la variable para evitar confusiones
+        EnviarNACK(1);
      }
 
 }
@@ -417,7 +434,6 @@ void main() {
      RE_DE = 0;                                               //Establece el Max485-1 en modo de lectura;
      RInt = 0;
      i1=0;
-     i2=0;
      contadorTOD = 0;                                         //Inicia el contador de Time-Out-Dispositivo
      contadorNACK = 0;                                        //Inicia el contador de NACK
      banTI=0;                                                 //Limpia la bandera de inicio de trama

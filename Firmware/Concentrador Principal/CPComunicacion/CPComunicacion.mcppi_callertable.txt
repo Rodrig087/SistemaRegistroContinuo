@@ -8,6 +8,7 @@ interrupt
 		UART1_Write
 		UART1_Tx_Idle
 	UART1_Read
+	EnviarErrorSPI
 	VerificarCRC
 		CalcularCRC
 	EnviarACK

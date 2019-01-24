@@ -71,6 +71,20 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto UART
      UART1_Init(19200);                                 //Inicializa el UART1 a 19200 bps
      PIE1.RCIE = 1;
+     
+     //Configuracion del TMR1 con un tiempo de 250ms
+     T1CON = 0x30;
+     PIR1.TMR1IF = 0;
+     TMR1H = 0x0B;
+     TMR1L = 0xDC;
+     PIE1.TMR1IE = 1;
+     INTCON = 0xC0;
+
+     //Configuracion del TMR2 con un tiempo de 2ms
+     T2CON = 0x78;
+     PR2 = 249;
+     PIR1.TMR2IF = 0;
+     PIE1.TMR2IE = 1;
 
      Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
 
@@ -203,21 +217,32 @@ void interrupt(){
                banTI = 1;                                   //Activa la bandera de inicio de trama
                i1 = 0;                                      //Define en 1 el subindice de la trama de peticion
                tramaOk = 9;                                 //Limpia la variable que indica si la trama ha llegado correctamente
+               //Inicializa el Time-Out-Trama, t=2ms
+               T2CON.TMR2ON = 1;                            //Enciende el Timer2
+               PR2 = 249;                                   //Se carga el valor del preload correspondiente al tiempo de 2ms
             }
         }
 
         if (banTI==1){                                      //Verifica que la bandera de inicio de trama este activa
+           PIR1.TMR2IF = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR2
+           T2CON.TMR2ON = 0;                                //Apaga el Timer2
            if (byteTrama!=END2){                            //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
               tramaRS485[i1] = byteTrama;                   //Almacena el dato en la trama de respuesta
               i1++;                                         //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
               banTF = 0;                                    //Limpia la bandera de final de trama
+              T2CON.TMR2ON = 1;                             //Enciende el Timer2
+              PR2 = 249;
            } else {
               tramaRS485[i1] = byteTrama;                   //Almacena el dato en la trama de respuesta
               banTF = 1;                                    //Si el dato recibido es el primer byte de final de trama activa la bandera
+              T2CON.TMR2ON = 1;                             //Enciende el Timer2
+              PR2 = 249;
            }
            if (BanTF==1){                                   //Verifica que se cumpla la condicion de final de trama
               banTI = 0;                                    //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
               banTC = 1;                                    //Activa la bandera de trama completa
+              PIR1.TMR2IF = 0;                              //Limpia la bandera de interrupcion por desbordamiento del TMR2
+              T2CON.TMR2ON = 0;                             //Apaga el Timer2
            }
         }
         
@@ -240,6 +265,36 @@ void interrupt(){
 
         PIR1.RCIF = 0;
 
+     }
+     
+//Interrupcion por TIMER1 (Time-Out-Dispositivo)
+//Si se produce una interrupcion por desbordamiento del TMR1 quiere decir que se cumplio el tiempo establecido por el Time-Out-Dispositivo,
+//
+     if (PIR1.TMR1IF==1){
+        TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
+        T1CON.TMR1ON = 0;                               //Apaga el Timer1
+        if (contadorTOD<3){
+           //EnviarMensajeRS485(tramaSPI, sizeSPI);       //Reenvia la trama por el bus RS485
+           contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
+        } else {
+           //EnviarMensajeSPI()                         //Responde a la RPI notificandole del error
+           contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
+        }
+     }
+
+//Interrupcion por TIMER2 (Time-Out-Trama)
+//Si se produce una interrupcion por desbordamiento del TMR2 quiere decir que se cumplio el tiempo establecido por el Time-Out-Trama,
+//por lo que se debe descartar la trama actual. Esto se logra limpiando la bandera de inicio de trama y encerando el subindice de trama,
+//de esta manera si llega otro dato por el Uart y este es diferente del encabezamiento de inicio de trama ya no se almacenara en la trama de respuesta.
+//Tambien se envia un NACK para pedir el renvio de la trama
+     if (PIR1.TMR2IF==1){
+        PIR1.TMR2IF = 0;                                //Limpia la bandera de interrupcion por desbordamiento del TMR2
+        T2CON.TMR2ON = 0;                               //Apaga el Timer2
+        i1 = 0;                                         //Limpia el subindice de la trama de peticion
+        banTI = 0;                                      //Limpia la bandera de inicio de trama
+        banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
+        banTF = 0;
+        EnviarNACK();                                   //Envia un NACK para solicitar el reenvio de la trama
      }
 
 }

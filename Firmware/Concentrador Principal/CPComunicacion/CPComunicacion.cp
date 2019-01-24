@@ -1,5 +1,5 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Concentrador Principal/CPComunicacion/CPComunicacion.c"
-#line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Concentrador Principal/CPComunicacion/CPComunicacion.c"
+#line 31 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Concentrador Principal/CPComunicacion/CPComunicacion.c"
 sbit AUX at RB3_bit;
 sbit AUX_Direction at TRISB3_bit;
 sbit IU1 at RB4_bit;
@@ -18,25 +18,21 @@ const short NACK = 0xAF;
 const unsigned int POLMODBUS = 0xA001;
 
 unsigned short byteTrama;
-unsigned short t1Size, t2Size, pduSize;
+unsigned short t1Size,pduSize;
 unsigned char tramaRS485[25];
 unsigned char tramaPDU[15];
 unsigned char pduSPI[10];
-short i1, i2;
+unsigned short i1;
 
 unsigned short banTC, banTI, banTF;
 
 unsigned short tramaOk;
 unsigned short contadorTOD;
 unsigned short contadorNACK;
-unsigned short puertoTOT;
 
-unsigned short regEsc;
-unsigned short numDatosEsc;
-unsigned short
-unsigned short i, x, j;
-unsigned short respSPI, buffer, registro, numBytesSPI;
-unsigned short banPet, banResp, banSPI, banLec, banId, banEsc;
+unsigned short i, x;
+unsigned short buffer;
+unsigned short banResp, banSPI, banLec, banEsc;
 
 
 
@@ -118,7 +114,6 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
  crcTrama = 1;
  for (j=0;j<tramaPDUSize;j++){
  pdu[j] = trama[j+1];
-
  }
  crcCalculado = CalcularCRC(pdu, tramaPDUSize);
  ptrCRCTrama = &CRCTrama;
@@ -136,7 +131,6 @@ unsigned short VerificarCRC(unsigned char* trama, unsigned char tramaPDUSize){
 
 
 void EnviarACK(unsigned char puerto){
- unsigned short i;
  if (puerto==1){
  RE_DE = 1;
  UART1_Write(ACK);
@@ -153,7 +147,6 @@ void EnviarACK(unsigned char puerto){
 
 
 void EnviarNACK(unsigned char puerto){
- unsigned short i;
  if (puerto==1){
  RE_DE = 1;
  UART1_Write(NACK);
@@ -184,6 +177,7 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
  RE_DE = 1;
  for (i=0;i<(sizePDU+5);i++){
  if ((i>=1)&&(i<=sizePDU)){
+
  UART1_Write(PDU[i-1]);
  } else {
  UART1_Write(tramaRS485[i]);
@@ -202,12 +196,29 @@ void EnviarMensajeRS485(unsigned char *PDU, unsigned char sizePDU){
 
 
 
+
 void EnviarMensajeSPI(unsigned char *trama, unsigned char pduSize2){
  unsigned short j;
  for (j=0;j<pduSize2;j++){
  pduSPI[j] = trama[j+1];
  UART1_Write(pduSPI[j]);
  }
+ RInt = 1;
+ Delay_ms(1);
+ RInt = 0;
+}
+
+
+
+
+
+void EnviarErrorSPI(unsigned char *trama, unsigned short codigoError){
+ pduSPI[0] = trama[0];
+ pduSPI[1] = 0xEE;
+ pduSPI[2] = trama[2];
+ pduSPI[3] = 0x01;
+ pduSPI[4] = codigoError;
+ t1Size = 5;
  RInt = 1;
  Delay_ms(1);
  RInt = 0;
@@ -292,10 +303,11 @@ void interrupt(void){
  T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
  if (contadorNACK<3){
-
+ EnviarMensajeRS485(tramaPDU,pduSize);
  contadorNACK++;
  } else {
  contadorNACK = 0;
+ EnviarErrorSPI(tramaPDU,0xE1);
  }
  banTI=0;
  byteTrama=0;
@@ -362,10 +374,10 @@ void interrupt(void){
  TMR1IF_bit = 0;
  T1CON.TMR1ON = 0;
  if (contadorTOD<3){
-
+ EnviarMensajeRS485(tramaPDU,pduSize);
  contadorTOD++;
  } else {
-
+ EnviarErrorSPI(tramaPDU,0xE0);
  contadorTOD = 0;
  }
  }
@@ -381,12 +393,7 @@ void interrupt(void){
  banTI = 0;
  i1 = 0;
  banTC = 0;
- if (puertoTOT==1){
  EnviarNACK(1);
- } else if (puertoTOT==2) {
- EnviarNACK(2);
- }
- puertoTOT = 0;
  }
 
 }
@@ -399,7 +406,6 @@ void main() {
  RE_DE = 0;
  RInt = 0;
  i1=0;
- i2=0;
  contadorTOD = 0;
  contadorNACK = 0;
  banTI=0;

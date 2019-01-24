@@ -54,6 +54,20 @@ void ConfiguracionPrincipal(){
  UART1_Init(19200);
  PIE1.RCIE = 1;
 
+
+ T1CON = 0x30;
+ PIR1.TMR1IF = 0;
+ TMR1H = 0x0B;
+ TMR1L = 0xDC;
+ PIE1.TMR1IE = 1;
+ INTCON = 0xC0;
+
+
+ T2CON = 0x78;
+ PR2 = 249;
+ PIR1.TMR2IF = 0;
+ PIE1.TMR2IE = 1;
+
  Delay_ms(100);
 
 }
@@ -185,21 +199,32 @@ void interrupt(){
  banTI = 1;
  i1 = 0;
  tramaOk = 9;
+
+ T2CON.TMR2ON = 1;
+ PR2 = 249;
  }
  }
 
  if (banTI==1){
+ PIR1.TMR2IF = 0;
+ T2CON.TMR2ON = 0;
  if (byteTrama!=END2){
  tramaRS485[i1] = byteTrama;
  i1++;
  banTF = 0;
+ T2CON.TMR2ON = 1;
+ PR2 = 249;
  } else {
  tramaRS485[i1] = byteTrama;
  banTF = 1;
+ T2CON.TMR2ON = 1;
+ PR2 = 249;
  }
  if (BanTF==1){
  banTI = 0;
  banTC = 1;
+ PIR1.TMR2IF = 0;
+ T2CON.TMR2ON = 0;
  }
  }
 
@@ -222,6 +247,36 @@ void interrupt(){
 
  PIR1.RCIF = 0;
 
+ }
+
+
+
+
+ if (PIR1.TMR1IF==1){
+ TMR1IF_bit = 0;
+ T1CON.TMR1ON = 0;
+ if (contadorTOD<3){
+
+ contadorTOD++;
+ } else {
+
+ contadorTOD = 0;
+ }
+ }
+
+
+
+
+
+
+ if (PIR1.TMR2IF==1){
+ PIR1.TMR2IF = 0;
+ T2CON.TMR2ON = 0;
+ i1 = 0;
+ banTI = 0;
+ banTC = 0;
+ banTF = 0;
+ EnviarNACK();
  }
 
 }
