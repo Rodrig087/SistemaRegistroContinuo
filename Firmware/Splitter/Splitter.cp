@@ -275,8 +275,6 @@ void interrupt(void){
 
 
 
-
-
  if(PIR1.RC1IF==1){
 
  IU1 = 1;
@@ -304,7 +302,7 @@ void interrupt(void){
  T1CON.TMR1ON = 0;
  TMR1IF_bit = 0;
  if (contadorNACK<3){
- EnviarMensajeRS485(tramaRS485,sizeTramaPDU);
+
  contadorNACK++;
  } else {
  contadorNACK = 0;
@@ -345,26 +343,7 @@ void interrupt(void){
  if (tramaOk==1){
 
  EnviarACK(1);
- if (tramaRS485[1]==DIR){
- if (tramaRS485[3]==0x01){
-
- } else if (tramaRS485[3]==0x02){
-
- } else if (tramaRS485[3]==0x03){
- ConfiguracionAPC220(tramaRS485,t1Size);
- } else {
-
-
- tramaPDU[1]=DIR;
- tramaPDU[2]=0x04;
- tramaPDU[3]=0xEE;
- tramaPDU[4]=0xE0;
- sizeTramaPDU = tramaPDU[2];
- EnviarMensajeRS485(tramaRS485,sizeTramaPDU);
- }
- } else {
  RenviarTrama(2,tramaRS485,t1Size);
- }
  } else if (tramaOk==0) {
  EnviarNACK(1);
  }
@@ -373,16 +352,15 @@ void interrupt(void){
  i1 = 0;
  }
 
-
  IU1 = 0;
 
  }
-#line 492 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
+#line 469 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Splitter/Splitter.c"
  if (TMR1IF_bit==1){
  TMR1IF_bit = 0;
  T1CON.TMR1ON = 0;
  if (contadorTOD<3){
- EnviarMensajeRS485(tramaPDU, sizeTramaPDU);
+
  contadorTOD++;
  } else {
 

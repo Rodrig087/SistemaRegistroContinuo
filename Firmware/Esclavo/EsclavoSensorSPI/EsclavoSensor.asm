@@ -130,7 +130,7 @@ L_interrupt10:
 	BTFSS      STATUS+0, 2
 	GOTO       L_interrupt11
 ;EsclavoSensor.c,107 :: 		SSPBUF = regLectura;
-	MOVLW      4
+	MOVLW      3
 	MOVWF      SSPBUF+0
 ;EsclavoSensor.c,108 :: 		}
 L_interrupt11:

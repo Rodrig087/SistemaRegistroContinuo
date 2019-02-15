@@ -1,5 +1,5 @@
-#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoSensor/EsclavoSensor.c"
-#line 28 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/EsclavoSensor/EsclavoSensor.c"
+#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Esclavo/EsclavoSensorSPI/EsclavoSensor.c"
+#line 28 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Firmware/Esclavo/EsclavoSensorSPI/EsclavoSensor.c"
 sbit AUX at RB3_bit;
 sbit AUX_Direction at TRISB3_bit;
 sbit ECINT at RC2_bit;
@@ -7,7 +7,7 @@ sbit ECINT_Direction at TRISC2_bit;
 
 const short idEsclavo = 0x09;
 const short funcEsclavo = 0x01;
-const short regLectura = 0x04;
+const short regLectura = 0x03;
 const short regEscritura = 0x03;
 
 unsigned char datosEscritura[10];

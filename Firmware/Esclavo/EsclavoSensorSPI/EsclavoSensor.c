@@ -32,7 +32,7 @@ sbit ECINT_Direction at TRISC2_bit;
 
 const short idEsclavo = 0x09;                           //Constante de identificador de esclavo
 const short funcEsclavo = 0x01;                         //Constante de numero de funciones del esclavo (0x00 = Solo lectura , 0x01 = Lectura y escritura)
-const short regLectura = 0x04;                          //Numero de registros de lectura del esclavo
+const short regLectura = 0x03;                          //Numero de registros de lectura del esclavo
 const short regEscritura = 0x03;                        //Numero de registros de escritura del esclavo
 
 unsigned char datosEscritura[10];                       //Vector para almacenar los valores que se requiere escribir en los registros de escritura

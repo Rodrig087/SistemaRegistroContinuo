@@ -257,10 +257,10 @@ L_VerificarCRC10:
 	MOVF        VerificarCRC_crcCalculado_L0+1, 0 
 	XORWF       VerificarCRC_crcTrama_L0+1, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__VerificarCRC96
+	GOTO        L__VerificarCRC88
 	MOVF        VerificarCRC_crcTrama_L0+0, 0 
 	XORWF       VerificarCRC_crcCalculado_L0+0, 0 
-L__VerificarCRC96:
+L__VerificarCRC88:
 	BTFSS       STATUS+0, 2 
 	GOTO        L_VerificarCRC12
 ;Splitter.c,150 :: 		return 1;
@@ -397,10 +397,10 @@ L_RenviarTrama27:
 	XORWF       R2, 0 
 	SUBWF       R0, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__RenviarTrama100
+	GOTO        L__RenviarTrama92
 	MOVF        R1, 0 
 	SUBWF       RenviarTrama_i_L0+0, 0 
-L__RenviarTrama100:
+L__RenviarTrama92:
 	BTFSC       STATUS+0, 0 
 	GOTO        L_RenviarTrama28
 ;Splitter.c,199 :: 		UART1_Write(trama[i]);                     //Reenvia la trama de peticion a travez del UART1
@@ -447,10 +447,10 @@ L_RenviarTrama33:
 	XORWF       R2, 0 
 	SUBWF       R0, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__RenviarTrama101
+	GOTO        L__RenviarTrama93
 	MOVF        R1, 0 
 	SUBWF       RenviarTrama_i_L0+0, 0 
-L__RenviarTrama101:
+L__RenviarTrama93:
 	BTFSC       STATUS+0, 0 
 	GOTO        L_RenviarTrama34
 ;Splitter.c,205 :: 		UART2_Write(trama[i]);                     //Reenvia la trama de peticion a travez del UART2
@@ -592,10 +592,10 @@ L_EnviarMensajeRS48538:
 	XORWF       R2, 0 
 	SUBWF       R0, 0 
 	BTFSS       STATUS+0, 2 
-	GOTO        L__EnviarMensajeRS485103
+	GOTO        L__EnviarMensajeRS48595
 	MOVF        R1, 0 
 	SUBWF       EnviarMensajeRS485_i_L0+0, 0 
-L__EnviarMensajeRS485103:
+L__EnviarMensajeRS48595:
 	BTFSC       STATUS+0, 0 
 	GOTO        L_EnviarMensajeRS48539
 ;Splitter.c,232 :: 		if ((i>=1)&&(i<=sizePDU)){
@@ -607,7 +607,7 @@ L__EnviarMensajeRS485103:
 	SUBWF       FARG_EnviarMensajeRS485_sizePDU+0, 0 
 	BTFSS       STATUS+0, 0 
 	GOTO        L_EnviarMensajeRS48543
-L__EnviarMensajeRS48591:
+L__EnviarMensajeRS48583:
 ;Splitter.c,233 :: 		UART1_Write(PDU[i-1]);                      //Envia el contenido de la trama PDU a travez del UART1
 	DECF        EnviarMensajeRS485_i_L0+0, 0 
 	MOVWF       R0 
@@ -721,25 +721,25 @@ L_ConfiguracionAPC22047:
 	MOVF        ConfiguracionAPC220_k_L0+0, 0 
 	XORLW       6
 	BTFSC       STATUS+0, 2 
-	GOTO        L__ConfiguracionAPC22092
+	GOTO        L__ConfiguracionAPC22084
 	MOVF        ConfiguracionAPC220_k_L0+0, 0 
 	XORLW       8
 	BTFSC       STATUS+0, 2 
-	GOTO        L__ConfiguracionAPC22092
+	GOTO        L__ConfiguracionAPC22084
 	MOVF        ConfiguracionAPC220_k_L0+0, 0 
 	XORLW       10
 	BTFSC       STATUS+0, 2 
-	GOTO        L__ConfiguracionAPC22092
+	GOTO        L__ConfiguracionAPC22084
 	MOVF        ConfiguracionAPC220_k_L0+0, 0 
 	XORLW       12
 	BTFSC       STATUS+0, 2 
-	GOTO        L__ConfiguracionAPC22092
+	GOTO        L__ConfiguracionAPC22084
 	MOVF        ConfiguracionAPC220_k_L0+0, 0 
 	XORLW       14
 	BTFSC       STATUS+0, 2 
-	GOTO        L__ConfiguracionAPC22092
+	GOTO        L__ConfiguracionAPC22084
 	GOTO        L_ConfiguracionAPC22051
-L__ConfiguracionAPC22092:
+L__ConfiguracionAPC22084:
 ;Splitter.c,260 :: 		datos[k] = 0x20;                            //Coloca un codigo de espacio para dividir los datos
 	MOVF        ConfiguracionAPC220_k_L0+0, 0 
 	ADDWF       ConfiguracionAPC220_datos_L0+0, 0 
@@ -896,108 +896,100 @@ L_end_ConfiguracionAPC220:
 _interrupt:
 
 ;Splitter.c,290 :: 		void interrupt(void){
-;Splitter.c,298 :: 		if(PIR1.RC1IF==1){
+;Splitter.c,296 :: 		if(PIR1.RC1IF==1){
 	BTFSS       PIR1+0, 5 
 	GOTO        L_interrupt61
-;Splitter.c,300 :: 		IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
+;Splitter.c,298 :: 		IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
 	BSF         RC4_bit+0, BitPos(RC4_bit+0) 
-;Splitter.c,301 :: 		byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
+;Splitter.c,299 :: 		byteTrama = UART1_Read();                       //Lee el byte de la trama de peticion
 	CALL        _UART1_Read+0, 0
 	MOVF        R0, 0 
 	MOVWF       _byteTrama+0 
-;Splitter.c,304 :: 		if (banTI==0){                                  //Verifica que la bandera de inicio de trama este apagada
+;Splitter.c,302 :: 		if (banTI==0){                                  //Verifica que la bandera de inicio de trama este apagada
 	MOVF        _banTI+0, 0 
 	XORLW       0
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt62
-;Splitter.c,305 :: 		if (byteTrama==HDR){                        //Verifica si recibio una cabecera
+;Splitter.c,303 :: 		if (byteTrama==HDR){                        //Verifica si recibio una cabecera
 	MOVF        _byteTrama+0, 0 
 	XORLW       58
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt63
-;Splitter.c,306 :: 		banTI = 1;                                //Activa la bandera de inicio de trama
+;Splitter.c,304 :: 		banTI = 1;                                //Activa la bandera de inicio de trama
 	MOVLW       1
 	MOVWF       _banTI+0 
-;Splitter.c,307 :: 		i1 = 0;                                   //Define en 1 el subindice de la trama de peticion
+;Splitter.c,305 :: 		i1 = 0;                                   //Define en 1 el subindice de la trama de peticion
 	CLRF        _i1+0 
-;Splitter.c,308 :: 		tramaOk = 9;                              //Limpia la variable que indica si la trama ha llegado correctamente
+;Splitter.c,306 :: 		tramaOk = 9;                              //Limpia la variable que indica si la trama ha llegado correctamente
 	MOVLW       9
 	MOVWF       _tramaOk+0 
-;Splitter.c,309 :: 		puertoTOT = 1;                            //Indica al Time-Out-Trama que de ser necesario envie el NACK por el puerto UART1
+;Splitter.c,307 :: 		puertoTOT = 1;                            //Indica al Time-Out-Trama que de ser necesario envie el NACK por el puerto UART1
 	MOVLW       1
 	MOVWF       _puertoTOT+0 
-;Splitter.c,311 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
+;Splitter.c,309 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
 	BSF         T2CON+0, 2 
-;Splitter.c,312 :: 		PR2 = 249;                                //Se carga el valor del preload correspondiente al tiempo de 2ms
+;Splitter.c,310 :: 		PR2 = 249;                                //Se carga el valor del preload correspondiente al tiempo de 2ms
 	MOVLW       249
 	MOVWF       PR2+0 
-;Splitter.c,313 :: 		}
+;Splitter.c,311 :: 		}
 L_interrupt63:
-;Splitter.c,314 :: 		if (byteTrama==ACK){                         //Verifica si recibio un ACK
+;Splitter.c,312 :: 		if (byteTrama==ACK){                         //Verifica si recibio un ACK
 	MOVF        _byteTrama+0, 0 
 	XORLW       170
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt64
-;Splitter.c,316 :: 		T1CON.TMR1ON = 0;                         //Apaga el Timer1
+;Splitter.c,314 :: 		T1CON.TMR1ON = 0;                         //Apaga el Timer1
 	BCF         T1CON+0, 0 
-;Splitter.c,317 :: 		TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;Splitter.c,315 :: 		TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF         TMR1IF_bit+0, BitPos(TMR1IF_bit+0) 
-;Splitter.c,318 :: 		banTI=0;                                  //Limpia la bandera de inicio de trama
+;Splitter.c,316 :: 		banTI=0;                                  //Limpia la bandera de inicio de trama
 	CLRF        _banTI+0 
-;Splitter.c,319 :: 		}
+;Splitter.c,317 :: 		}
 L_interrupt64:
-;Splitter.c,320 :: 		if (byteTrama==NACK){                        //Verifica si recibio un NACK
+;Splitter.c,318 :: 		if (byteTrama==NACK){                        //Verifica si recibio un NACK
 	MOVF        _byteTrama+0, 0 
 	XORLW       175
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt65
-;Splitter.c,322 :: 		T1CON.TMR1ON = 0;                         //Apaga el Timer1
+;Splitter.c,320 :: 		T1CON.TMR1ON = 0;                         //Apaga el Timer1
 	BCF         T1CON+0, 0 
-;Splitter.c,323 :: 		TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
+;Splitter.c,321 :: 		TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF         TMR1IF_bit+0, BitPos(TMR1IF_bit+0) 
-;Splitter.c,324 :: 		if (contadorNACK<3){
+;Splitter.c,322 :: 		if (contadorNACK<3){
 	MOVLW       3
 	SUBWF       _contadorNACK+0, 0 
 	BTFSC       STATUS+0, 0 
 	GOTO        L_interrupt66
-;Splitter.c,325 :: 		EnviarMensajeRS485(tramaRS485,sizeTramaPDU);
-	MOVLW       _tramaRS485+0
-	MOVWF       FARG_EnviarMensajeRS485_PDU+0 
-	MOVLW       hi_addr(_tramaRS485+0)
-	MOVWF       FARG_EnviarMensajeRS485_PDU+1 
-	MOVF        _sizeTramaPDU+0, 0 
-	MOVWF       FARG_EnviarMensajeRS485_sizePDU+0 
-	CALL        _EnviarMensajeRS485+0, 0
-;Splitter.c,326 :: 		contadorNACK++;                        //Incrrmenta en una unidad el valor del contador de NACK
+;Splitter.c,324 :: 		contadorNACK++;                        //Incrrmenta en una unidad el valor del contador de NACK
 	INCF        _contadorNACK+0, 1 
-;Splitter.c,327 :: 		} else {
+;Splitter.c,325 :: 		} else {
 	GOTO        L_interrupt67
 L_interrupt66:
-;Splitter.c,328 :: 		contadorNACK = 0;                      //Solo puede resetear el contador de NACK por que no puede comunicarse con el dispositivo jerarquico superior (Master) para notificarle el error
+;Splitter.c,326 :: 		contadorNACK = 0;                      //Solo puede resetear el contador de NACK por que no puede comunicarse con el dispositivo jerarquico superior (Master) para notificarle el error
 	CLRF        _contadorNACK+0 
-;Splitter.c,329 :: 		}
+;Splitter.c,327 :: 		}
 L_interrupt67:
-;Splitter.c,330 :: 		banTI=0;                                  //Limpia la bandera de inicio de trama
+;Splitter.c,328 :: 		banTI=0;                                  //Limpia la bandera de inicio de trama
 	CLRF        _banTI+0 
-;Splitter.c,331 :: 		}
+;Splitter.c,329 :: 		}
 L_interrupt65:
-;Splitter.c,332 :: 		}
+;Splitter.c,330 :: 		}
 L_interrupt62:
-;Splitter.c,336 :: 		if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
+;Splitter.c,334 :: 		if (banTI==1){                                  //Verifica que la bandera de inicio de trama este activa
 	MOVF        _banTI+0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt68
-;Splitter.c,337 :: 		PIR1.TMR2IF = 0;                             //Limpia la bandera de interrupcion por desbordamiento del TMR2
+;Splitter.c,335 :: 		PIR1.TMR2IF = 0;                             //Limpia la bandera de interrupcion por desbordamiento del TMR2
 	BCF         PIR1+0, 1 
-;Splitter.c,338 :: 		T2CON.TMR2ON = 0;                            //Apaga el Timer2
+;Splitter.c,336 :: 		T2CON.TMR2ON = 0;                            //Apaga el Timer2
 	BCF         T2CON+0, 2 
-;Splitter.c,339 :: 		if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
+;Splitter.c,337 :: 		if (byteTrama!=END2){                        //Verifica que el dato recibido sea diferente del primer byte del delimitador de final de trama
 	MOVF        _byteTrama+0, 0 
 	XORLW       10
 	BTFSC       STATUS+0, 2 
 	GOTO        L_interrupt69
-;Splitter.c,340 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+;Splitter.c,338 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
 	MOVLW       _tramaRS485+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_tramaRS485+0)
@@ -1010,19 +1002,19 @@ L_interrupt62:
 	ADDWFC      FSR1H, 1 
 	MOVF        _byteTrama+0, 0 
 	MOVWF       POSTINC1+0 
-;Splitter.c,341 :: 		i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
+;Splitter.c,339 :: 		i1++;                                     //Aumenta el subindice en una unidad para permitir almacenar el siguiente dato del mensaje
 	INCF        _i1+0, 1 
-;Splitter.c,342 :: 		banTF = 0;                                //Limpia la bandera de final de trama
+;Splitter.c,340 :: 		banTF = 0;                                //Limpia la bandera de final de trama
 	CLRF        _banTF+0 
-;Splitter.c,343 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
+;Splitter.c,341 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
 	BSF         T2CON+0, 2 
-;Splitter.c,344 :: 		PR2 = 249;
+;Splitter.c,342 :: 		PR2 = 249;
 	MOVLW       249
 	MOVWF       PR2+0 
-;Splitter.c,345 :: 		} else {
+;Splitter.c,343 :: 		} else {
 	GOTO        L_interrupt70
 L_interrupt69:
-;Splitter.c,346 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
+;Splitter.c,344 :: 		tramaRS485[i1] = byteTrama;               //Almacena el dato en la trama de respuesta
 	MOVLW       _tramaRS485+0
 	MOVWF       FSR1 
 	MOVLW       hi_addr(_tramaRS485+0)
@@ -1035,44 +1027,44 @@ L_interrupt69:
 	ADDWFC      FSR1H, 1 
 	MOVF        _byteTrama+0, 0 
 	MOVWF       POSTINC1+0 
-;Splitter.c,347 :: 		banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
+;Splitter.c,345 :: 		banTF = 1;                                //Si el dato recibido es el primer byte de final de trama activa la bandera
 	MOVLW       1
 	MOVWF       _banTF+0 
-;Splitter.c,348 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
+;Splitter.c,346 :: 		T2CON.TMR2ON = 1;                         //Enciende el Timer2
 	BSF         T2CON+0, 2 
-;Splitter.c,349 :: 		PR2 = 249;
+;Splitter.c,347 :: 		PR2 = 249;
 	MOVLW       249
 	MOVWF       PR2+0 
-;Splitter.c,350 :: 		}
+;Splitter.c,348 :: 		}
 L_interrupt70:
-;Splitter.c,351 :: 		if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
+;Splitter.c,349 :: 		if (BanTF==1){                               //Verifica que se cumpla la condicion de final de trama
 	MOVF        _banTF+0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt71
-;Splitter.c,352 :: 		banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
+;Splitter.c,350 :: 		banTI = 0;                                //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
 	CLRF        _banTI+0 
-;Splitter.c,353 :: 		banTC = 1;                                //Activa la bandera de trama completa
+;Splitter.c,351 :: 		banTC = 1;                                //Activa la bandera de trama completa
 	MOVLW       1
 	MOVWF       _banTC+0 
-;Splitter.c,354 :: 		t1Size = tramaRS485[4]+4;                 //calcula la longitud de la trama PDU sumando 3 al valor del campo #Datos
+;Splitter.c,352 :: 		t1Size = tramaRS485[4]+4;                 //calcula la longitud de la trama PDU sumando 4 al valor del campo #Datos
 	MOVLW       4
 	ADDWF       _tramaRS485+4, 0 
 	MOVWF       _t1Size+0 
-;Splitter.c,355 :: 		PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
+;Splitter.c,353 :: 		PIR1.TMR2IF = 0;                          //Limpia la bandera de interrupcion por desbordamiento del TMR2
 	BCF         PIR1+0, 1 
-;Splitter.c,356 :: 		T2CON.TMR2ON = 0;                         //Apaga el Timer2
+;Splitter.c,354 :: 		T2CON.TMR2ON = 0;                         //Apaga el Timer2
 	BCF         T2CON+0, 2 
-;Splitter.c,357 :: 		}
+;Splitter.c,355 :: 		}
 L_interrupt71:
-;Splitter.c,358 :: 		}
+;Splitter.c,356 :: 		}
 L_interrupt68:
-;Splitter.c,361 :: 		if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
+;Splitter.c,359 :: 		if (banTC==1){                                  //Verifica que se haya completado de llenar la trama de peticion
 	MOVF        _banTC+0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt72
-;Splitter.c,362 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
+;Splitter.c,360 :: 		tramaOk = VerificarCRC(tramaRS485,t1Size);   //Calcula y verifica el CRC de la trama de peticion
 	MOVLW       _tramaRS485+0
 	MOVWF       FARG_VerificarCRC_trama+0 
 	MOVLW       hi_addr(_tramaRS485+0)
@@ -1082,81 +1074,16 @@ L_interrupt68:
 	CALL        _VerificarCRC+0, 0
 	MOVF        R0, 0 
 	MOVWF       _tramaOk+0 
-;Splitter.c,363 :: 		if (tramaOk==1){
+;Splitter.c,361 :: 		if (tramaOk==1){
 	MOVF        R0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
 	GOTO        L_interrupt73
-;Splitter.c,365 :: 		EnviarACK(1);                            //Si la trama llego sin errores responde con un ACK al Master y luego reenvia la trama a los esclavos
+;Splitter.c,363 :: 		EnviarACK(1);                            //Si la trama llego sin errores responde con un ACK al Master y luego reenvia la trama a los esclavos
 	MOVLW       1
 	MOVWF       FARG_EnviarACK_puerto+0 
 	CALL        _EnviarACK+0, 0
-;Splitter.c,366 :: 		if (tramaRS485[1]==DIR){                 //Verifica si la direccion es FFh para comprobar si se trata de una solicitud de sincronizacion.
-	MOVF        _tramaRS485+1, 0 
-	XORLW       253
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt74
-;Splitter.c,367 :: 		if (tramaRS485[3]==0x01){             //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
-	MOVF        _tramaRS485+3, 0 
-	XORLW       1
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt75
-;Splitter.c,369 :: 		} else if (tramaRS485[3]==0x02){      //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
-	GOTO        L_interrupt76
-L_interrupt75:
-	MOVF        _tramaRS485+3, 0 
-	XORLW       2
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt77
-;Splitter.c,371 :: 		} else if (tramaRS485[3]==0x03){      //Verifica el campo de Funcion para ver si se trata de una solicitud de configuracion del APC220
-	GOTO        L_interrupt78
-L_interrupt77:
-	MOVF        _tramaRS485+3, 0 
-	XORLW       3
-	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt79
-;Splitter.c,372 :: 		ConfiguracionAPC220(tramaRS485,t1Size);  //Invoca a la funcion para realizar la configuracion del modulo APC con los parametros especificados en la trama
-	MOVLW       _tramaRS485+0
-	MOVWF       FARG_ConfiguracionAPC220_trama+0 
-	MOVLW       hi_addr(_tramaRS485+0)
-	MOVWF       FARG_ConfiguracionAPC220_trama+1 
-	MOVF        _t1Size+0, 0 
-	MOVWF       FARG_ConfiguracionAPC220_tramaSize+0 
-	CALL        _ConfiguracionAPC220+0, 0
-;Splitter.c,373 :: 		} else {
-	GOTO        L_interrupt80
-L_interrupt79:
-;Splitter.c,376 :: 		tramaPDU[1]=DIR;
-	MOVLW       253
-	MOVWF       _tramaPDU+1 
-;Splitter.c,377 :: 		tramaPDU[2]=0x04;                   //Establece en 4 el numero de elementos del PDU de la trama de respuesta de error
-	MOVLW       4
-	MOVWF       _tramaPDU+2 
-;Splitter.c,378 :: 		tramaPDU[3]=0xEE;                   //Cambia el campo de funcion por el codigo 0xEE para
-	MOVLW       238
-	MOVWF       _tramaPDU+3 
-;Splitter.c,379 :: 		tramaPDU[4]=0xE0;                   //Codigo de error para funcion no disponible
-	MOVLW       224
-	MOVWF       _tramaPDU+4 
-;Splitter.c,380 :: 		sizeTramaPDU = tramaPDU[2];         //Guarda en la variable sizeTramaPDU el valor del campo #Datos de la trama PDU
-	MOVLW       4
-	MOVWF       _sizeTramaPDU+0 
-;Splitter.c,381 :: 		EnviarMensajeRS485(tramaRS485,sizeTramaPDU);   //Invoca a la funcion de Error pasandole como parametros el puerto, la Direccion y el tipo de error
-	MOVLW       _tramaRS485+0
-	MOVWF       FARG_EnviarMensajeRS485_PDU+0 
-	MOVLW       hi_addr(_tramaRS485+0)
-	MOVWF       FARG_EnviarMensajeRS485_PDU+1 
-	MOVLW       4
-	MOVWF       FARG_EnviarMensajeRS485_sizePDU+0 
-	CALL        _EnviarMensajeRS485+0, 0
-;Splitter.c,382 :: 		}
-L_interrupt80:
-L_interrupt78:
-L_interrupt76:
-;Splitter.c,383 :: 		} else {                                  //Si la direccion es diferente de FFh renvia la trama de peticion por el puerto UART2
-	GOTO        L_interrupt81
-L_interrupt74:
-;Splitter.c,384 :: 		RenviarTrama(2,tramaRS485,t1Size);     //Invoca la funcion para renviar la trama por el puerto UART2
+;Splitter.c,364 :: 		RenviarTrama(2,tramaRS485,t1Size);       //Invoca la funcion para renviar la trama por el puerto UART2
 	MOVLW       2
 	MOVWF       FARG_RenviarTrama_puerto+0 
 	MOVLW       _tramaRS485+0
@@ -1166,139 +1093,129 @@ L_interrupt74:
 	MOVF        _t1Size+0, 0 
 	MOVWF       FARG_RenviarTrama_sizePDU+0 
 	CALL        _RenviarTrama+0, 0
-;Splitter.c,385 :: 		}
-L_interrupt81:
-;Splitter.c,386 :: 		} else if (tramaOk==0) {
-	GOTO        L_interrupt82
+;Splitter.c,365 :: 		} else if (tramaOk==0) {
+	GOTO        L_interrupt74
 L_interrupt73:
 	MOVF        _tramaOk+0, 0 
 	XORLW       0
 	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt83
-;Splitter.c,387 :: 		EnviarNACK(1);                            //Si hubo algun error en la trama se envia un ACK al Master para que reenvie la trama
+	GOTO        L_interrupt75
+;Splitter.c,366 :: 		EnviarNACK(1);                           //Si hubo algun error en la trama se envia un ACK al Master para que reenvie la trama
 	MOVLW       1
 	MOVWF       FARG_EnviarNACK_puerto+0 
 	CALL        _EnviarNACK+0, 0
-;Splitter.c,388 :: 		}
-L_interrupt83:
-L_interrupt82:
-;Splitter.c,389 :: 		banTI = 0;                                    //Limpia la bandera de inicio de trama
+;Splitter.c,367 :: 		}
+L_interrupt75:
+L_interrupt74:
+;Splitter.c,368 :: 		banTI = 0;                                   //Limpia la bandera de inicio de trama
 	CLRF        _banTI+0 
-;Splitter.c,390 :: 		banTC = 0;                                    //Limpia la bandera de trama completa
+;Splitter.c,369 :: 		banTC = 0;                                   //Limpia la bandera de trama completa
 	CLRF        _banTC+0 
-;Splitter.c,391 :: 		i1 = 0;                                       //Incializa el subindice de la trama de peticion
+;Splitter.c,370 :: 		i1 = 0;                                      //Incializa el subindice de la trama de peticion
 	CLRF        _i1+0 
-;Splitter.c,392 :: 		}
+;Splitter.c,371 :: 		}
 L_interrupt72:
-;Splitter.c,395 :: 		IU1 = 0;                                         //Apaga el indicador de interrupcion por UART1
+;Splitter.c,373 :: 		IU1 = 0;                                        //Apaga el indicador de interrupcion por UART1
 	BCF         RC4_bit+0, BitPos(RC4_bit+0) 
-;Splitter.c,397 :: 		}
+;Splitter.c,375 :: 		}
 L_interrupt61:
-;Splitter.c,492 :: 		if (TMR1IF_bit==1){
+;Splitter.c,469 :: 		if (TMR1IF_bit==1){
 	BTFSS       TMR1IF_bit+0, BitPos(TMR1IF_bit+0) 
-	GOTO        L_interrupt84
-;Splitter.c,493 :: 		TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
+	GOTO        L_interrupt76
+;Splitter.c,470 :: 		TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
 	BCF         TMR1IF_bit+0, BitPos(TMR1IF_bit+0) 
-;Splitter.c,494 :: 		T1CON.TMR1ON = 0;                               //Apaga el Timer1
+;Splitter.c,471 :: 		T1CON.TMR1ON = 0;                               //Apaga el Timer1
 	BCF         T1CON+0, 0 
-;Splitter.c,495 :: 		if (contadorTOD<3){
+;Splitter.c,472 :: 		if (contadorTOD<3){
 	MOVLW       3
 	SUBWF       _contadorTOD+0, 0 
 	BTFSC       STATUS+0, 0 
-	GOTO        L_interrupt85
-;Splitter.c,496 :: 		EnviarMensajeRS485(tramaPDU, sizeTramaPDU);  //Reenvia la trama por el bus RS485
-	MOVLW       _tramaPDU+0
-	MOVWF       FARG_EnviarMensajeRS485_PDU+0 
-	MOVLW       hi_addr(_tramaPDU+0)
-	MOVWF       FARG_EnviarMensajeRS485_PDU+1 
-	MOVF        _sizeTramaPDU+0, 0 
-	MOVWF       FARG_EnviarMensajeRS485_sizePDU+0 
-	CALL        _EnviarMensajeRS485+0, 0
-;Splitter.c,497 :: 		contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
+	GOTO        L_interrupt77
+;Splitter.c,474 :: 		contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
 	INCF        _contadorTOD+0, 1 
-;Splitter.c,498 :: 		} else {
-	GOTO        L_interrupt86
-L_interrupt85:
-;Splitter.c,500 :: 		contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
+;Splitter.c,475 :: 		} else {
+	GOTO        L_interrupt78
+L_interrupt77:
+;Splitter.c,477 :: 		contadorTOD = 0;                             //Limpia el contador de Time-Out-Dispositivo
 	CLRF        _contadorTOD+0 
-;Splitter.c,501 :: 		}
-L_interrupt86:
-;Splitter.c,502 :: 		}
-L_interrupt84:
-;Splitter.c,509 :: 		if (TMR2IF_bit==1){
+;Splitter.c,478 :: 		}
+L_interrupt78:
+;Splitter.c,479 :: 		}
+L_interrupt76:
+;Splitter.c,486 :: 		if (TMR2IF_bit==1){
 	BTFSS       TMR2IF_bit+0, BitPos(TMR2IF_bit+0) 
-	GOTO        L_interrupt87
-;Splitter.c,510 :: 		TMR2IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR2
+	GOTO        L_interrupt79
+;Splitter.c,487 :: 		TMR2IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR2
 	BCF         TMR2IF_bit+0, BitPos(TMR2IF_bit+0) 
-;Splitter.c,511 :: 		T2CON.TMR2ON = 0;                               //Apaga el Timer2
+;Splitter.c,488 :: 		T2CON.TMR2ON = 0;                               //Apaga el Timer2
 	BCF         T2CON+0, 2 
-;Splitter.c,512 :: 		banTI = 0;                                      //Limpia la bandera de inicio de trama
+;Splitter.c,489 :: 		banTI = 0;                                      //Limpia la bandera de inicio de trama
 	CLRF        _banTI+0 
-;Splitter.c,513 :: 		i1 = 0;                                         //Limpia el subindice de la trama de peticion
+;Splitter.c,490 :: 		i1 = 0;                                         //Limpia el subindice de la trama de peticion
 	CLRF        _i1+0 
-;Splitter.c,514 :: 		banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
+;Splitter.c,491 :: 		banTC = 0;                                      //Limpia la bandera de trama completa(Por si acaso)
 	CLRF        _banTC+0 
-;Splitter.c,515 :: 		if (puertoTOT==1){
+;Splitter.c,492 :: 		if (puertoTOT==1){
 	MOVF        _puertoTOT+0, 0 
 	XORLW       1
 	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt88
-;Splitter.c,516 :: 		EnviarNACK(1);                              //Envia un NACK por el puerto UART1 para solicitar el reenvio de la trama
+	GOTO        L_interrupt80
+;Splitter.c,493 :: 		EnviarNACK(1);                              //Envia un NACK por el puerto UART1 para solicitar el reenvio de la trama
 	MOVLW       1
 	MOVWF       FARG_EnviarNACK_puerto+0 
 	CALL        _EnviarNACK+0, 0
-;Splitter.c,517 :: 		} else if (puertoTOT==2) {
-	GOTO        L_interrupt89
-L_interrupt88:
+;Splitter.c,494 :: 		} else if (puertoTOT==2) {
+	GOTO        L_interrupt81
+L_interrupt80:
 	MOVF        _puertoTOT+0, 0 
 	XORLW       2
 	BTFSS       STATUS+0, 2 
-	GOTO        L_interrupt90
-;Splitter.c,518 :: 		EnviarNACK(2);                              //Envia un NACK por el puerto UART2 para solicitar el reenvio de la trama
+	GOTO        L_interrupt82
+;Splitter.c,495 :: 		EnviarNACK(2);                              //Envia un NACK por el puerto UART2 para solicitar el reenvio de la trama
 	MOVLW       2
 	MOVWF       FARG_EnviarNACK_puerto+0 
 	CALL        _EnviarNACK+0, 0
-;Splitter.c,519 :: 		}
-L_interrupt90:
-L_interrupt89:
-;Splitter.c,520 :: 		puertoTOT = 0;                                  //Encera la variable para evitar confusiones
+;Splitter.c,496 :: 		}
+L_interrupt82:
+L_interrupt81:
+;Splitter.c,497 :: 		puertoTOT = 0;                                  //Encera la variable para evitar confusiones
 	CLRF        _puertoTOT+0 
-;Splitter.c,521 :: 		}
-L_interrupt87:
-;Splitter.c,523 :: 		}
+;Splitter.c,498 :: 		}
+L_interrupt79:
+;Splitter.c,500 :: 		}
 L_end_interrupt:
-L__interrupt106:
+L__interrupt98:
 	RETFIE      1
 ; end of _interrupt
 
 _main:
 
-;Splitter.c,527 :: 		void main() {
-;Splitter.c,529 :: 		ConfiguracionPrincipal();
+;Splitter.c,504 :: 		void main() {
+;Splitter.c,506 :: 		ConfiguracionPrincipal();
 	CALL        _ConfiguracionPrincipal+0, 0
-;Splitter.c,530 :: 		RE_DE = 0;                                        //Establece el Max485-1 en modo de lectura;
+;Splitter.c,507 :: 		RE_DE = 0;                                        //Establece el Max485-1 en modo de lectura;
 	BCF         RC5_bit+0, BitPos(RC5_bit+0) 
-;Splitter.c,531 :: 		ENABLE = 1;                                       //Enciende el modulo APC220
+;Splitter.c,508 :: 		ENABLE = 1;                                       //Enciende el modulo APC220
 	BSF         RB5_bit+0, BitPos(RB5_bit+0) 
-;Splitter.c,532 :: 		SET = 1;
+;Splitter.c,509 :: 		SET = 1;
 	BSF         RB4_bit+0, BitPos(RB4_bit+0) 
-;Splitter.c,533 :: 		i1=0;
+;Splitter.c,510 :: 		i1=0;
 	CLRF        _i1+0 
-;Splitter.c,534 :: 		i2=0;
+;Splitter.c,511 :: 		i2=0;
 	CLRF        _i2+0 
-;Splitter.c,535 :: 		contadorTOD = 0;                                  //Inicia el contador de Time-Out-Dispositivo
+;Splitter.c,512 :: 		contadorTOD = 0;                                  //Inicia el contador de Time-Out-Dispositivo
 	CLRF        _contadorTOD+0 
-;Splitter.c,536 :: 		contadorNACK = 0;                                 //Inicia el contador de NACK
+;Splitter.c,513 :: 		contadorNACK = 0;                                 //Inicia el contador de NACK
 	CLRF        _contadorNACK+0 
-;Splitter.c,537 :: 		banTI=0;                                          //Limpia la bandera de inicio de trama
+;Splitter.c,514 :: 		banTI=0;                                          //Limpia la bandera de inicio de trama
 	CLRF        _banTI+0 
-;Splitter.c,538 :: 		banTC=0;                                          //Limpia la bandera de trama completa
+;Splitter.c,515 :: 		banTC=0;                                          //Limpia la bandera de trama completa
 	CLRF        _banTC+0 
-;Splitter.c,539 :: 		banTF=0;                                          //Limpia la bandera de final de trama
+;Splitter.c,516 :: 		banTF=0;                                          //Limpia la bandera de final de trama
 	CLRF        _banTF+0 
-;Splitter.c,540 :: 		AUX = 0;
+;Splitter.c,517 :: 		AUX = 0;
 	BCF         RB3_bit+0, BitPos(RB3_bit+0) 
-;Splitter.c,542 :: 		}
+;Splitter.c,519 :: 		}
 L_end_main:
 	GOTO        $+0
 ; end of _main

@@ -290,11 +290,9 @@ void ConfiguracionAPC220(unsigned char *trama, unsigned char tramaSize){
 void interrupt(void){
 
 //Interrupcion UART1
-//Esta interrupcion supervisa el estado del bus RS485, cuando detecta una peticion procediente del Master revisa si el prmer byte de la trama es
-//la Cabecera, despues guarda el siguiente byte de Direccion, despues lee el siguiente byte de #Datos y utiliza esta informacion para saber cuantos
-//bytes debe guardar a continuacion. Despues guarda el campo PDU, calcula su CRC y lo compara con el campo CRC de la trama de peticion, si coincide el CRC
-//envia un ACK al remitente para indicar que la peticion llego correctamente. Despues, comprueba el campo de Direccion, si es igual a 0xFF dara paso al 
-//proceso de calibracion, caso contrario renviara la trama por el puerto UART2 es decir a travez de los modulos inhalabricos hacia los esclavos.
+//Esta interrupcion supervisa el estado del bus RS485, cuando detecta una peticion procedente del Concentrador Principal revisa el primer byte de la trama, si es un ACK detiene el Time-Out-Dispositivo,
+//si es un NACK, detiene el Time-Out-Dispositivo y reenvia la trama, y si es una Cabecera, activa una bandera para guardar el resto de la trama. Despues verifica el CRC de la trama,
+//si esta bien envia un ACK al concentrador principal y reenvia la trama de peticion por el puerto UART2; si el CRC no esta bien le envia un NACK.
      if(PIR1.RC1IF==1){
      
         IU1 = 1;                                        //Enciende el indicador de interrupcion por UART1
@@ -322,7 +320,7 @@ void interrupt(void){
               T1CON.TMR1ON = 0;                         //Apaga el Timer1
               TMR1IF_bit = 0;                           //Limpia la bandera de interrupcion por desbordamiento del TMR1
               if (contadorNACK<3){
-                 EnviarMensajeRS485(tramaRS485,sizeTramaPDU);
+                 //EnviarMensajeRS485(tramaRS485,sizeTramaPDU);
                  contadorNACK++;                        //Incrrmenta en una unidad el valor del contador de NACK
               } else {
                  contadorNACK = 0;                      //Solo puede resetear el contador de NACK por que no puede comunicarse con el dispositivo jerarquico superior (Master) para notificarle el error
@@ -363,45 +361,24 @@ void interrupt(void){
            if (tramaOk==1){
                //Delay_ms(300);                         //Sirve para probar el Time-Out-Dispositivo en el dispositivo que recibe el ACK
                EnviarACK(1);                            //Si la trama llego sin errores responde con un ACK al Master y luego reenvia la trama a los esclavos
-               if (tramaRS485[1]==DIR){                 //Verifica si la direccion es FFh para comprobar si se trata de una solicitud de sincronizacion.
-                  if (tramaRS485[3]==0x01){             //Verifica el campo de Funcion para ver si se trata de una sincronizacion de segundos
-                     //SincronizacionSegundos();        //Invoca a la funcion de sincronizacion de segundos
-                  } else if (tramaRS485[3]==0x02){      //Verifica el campo de Funcion para ver si se trata de una solicitud de sincronizacion de fecha y hora
-                     //SincronizacionFechaHora();       //Invoca a la funcion de sincronizacion de fecha y hora
-                  } else if (tramaRS485[3]==0x03){      //Verifica el campo de Funcion para ver si se trata de una solicitud de configuracion del APC220
-                     ConfiguracionAPC220(tramaRS485,t1Size);  //Invoca a la funcion para realizar la configuracion del modulo APC con los parametros especificados en la trama
-                  } else {
-                     //Arma una trama de respuesta para indicar al Master que se produjo un error
-                     //Revisar
-                     tramaPDU[1]=DIR;
-                     tramaPDU[2]=0x04;                   //Establece en 4 el numero de elementos del PDU de la trama de respuesta de error
-                     tramaPDU[3]=0xEE;                   //Cambia el campo de funcion por el codigo 0xEE para
-                     tramaPDU[4]=0xE0;                   //Codigo de error para funcion no disponible
-                     sizeTramaPDU = tramaPDU[2];         //Guarda en la variable sizeTramaPDU el valor del campo #Datos de la trama PDU
-                     EnviarMensajeRS485(tramaRS485,sizeTramaPDU);   //Invoca a la funcion de Error pasandole como parametros el puerto, la Direccion y el tipo de error
-                  }
-               } else {                                  //Si la direccion es diferente de FFh renvia la trama de peticion por el puerto UART2
-                  RenviarTrama(2,tramaRS485,t1Size);     //Invoca la funcion para renviar la trama por el puerto UART2
-               }
+               RenviarTrama(2,tramaRS485,t1Size);       //Invoca la funcion para renviar la trama por el puerto UART2
            } else if (tramaOk==0) {
-               EnviarNACK(1);                            //Si hubo algun error en la trama se envia un ACK al Master para que reenvie la trama
+               EnviarNACK(1);                           //Si hubo algun error en la trama se envia un ACK al Master para que reenvie la trama
            }
-           banTI = 0;                                    //Limpia la bandera de inicio de trama
-           banTC = 0;                                    //Limpia la bandera de trama completa
-           i1 = 0;                                       //Incializa el subindice de la trama de peticion
+           banTI = 0;                                   //Limpia la bandera de inicio de trama
+           banTC = 0;                                   //Limpia la bandera de trama completa
+           i1 = 0;                                      //Incializa el subindice de la trama de peticion
         }
         
-        //PIR1.RC1IF = 0;                                  //Limpia la bandera de interrupcion de UART1
-        IU1 = 0;                                         //Apaga el indicador de interrupcion por UART1
+        IU1 = 0;                                        //Apaga el indicador de interrupcion por UART1
         
      }
      
      
 //Interrupcion UART2
-//Esta interrupcion supervisa el estado del puerto UART2 conectado al modulo APC220, cuando detecta un mensaje procediente de un esclavo revisa si el primer byte de la trama es
-//la Cabecera, si es asi lo guarda en la trama, despues guarda el siguiente byte de Direccion, despues lee el siguiente byte de #Datos y utiliza esta informacion para saber cuantos
-//bytes debe guardar a continuacion. Despues extrae el campo PDU, calcula su CRC y lo compara con el campo CRC de la trama recibida, si coincide el CRC
-//envia un ACK al remitente para indicar que la peticion llego correctamente. Despues, renviara la trama por el puerto UART1 es decir a travez del bus RS485
+//Esta interrupcion supervisa el estado del puerto UART2 conectado al modulo APC220, cuando detecta una respuesta procedente del dispositivo Esclavo revisa el primer byte de la trama, si es un ACK detiene el Time-Out-Dispositivo,
+//si es un NACK, detiene el Time-Out-Dispositivo y reenvia la trama, y si es una Cabecera, activa una bandera para guardar el resto de la trama. Despues verifica el CRC de la trama,
+//si esta bien envia un ACK al concentrador principal y reenvia la trama de peticion por el puerto UART2; si el CRC no esta bien le envia un NACK.
 /*if (PIR3.F5==1){
 
         IU2 = 1;                                        //Enciende el indicador de interrupcion por UART2
@@ -493,7 +470,7 @@ void interrupt(void){
         TMR1IF_bit = 0;                                 //Limpia la bandera de interrupcion por desbordamiento del TMR1
         T1CON.TMR1ON = 0;                               //Apaga el Timer1
         if (contadorTOD<3){
-           EnviarMensajeRS485(tramaPDU, sizeTramaPDU);  //Reenvia la trama por el bus RS485
+           //EnviarMensajeRS485(tramaPDU, sizeTramaPDU);  //Reenvia la trama por el bus RS485
            contadorTOD++;                               //Incrementa el contador de Time-Out-Dispositivo en una unidad
         } else {
            //EnviarMensajeSPI()                         //Responde al Master notificandole del error

@@ -1,0 +1,6 @@
+main
+	ConfiguracionPrincipal
+		UART1_Init
+		SPI1_Init_Advanced
+interrupt
+	UART1_Write
