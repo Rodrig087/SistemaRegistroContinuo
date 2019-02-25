@@ -176,7 +176,6 @@ b4
 b5
 b6
 b7
-banboton
 banesc
 banked
 banlec
@@ -234,7 +233,6 @@ brgh2_bit
 bsr
 buffer
 byte2double
-bytetrama
 c
 c_bit
 c12in0m
@@ -523,8 +521,7 @@ cmp2md_bit
 comfrem
 compare_double
 configuracionprincipal
-contadornack
-contadortod
+contmuestras
 cren
 cren_bit
 cren_rc1sta_bit
@@ -602,7 +599,7 @@ dacr3
 dacr3_bit
 dacr4
 dacr4_bit
-datosacelerometro
+datos
 dc
 dc_bit
 dc1b0
@@ -803,7 +800,6 @@ hlvdl2_bit
 hlvdl3
 hlvdl3_bit
 i
-i1
 ics_auto
 ics_off
 idissen
@@ -906,8 +902,6 @@ itrim4
 itrim4_bit
 itrim5
 itrim5_bit
-iu1
-iu1_direction
 ivrst
 ivrst_bit
 kbi0
@@ -1092,6 +1086,7 @@ not_write_bit
 not_write_ssp1stat_bit
 nrm3232
 nrm4032
+num_muestras
 nvcfg0
 nvcfg0_bit
 nvcfg1
@@ -1119,6 +1114,8 @@ ov_bit
 p
 p_bit
 p_ssp1stat_bit
+p1
+p1_direction
 p1a
 p1a_bit
 p1b
@@ -1155,6 +1152,8 @@ p1ssbd0
 p1ssbd0_bit
 p1ssbd1
 p1ssbd1_bit
+p2
+p2_direction
 p2a_portb
 p2a_portb_bit
 p2a_portc
@@ -1258,7 +1257,6 @@ pdc5
 pdc5_bit
 pdc6
 pdc6_bit
-pdusize
 pduspi
 peie
 peie_bit
@@ -1488,15 +1486,11 @@ rd
 rd_bit
 rd16
 rd16_bit
-re_de
-re_de_direction
 re3
 re3_bit
 res032
 ri
 ri_bit
-rint
-rint_direction
 rsen
 rsen_bit
 rsen_ssp1con2_bit
@@ -1867,7 +1861,6 @@ t1oso
 t1oso_bit
 t1rd16
 t1rd16_bit
-t1size
 t1soscen
 t1soscen_bit
 t1sync
@@ -2108,9 +2101,6 @@ to__bit
 tosh
 tosl
 tosu
-tramaok
-tramapdu
-tramars485
 trigsel
 trigsel_bit
 trisa

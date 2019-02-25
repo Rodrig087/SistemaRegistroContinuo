@@ -2,4 +2,3 @@ main
 	ConfiguracionPrincipal
 		SPI1_Init_Advanced
 interrupt
-	pulsoAux
