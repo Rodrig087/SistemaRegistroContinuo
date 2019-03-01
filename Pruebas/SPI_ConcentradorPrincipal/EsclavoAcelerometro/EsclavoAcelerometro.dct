@@ -341,7 +341,6 @@ c5tsel0
 c5tsel0_bit
 c5tsel1
 c5tsel1_bit
-cabecera
 ccp1
 ccp1_bit
 ccp1as0
@@ -521,6 +520,7 @@ cmp2md_bit
 comfrem
 compare_double
 configuracionprincipal
+contciclos
 contmuestras
 cren
 cren_bit
@@ -1865,6 +1865,7 @@ t1soscen
 t1soscen_bit
 t1sync
 t1sync_bit
+t2
 t2ckps0
 t2ckps0_bit
 t2ckps1
@@ -1981,6 +1982,7 @@ tblptrl
 tblptru
 tgen
 tgen_bit
+tiempo
 tmr0h
 tmr0ie
 tmr0ie_bit

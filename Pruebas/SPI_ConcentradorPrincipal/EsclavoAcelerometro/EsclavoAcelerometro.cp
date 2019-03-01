@@ -11,19 +11,30 @@ const short HDR = 0x3A;
 const short END1 = 0x0D;
 const short END2 = 0x0A;
 const unsigned short NUM_MUESTRAS = 199;
+const unsigned int T2 = 222;
 
-unsigned char cabecera[5];
+
+unsigned char tiempo[5];
 unsigned char datos[10];
 unsigned char pduSPI[15];
 
 unsigned short i, x;
 unsigned short buffer;
 unsigned short contMuestras;
+unsigned short contCiclos;
 
 unsigned short banTC, banTI, banTF;
 
 unsigned short banResp, banSPI, banLec, banEsc;
-#line 68 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Pruebas/SPI_ConcentradorPrincipal/EsclavoAcelerometro/EsclavoAcelerometro.c"
+
+
+
+
+
+
+
+
+
 void ConfiguracionPrincipal(){
 
  ANSELA = 0;
@@ -49,16 +60,16 @@ void ConfiguracionPrincipal(){
  INTCON.INT0IF = 0;
 
 
-
-
  T2CON = 0x36;
- PR2 = 222;
+
+ PR2 = T2;
  PIR1.TMR2IF = 0;
  PIE1.TMR2IE = 1;
 
  Delay_ms(100);
 
 }
+
 
 
 void pulsoAux(){
@@ -96,8 +107,6 @@ void interrupt(void){
  SSP1BUF = 0xFF;
  }
 
-
-
  }
 
 
@@ -105,7 +114,7 @@ void interrupt(void){
  if (INTCON.INT0IF==1){
  INTCON.INT0IF = 0;
  contMuestras = 0;
- datos[0] = contMuestras;
+ datos[0] = contCiclos;
  for (x=0;x<10;x++){
  pduSPI[x]=datos[x];
  }
@@ -114,7 +123,8 @@ void interrupt(void){
  Delay_us(20);
  P1 = 0;
  T2CON.TMR2ON = 1;
- PR2 = 222;
+ PR2 = T2;
+ contCiclos++;
  }
 
 
@@ -128,8 +138,11 @@ void interrupt(void){
  }
  if (contMuestras==NUM_MUESTRAS){
  T2CON.TMR2ON = 0;
+ for (x=1;x<10;x++){
+ pduSPI[x]=66;
+ }
  for (x=10;x<15;x++){
- pduSPI[x]=cabecera[x-10];
+ pduSPI[x]=tiempo[x-10];
  }
  }
  banTI = 1;
@@ -145,11 +158,11 @@ void main() {
 
  ConfiguracionPrincipal();
 
- cabecera[0] = 19;
- cabecera[1] = 49;
- cabecera[2] = 9;
- cabecera[3] = 30;
- cabecera[4] = 0;
+ tiempo[0] = 19;
+ tiempo[1] = 49;
+ tiempo[2] = 9;
+ tiempo[3] = 30;
+ tiempo[4] = 0;
 
  datos[1] = 11;
  datos[2] = 12;
@@ -161,9 +174,6 @@ void main() {
  datos[8] = 32;
  datos[9] = 33;
 
-
-
-
  banTI = 0;
  banLec = 0;
  i = 0;
@@ -171,6 +181,7 @@ void main() {
  AUX = 0;
 
  contMuestras = 0;
+ contCiclos = 0;
  P1 = 0;
  P2 = 0;
 
