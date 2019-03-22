@@ -1,0 +1,7 @@
+main
+	ConfiguracionPrincipal
+		SPI1_Init_Advanced
+		SPI2_Init
+int_1
+spi_1
+Timer1Int

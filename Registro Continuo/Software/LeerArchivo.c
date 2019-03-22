@@ -48,13 +48,13 @@ int main(void) {
 
 void RecuperarVector() {
 	
-	lf = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/output.dat", "rb");
-	ef = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/lectura.txt", "ab");
+	lf = fopen ("/home/pi/Ejemplos/EjemploSPI/output.dat", "rb");
+	ef = fopen ("/home/pi/Ejemplos/EjemploSPI/lectura.txt", "ab");
 	while (contMuestras<NUM_CICLOS){
 		fread(tramaDatos, sizeof(char), tramaSize, lf);
 		fprintf(ef, "\n");
 		for (i=0;i<tramaSize;i++){
-			if ((i==0)||(i==1)||(i%10==0)){
+			if ((i==0)||(i%10==0)){
 				fprintf(ef, " %0.3d ", tramaDatos[i]);				
 			} else {
 				fprintf(ef, "%d", tramaDatos[i]);

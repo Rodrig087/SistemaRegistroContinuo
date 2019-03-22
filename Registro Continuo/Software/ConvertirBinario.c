@@ -8,7 +8,6 @@
 #define P2 0
 #define P1 2
 #define NUM_MUESTRAS 199
-#define NUM_CICLOS 100
 #define TIEMPO_SPI 100
 
 //Declaracion de variables
@@ -19,6 +18,7 @@ unsigned short banLinea;
 unsigned short banInicio;
 unsigned short numBytes;
 unsigned short contMuestras;
+unsigned int numCiclos;
 unsigned char tramaInSPI[20];
 unsigned char tramaDatos[15+(NUM_MUESTRAS*10)];
 unsigned short tiempoSPI;
@@ -27,7 +27,7 @@ FILE *lf;
 FILE *ef;
 
 //Declaracion de funciones
-void RecuperarVector();
+void RecuperarVector(unsigned int numCiclos);
 
 
 int main(void) {
@@ -39,18 +39,21 @@ int main(void) {
   contMuestras = 0;
   tramaSize = 15+(NUM_MUESTRAS*10);
   
-  RecuperarVector();
+  printf("Ingrese el numero de muestras:\n");
+  scanf("%d", &numCiclos);
+  
+  RecuperarVector(numCiclos);
  
   return 0;
   
  }
 
 
-void RecuperarVector() {
+void RecuperarVector(unsigned int numCiclos) {
 	
 	lf = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/output.dat", "rb");
-	ef = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/lectura.txt", "ab");
-	while (contMuestras<NUM_CICLOS){
+	ef = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/lectura.txt", "wb");
+	while (contMuestras<numCiclos){
 		fread(tramaDatos, sizeof(char), tramaSize, lf);
 		fprintf(ef, "\n");
 		for (i=0;i<tramaSize;i++){

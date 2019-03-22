@@ -1,0 +1,24 @@
+0	1	mikroCdsPIC.exe -MSF -DBG -pP33EP256MC202 -DL -SSA -O11111114 -fo80 -N"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\Acelerografo.mcpds" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\" -SP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\" -IP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\" "Acelerografo.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_SPI_12.mcl"	 
+diagnostics: 0	121	Loading...	 
+hint: 82	1354	 warning: The macro is redefined     #define _4G 0x03     from C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c: 9:    #include <ADXL355_SPI.c>     previously macro "_4G" defined as: #define _4G  0x02 	c:\users\ivan\desktop\milton muñoz\proyectos\git\instrumentacion presa\instrumentacionpch\registro continuo\firmware\acelerografo\adxl355_spi.c
+diagnostics: 0	122	Compilation Started	adxl355_spi.c
+warning: 151	1505	Suspicious pointer conversion	adxl355_spi.c
+warning: 189	1503	Result is not defined in function: ''	adxl355_spi.c
+warning: 190	1503	Result is not defined in function: 'ADXL355_muestra'	adxl355_spi.c
+hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
+hint: 0	1004	interrupt handler (spi_1 at 0x0028)	Acelerografo.c
+hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
+diagnostics: 211	123	Compiled Successfully	Acelerografo.c
+warning: 151	1512	variable 'dato' might not have been initialized	adxl355_spi.c
+warning: 205	1519	Logical expression is always: 'False'	Acelerografo.c
+hint: 122	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
+hint: 134	1164	Variable 'lb' has been eliminated by optimizer	Acelerografo.c
+hint: 150	1164	Variable 'bandera' has been eliminated by optimizer	Acelerografo.c
+diagnostics: 0	127	All files Compiled in 93 ms	 
+hint: 0	1144	Used RX (bytes): 26 (81%)   Free RX (bytes): 6 (19%)	Used RX (bytes): 26 (81%)   Free RX (bytes): 6 (19%)
+hint: 0	1144	Static RAM (bytes): 41   Dynamic RAM (bytes): 28630	Static RAM (bytes): 41   Dynamic RAM (bytes): 28630
+hint: 0	1144	Used ROM (bytes): 1424 (1%)  Free ROM (bytes): 174684 (99%)	Used ROM (bytes): 1424 (1%)  Free ROM (bytes): 174684 (99%)
+diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 172 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 422 ms	 
+diagnostics: 0	103	Finished successfully: 22 mar. 2019, 09:18:01	Acelerografo.mcpds

@@ -101,7 +101,7 @@ int ConfiguracionPrincipal(){
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);
+    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);
     bcm2835_spi_set_speed_hz(2000000);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
@@ -131,7 +131,7 @@ void NuevaLinea(){
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
 	for (i=0;i<10;i++){
-		tramaDatos[i] = tramaInSPI[i+1];		
+		tramaDatos[i] = tramaInSPI[i];		
 	}
 
     banLinea = 1;
@@ -168,13 +168,13 @@ void NuevaMuestra(){
 		bcm2835_delayMicroseconds(TIEMPO_SPI);
 
 		if (numBytes==11){														//Guardo 10 muestras
-		   for (i=1;i<11;i++){
-		       x = (contMuestras*10)+i-1;
+		   for (i=0;i<10;i++){
+		       x = (contMuestras*10)+i;
 			   tramaDatos[x] = tramaInSPI[i];		
 		   }				
 		} else {																//Guardo 15 muestras
-		   for (i=1;i<16;i++){
-		       x = (contMuestras*10)+i-1;
+		   for (i=0;i<15;i++){
+		       x = (contMuestras*10)+i;
 			   tramaDatos[x] = tramaInSPI[i];
 		   }
 		   tramaDatos[1] = contador;
