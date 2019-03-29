@@ -2,6 +2,16 @@ main
 	ConfiguracionPrincipal
 		SPI1_Init_Advanced
 		SPI2_Init
+		ADXL355_init
+			ADXL355_write_byte
+				SPI2_Write
+					SPI2_Read
 int_1
+	ADXL355_muestra
+		SPI2_Write
+		SPI_Read
+			SPI1_Read
+			SPI2_Read
 spi_1
 Timer1Int
+	ADXL355_muestra

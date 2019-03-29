@@ -28,6 +28,7 @@ const unsigned short NUM_MUESTRAS = 199;                //Constantes para almace
 unsigned char tiempo[5];                                //Vector para almacenar los datos de la cabecera
 unsigned char datos[10];                                //Vector para almacenar los datos de payload
 unsigned char pduSPI[15];                               //Vector de trama de datos del puerto UART2
+unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 unsigned short i, x;
 unsigned short  buffer;
@@ -35,8 +36,11 @@ unsigned short contMuestras;
 unsigned short contCiclos;
 
 unsigned short banTC, banTI, banTF;                     //Banderas de trama completa, inicio de trama y final de trama
-
 unsigned short  banResp, banSPI, banLec, banEsc;
+
+
+long datox, datoy, datoz, auxiliar;
+unsigned char *puntero_8, direccion;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -58,7 +62,10 @@ void ConfiguracionPrincipal(){
      TRISA3_bit = 0;                                    //Configura el pin A3 como salida  *
      TRISA4_bit = 0;                                    //Configura el pin A4 como salida  *
      TRISB4_bit = 0;                                    //Configura el pin B4 como salida  *
-     TRISB13_bit = 1;                                   //Configura el pin B1 como entrada *
+     TRISB10_bit = 1;                                   //Configura el pin B10 como entrada *
+     TRISB11_bit = 1;                                   //Configura el pin B11 como entrada *
+     TRISB12_bit = 1;                                   //Configura el pin B12 como entrada *
+     TRISB13_bit = 1;                                   //Configura el pin B13 como entrada *
 
      INTCON2.GIE = 1;                                   //Habilita las interrupciones globales *
      
@@ -73,7 +80,7 @@ void ConfiguracionPrincipal(){
      SPI1IF_bit = 0;                                    //Limpia la bandera de interrupcion por SPI *
      
      //Configuracion del puerto SPI2 en modo Master
-     RPINR22 = 0x0021;                                  //Configura el pin RB1/RPI33 como SDI2 *
+     RPINR22bits.SDI2R = 0x21;                          //Configura el pin RB1/RPI33 como SDI2 *
      RPOR2bits.RP38R = 0x08;                            //Configura el SDO2 en el pin RB6/RP38 *
      RPOR1bits.RP37R = 0x09;                            //Configura el SCK2 en el pin RB5/RP37 *
      SPI2STAT.SPIEN = 1;                                //Habilita el SPI2 *
@@ -93,6 +100,8 @@ void ConfiguracionPrincipal(){
      IPC0 = 0x1000;                                     //Prioridad de la interrupcion por desbordamiento del TMR1
      PR1 = 25000;
      
+     ADXL355_init();
+     
      Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
 
 }
@@ -107,6 +116,31 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      INT1IF_bit = 0;                                    //Limpia la bandera de interrupcion externa INT1
      contMuestras = 0;                                  //Limpia el contador de muestras
      datos[0] = contCiclos;                             //Carga el primer valor de la trama de datos con el valor de la muestra actual
+     
+     //readMultipleData(axisAddresses, 9, datosLeidos);
+     ADXL355_muestra(datosLeidos);
+     datos[1] = (datosLeidos[0]);
+     datos[2] = (datosLeidos[1]);
+     datos[3] = (datosLeidos[2]>>4);
+     datos[4] = (datosLeidos[3]);
+     datos[5] = (datosLeidos[4]);
+     datos[6] = (datosLeidos[5]>>4);
+     datos[7] = (datosLeidos[6]);
+     datos[8] = (datosLeidos[7]);
+     datos[9] = (datosLeidos[8]>>4);
+
+     /*datox = ADXL355_read_data(0x08);
+     datos[0] = contCiclos;                             //Carga el primer valor de la trama de datos con el valor de la muestra actual
+     datos[1] = datox & 0xFF;
+     datos[2] = (datox>>8) & 0xFF;
+     datos[3] = (datox>>16) & 0xFF;
+     datos[4] = datoy & 0xFF;
+     datos[5] = (datoy>>8) & 0xFF;
+     datos[6] = (datoy>>16) & 0xFF;
+     datos[7] = datoz & 0xFF;
+     datos[8] = (datoz>>8) & 0xFF;
+     datos[9] = (datoz>>16) & 0xFF;*/
+
      for (x=0;x<10;x++){
          pduSPI[x]=datos[x];                            //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
      }
@@ -116,6 +150,52 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      RP1 = 0;
      T1CON.TON = 1;                                     //Enciende el Timer1
      contCiclos++;
+}
+
+//Interrupcion por desbordamiento del Timer1
+void Timer1Int() org IVT_ADDR_T1INTERRUPT{
+     T1IF_bit = 0; 
+     contMuestras++;                                    //Incrementa el contador de muestras
+     datos[0] = contMuestras;                           //Carga el primer valor de la trama de datos con el valor de la muestra actual
+     
+     //readMultipleData(axisAddresses, 9, datosLeidos);
+     
+     ADXL355_muestra(datosLeidos);
+     datos[1] = (datosLeidos[0]);
+     datos[2] = (datosLeidos[1]);
+     datos[3] = (datosLeidos[2]);
+     datos[4] = (datosLeidos[3]);
+     datos[5] = (datosLeidos[4]);
+     datos[6] = (datosLeidos[5]);
+     datos[7] = (datosLeidos[6]);
+     datos[8] = (datosLeidos[7]);
+     datos[9] = (datosLeidos[8]);
+
+     /*datox = ADXL355_read_data(0x08);
+     datos[0] = contMuestras;                           //Carga el primer valor de la trama de datos con el valor del contador de muestras
+     datos[1] = datox & 0xFF;
+     datos[2] = (datox>>8) & 0xFF;
+     datos[3] = (datox>>16) & 0xFF;
+     datos[4] = datoy & 0xFF;
+     datos[5] = (datoy>>8) & 0xFF;
+     datos[6] = (datoy>>16) & 0xFF;
+     datos[7] = datoz & 0xFF;
+     datos[8] = (datoz>>8) & 0xFF;
+     datos[9] = (datoz>>16) & 0xFF;*/
+     
+     for (x=0;x<10;x++){
+         pduSPI[x]=datos[x];                            //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
+     }
+     if (contMuestras==NUM_MUESTRAS){
+        T1CON.TON = 0;                                  //Apaga el Timer2
+        for (x=10;x<15;x++){
+            pduSPI[x]=tiempo[x-10];                     //Carga el vector de salida de datos SPI con los datos de la cabecera
+        }
+     }
+     banTI = 1;                                         //Activa la bandera de inicio de trama
+     RP2 = 1;                                           //Genera el pulso P2 para producir la interrupcion en la RPi
+     Delay_us(20);
+     RP2 = 0;                                           //Limpia la bandera de interrupcion por desbordamiento del Timer1
 }
 
 //Interrupcion SPI1
@@ -140,31 +220,6 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
 }
 
-void Timer1Int() org IVT_ADDR_T1INTERRUPT{
-     T1IF_bit = 0; 
-     contMuestras++;                                    //Incrementa el contador de muestras
-     datos[0] = contMuestras;                           //Carga el primer valor de la trama de datos con el valor del contador de muestras
-     for (x=0;x<10;x++){
-         pduSPI[x]=datos[x];                            //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
-     }
-     if (contMuestras==NUM_MUESTRAS){
-        T1CON.TON = 0;                                  //Apaga el Timer2
-        for (x=1;x<10;x++){
-            pduSPI[x]=66;                               //Trama de prueba
-        }
-        for (x=10;x<15;x++){
-            pduSPI[x]=tiempo[x-10];                     //Carga el vector de salida de datos SPI con los datos de la cabecera
-        }
-     }
-     banTI = 1;                                         //Activa la bandera de inicio de trama
-     RP2 = 1;                                           //Genera el pulso P2 para producir la interrupcion en la RPi
-     Delay_us(20);
-     RP2 = 0;                                           //Limpia la bandera de interrupcion por desbordamiento del Timer1
-     
-     //ADXL355_read_byte(0x08);
-     
-}
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -179,16 +234,24 @@ void main() {
      tiempo[2] = 9;                                     //Hora
      tiempo[3] = 30;                                    //Minuto
      tiempo[4] = 0;                                     //Segundo
-
-     datos[1] = 11;
-     datos[2] = 12;
-     datos[3] = 13;
-     datos[4] = 21;
-     datos[5] = 22;
-     datos[6] = 23;
-     datos[7] = 31;
-     datos[8] = 32;
-     datos[9] = 33;
+     
+     datos[1] = 0;
+     datos[2] = 0;
+     datos[3] = 0;
+     datos[4] = 0;
+     datos[5] = 0;
+     datos[6] = 0;
+     datos[7] = 0;
+     datos[8] = 0;
+     datos[9] = 0;
+     
+     //datox = 0x1BACA5;                                  //00011011 10101100 10100101       165  172  027
+     //datoy = 0x2BECA5;                                  //00101011 11101100 10100101       165  236  043
+     //datoz = 0x3B0CA5;                                  //00111011 00001100 10100101       165  012  059
+     
+     datox = 0;
+     datoy = 0x6F6F6F6F;
+     datoz = 0x6F6F6F6F;
 
      banTI = 0;
      banLec = 0;
@@ -199,6 +262,8 @@ void main() {
      contCiclos = 0;
      RP1 = 0;
      RP2 = 0;
+     
+     puntero_8 = &auxiliar;
 
      SPI1BUF = 0x00;
 

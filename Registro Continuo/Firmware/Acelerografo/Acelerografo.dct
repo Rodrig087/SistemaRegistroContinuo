@@ -1048,6 +1048,7 @@ adrc_bit
 adsidl
 adsidl
 adsidl_bit
+adxl355_get_values
 adxl355_init
 adxl355_muestra
 adxl355_read_byte
@@ -1259,6 +1260,8 @@ auxcon2
 auxcon2bits
 auxcon3
 auxcon3bits
+auxiliar
+axisaddresses
 b
 b0
 b1
@@ -2681,6 +2684,10 @@ dae
 dae
 dae_bit
 datos
+datosleidos
+datox
+datoy
+datoz
 dc
 dc
 dc_bit
@@ -2841,6 +2848,7 @@ dir__dma1con_bit
 dir__dma2con_bit
 dir__dma3con_bit
 dir_bit
+direccion
 disi
 disi
 disi_bit
@@ -3944,7 +3952,6 @@ gcstat_i2c1stat_bit
 gcstat_i2c2stat_bit
 get_fosc_khz
 get_fosc_per_cyc
-get_values
 gie
 gie
 gie_bit
@@ -8512,6 +8519,7 @@ ptper_9_bit
 ptsidl
 ptsidl
 ptsidl_bit
+puntero_8
 pwcol0
 pwcol0
 pwcol0_bit
@@ -8973,6 +8981,7 @@ rcount_8
 rcount_8_bit
 rcount_9
 rcount_9_bit
+readmultipledata
 refocon
 refoconbits
 refomd

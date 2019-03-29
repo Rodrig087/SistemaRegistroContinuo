@@ -57,7 +57,7 @@ void RecuperarVector() {
 			if ((i==0)||(i==1)||(i%10==0)){
 				fprintf(ef, " %0.3d ", tramaDatos[i]);				
 			} else {
-				fprintf(ef, "%d", tramaDatos[i]);
+				fprintf(ef, "%0.3d", tramaDatos[i]);
 			}
 	    }
 		

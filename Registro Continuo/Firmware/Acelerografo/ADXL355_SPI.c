@@ -79,7 +79,7 @@
 #define INT_ACTIVE_HIGH     0x00
 #define _2G                 0x01
 #define _4G                 0x02
-#define _4G                 0x03
+#define _8G                 0x03
 
 
 /*       POWER CONTROL REGISTER    POWER_CTL   */
@@ -92,6 +92,7 @@
 
 
 sbit CS_ADXL355 at LATA3_bit;
+unsigned short axisAddresses[] = {XDATA3, XDATA2, XDATA1, YDATA3, YDATA2, YDATA1, ZDATA3, ZDATA2, ZDATA1};
 
 void ADXL355_init();
 void ADXL355_write_byte(unsigned char address, unsigned char value);
@@ -101,11 +102,12 @@ void get_values(signed int *x_val, signed int *y_val, signed int *z_val);
 void get_offsets(signed int *x_val, signed int *y_val, signed int *z_val);
 void set_offsets(signed int *x_val, signed int *y_val, signed int *z_val);
 unsigned int ADXL355_muestra(void);
+void readMultipleData(int *addresses, int dataSize, int *readedData);
 
 
 void ADXL355_init(){
-    delay_ms(100);
     ADXL355_write_byte(POWER_CTL, DRDY_OFF|TEMP_OFF|MEASURING);
+    ADXL355_write_byte(Range, _2G);
     ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_31_25_Hz);
 }
 
@@ -150,8 +152,8 @@ unsigned int ADXL355_read_data(unsigned char address){
 
      long *dato,auxiliar;
      unsigned char *puntero_8,bandera;
-     puntero_8=&dato;
-     address=(address<<1)|0x01;
+     puntero_8 = &dato;
+     address = (address<<1) | 0x01;
      
      CS_ADXL355=0;
      SPI2_Write(address);
@@ -172,40 +174,41 @@ unsigned int ADXL355_read_data(unsigned char address){
 }
 
 
-/*void ADXL355_get_values(signed int *x_val, signed int *y_val, signed int *z_val){
+void ADXL355_get_values(signed int *x_val, signed int *y_val, signed int *z_val){
      *x_val = ADXL355_read_data(XDATA3);
      *y_val = ADXL355_read_data(YDATA3);
      *z_val = ADXL355_read_data(ZDATA3);
-}*/
-
-//long datox,datoy,datoz,transmitir,auxiliar;
-////get_values(datox, datoy, datoz);
-
-
-//El unico parametro de entrada es el vector donde se van almacenar los datos de los 3 ejes
-void ADXL355_get_values(unsigned char *datos){
-
-     *x_val = ADXL355_read_data(XDATA3);                                //Devuelve un puntero que apunta a una variable tipo long
-     *y_val = ADXL355_read_data(YDATA3);
-     *z_val = ADXL355_read_data(ZDATA3);
-     
-     
-     
 }
 
 
 unsigned int ADXL355_muestra( unsigned char *puntero_8){
      CS_ADXL355=0;
-     SPI2_Write(0x11); //Es la dirección 0x08 de XDATA desplazada y colocada el modo lectura
-     *(puntero_8+0) = SPI_Read(8);
-     *(puntero_8+1) = SPI_Read(7);
-     *(puntero_8+2) = SPI_Read(6);
-     *(puntero_8+3) = SPI_Read(5);
-     *(puntero_8+4) = SPI_Read(4);
-     *(puntero_8+5) = SPI_Read(3);
-     *(puntero_8+6) = SPI_Read(2);
-     *(puntero_8+7) = SPI_Read(1);
-     *(puntero_8+8) = SPI_Read(0);
+     SPI2_Write(0x11);                                 //Es la dirección de FIFO
+     *(puntero_8+0) = SPI_Read(8);                     //XDATA3
+     *(puntero_8+1) = SPI_Read(7);                     //XDATA2
+     *(puntero_8+2) = SPI_Read(6);                     //XDATA1
+     *(puntero_8+3) = SPI_Read(5);                     //YDATA3
+     *(puntero_8+4) = SPI_Read(4);                     //YDATA2
+     *(puntero_8+5) = SPI_Read(3);                     //YDATA1
+     *(puntero_8+6) = SPI_Read(2);                     //ZDATA3
+     *(puntero_8+7) = SPI_Read(1);                     //ZDATA2
+     *(puntero_8+8) = SPI_Read(0);                     //ZDATA1
      CS_ADXL355=1;
      return;
+}
+
+
+
+
+
+void readMultipleData(int *addresses, int dataSize, int *readedData){
+  unsigned char address;
+  unsigned int j;
+  CS_ADXL355 = 0;
+  for(j=0; j<dataSize; j++) {
+    address = (addresses[j]<<1) | 0x01;
+    SPI2_Write(address);
+    readedData[j] = SPI_Read(0);
+  }
+  CS_ADXL355 = 1;
 }

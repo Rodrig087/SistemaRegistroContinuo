@@ -101,7 +101,8 @@ int ConfiguracionPrincipal(){
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);
+	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2		
+    //bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);					//Clock divider RPi 3
     bcm2835_spi_set_speed_hz(2000000);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
@@ -114,7 +115,7 @@ void NuevaLinea(){
 	contCiclos++;
 	if (contCiclos==NUM_CICLOS){
 		contCiclos = 0;
-		pthread_create (&h1, NULL, thGrabarVector, (void*)tramaLarga);   	//Crea un hilo h1 para guardar el vector tramaDatos en el archivo binario
+		pthread_create (&h1, NULL, thGrabarVector, (void*)tramaLarga);   		//Crea un hilo h1 para guardar el vector tramaDatos en el archivo binario
 		pthread_join (h1, NULL);
 	}
 
@@ -177,7 +178,6 @@ void NuevaMuestra(){
 		       x = (contMuestras*10)+i;
 			   tramaDatos[x] = tramaInSPI[i];
 		   }
-		   tramaDatos[1] = contador;
 		   GuardarVector(tramaDatos, contCiclos);
 		}
 
@@ -217,3 +217,7 @@ void *thGrabarVector(void *arg) {
 	
 }
 
+
+
+//Compilar:
+//gcc PAE_V5.c -o muestrear -lbcm2835 -lwiringPi -lpthread

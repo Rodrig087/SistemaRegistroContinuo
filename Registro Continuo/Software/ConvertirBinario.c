@@ -1,8 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <wiringPi.h>
-#include <bcm2835.h>
-
 
 //Declaracion de constantes
 #define P2 0
@@ -31,8 +28,6 @@ void RecuperarVector(unsigned int numCiclos);
 
 
 int main(void) {
-
-  piHiPri (99);
   
   i = 0;
   x = 0;
@@ -57,10 +52,10 @@ void RecuperarVector(unsigned int numCiclos) {
 		fread(tramaDatos, sizeof(char), tramaSize, lf);
 		fprintf(ef, "\n");
 		for (i=0;i<tramaSize;i++){
-			if ((i==0)||(i==1)||(i%10==0)){
-				fprintf(ef, " %0.3d ", tramaDatos[i]);				
+			if ((i==0)||(i%10==0)){
+				fprintf(ef, " %0.3d ", tramaDatos[i]);	
 			} else {
-				fprintf(ef, "%d", tramaDatos[i]);
+				fprintf(ef, "%0.3d", tramaDatos[i]);
 			}
 	    }
 		
@@ -70,3 +65,7 @@ void RecuperarVector(unsigned int numCiclos) {
 	fclose (lf);
 }
 
+
+
+//Compilar:
+//gcc ConvertirBinario.c -o convertir 
