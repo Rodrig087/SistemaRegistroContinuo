@@ -1053,7 +1053,6 @@ adxl355_init
 adxl355_muestra
 adxl355_read_byte
 adxl355_read_data
-adxl355_read_word
 adxl355_write_byte
 altdtr1
 altdtr1_0
@@ -8981,7 +8980,6 @@ rcount_8
 rcount_8_bit
 rcount_9
 rcount_9_bit
-readmultipledata
 refocon
 refoconbits
 refomd

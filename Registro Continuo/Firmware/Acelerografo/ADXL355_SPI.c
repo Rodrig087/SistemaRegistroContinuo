@@ -131,84 +131,13 @@ unsigned char ADXL355_read_byte(unsigned char address){
      return value;
 }
 
-
-unsigned int ADXL355_read_word(unsigned char address){
-     unsigned char hb = 0x00;
-     unsigned char lb = 0x00;
-     unsigned int temp = 0x0000;
-     address=(address<<1)|0x01;
-     CS_ADXL355=0;
-     SPI2_Write(address);
-     hb = SPI_Read(1);
-     lb = SPI_Read(0);
-     CS_ADXL355=1;
-     temp = hb;
-     temp <<= 0x08;
-     temp |= lb;
-     return temp;
-}
-
-unsigned int ADXL355_read_data(unsigned char address){
-
-     long *dato,auxiliar;
-     unsigned char *puntero_8,bandera;
-     puntero_8 = &dato;
-     address = (address<<1) | 0x01;
-     
-     CS_ADXL355=0;
-     SPI2_Write(address);
-     *(puntero_8+0) = SPI_Read(2);
-     *(puntero_8+1) = SPI_Read(1);
-     *(puntero_8+2) = SPI_Read(0);
-     CS_ADXL355=1;
-     
-     bandera=*(puntero_8+0)&0x80;                      //0x80 = 00000000 00000000 00000000 10000000
-     auxiliar=*dato;
-     auxiliar=auxiliar>>12;
-     if(bandera!=0){
-         auxiliar=auxiliar|0xFFF00000;                 //0xFFF00000 = 11111111 11110000 00000000 00000000
-     }
-     
-     return auxiliar;
-     
-}
-
-
-void ADXL355_get_values(signed int *x_val, signed int *y_val, signed int *z_val){
-     *x_val = ADXL355_read_data(XDATA3);
-     *y_val = ADXL355_read_data(YDATA3);
-     *z_val = ADXL355_read_data(ZDATA3);
-}
-
-
-unsigned int ADXL355_muestra( unsigned char *puntero_8){
+unsigned int ADXL355_muestra( unsigned char *vectorMuestra){
+     unsigned short j;
      CS_ADXL355=0;
      SPI2_Write(0x11);                                 //Es la dirección de FIFO
-     *(puntero_8+0) = SPI_Read(8);                     //XDATA3
-     *(puntero_8+1) = SPI_Read(7);                     //XDATA2
-     *(puntero_8+2) = SPI_Read(6);                     //XDATA1
-     *(puntero_8+3) = SPI_Read(5);                     //YDATA3
-     *(puntero_8+4) = SPI_Read(4);                     //YDATA2
-     *(puntero_8+5) = SPI_Read(3);                     //YDATA1
-     *(puntero_8+6) = SPI_Read(2);                     //ZDATA3
-     *(puntero_8+7) = SPI_Read(1);                     //ZDATA2
-     *(puntero_8+8) = SPI_Read(0);                     //ZDATA1
+     for (j=0;j<9;j++){
+         vectorMuestra[j] = SPI_Read(0);
+     }
      CS_ADXL355=1;
      return;
-}
-
-
-
-
-
-void readMultipleData(int *addresses, int dataSize, int *readedData){
-  unsigned char address;
-  unsigned int j;
-  CS_ADXL355 = 0;
-  for(j=0; j<dataSize; j++) {
-    address = (addresses[j]<<1) | 0x01;
-    SPI2_Write(address);
-    readedData[j] = SPI_Read(0);
-  }
-  CS_ADXL355 = 1;
 }

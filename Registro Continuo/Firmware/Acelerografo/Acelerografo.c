@@ -118,7 +118,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      datos[0] = contCiclos;                             //Carga el primer valor de la trama de datos con el valor de la muestra actual
      
      //readMultipleData(axisAddresses, 9, datosLeidos);
-     ADXL355_muestra(datosLeidos);
+    ADXL355_muestra(datosLeidos);
      datos[1] = (datosLeidos[0]);
      datos[2] = (datosLeidos[1]);
      datos[3] = (datosLeidos[2]>>4);
@@ -129,8 +129,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      datos[8] = (datosLeidos[7]);
      datos[9] = (datosLeidos[8]>>4);
 
-     /*datox = ADXL355_read_data(0x08);
-     datos[0] = contCiclos;                             //Carga el primer valor de la trama de datos con el valor de la muestra actual
+     /*datos[0] = contCiclos;                             //Carga el primer valor de la trama de datos con el valor de la muestra actual
      datos[1] = datox & 0xFF;
      datos[2] = (datox>>8) & 0xFF;
      datos[3] = (datox>>16) & 0xFF;
@@ -171,8 +170,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      datos[8] = (datosLeidos[7]);
      datos[9] = (datosLeidos[8]);
 
-     /*datox = ADXL355_read_data(0x08);
-     datos[0] = contMuestras;                           //Carga el primer valor de la trama de datos con el valor del contador de muestras
+     /*datos[0] = contMuestras;                           //Carga el primer valor de la trama de datos con el valor del contador de muestras
      datos[1] = datox & 0xFF;
      datos[2] = (datox>>8) & 0xFF;
      datos[3] = (datox>>16) & 0xFF;
