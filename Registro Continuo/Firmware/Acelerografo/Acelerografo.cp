@@ -7,18 +7,13 @@ unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D 
 void ADXL355_init();
 void ADXL355_write_byte(unsigned char address, unsigned char value);
 unsigned char ADXL355_read_byte(unsigned char address);
-unsigned int ADXL355_read_word(unsigned char address);
-void get_values(signed int *x_val, signed int *y_val, signed int *z_val);
-void get_offsets(signed int *x_val, signed int *y_val, signed int *z_val);
-void set_offsets(signed int *x_val, signed int *y_val, signed int *z_val);
-unsigned int ADXL355_muestra(void);
-void readMultipleData(int *addresses, int dataSize, int *readedData);
+unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
 
 
 void ADXL355_init(){
  ADXL355_write_byte( 0x2D ,  0x04 | 0x02 | 0x00 );
  ADXL355_write_byte( 0x2C ,  0x01 );
- ADXL355_write_byte( 0x28 ,  0x00 | 0x05 );
+ ADXL355_write_byte( 0x28 ,  0x00 | 0x04 );
 }
 
 
@@ -41,46 +36,27 @@ unsigned char ADXL355_read_byte(unsigned char address){
  return value;
 }
 
-unsigned int ADXL355_read_data(unsigned char address){
 
- long *dato,auxiliar;
- unsigned char *puntero_8,bandera;
- puntero_8 = &dato;
- address = (address<<1) | 0x01;
-
- CS_ADXL355=0;
- SPI2_Write(address);
- *(puntero_8+0) = SPI_Read(2);
- *(puntero_8+1) = SPI_Read(1);
- *(puntero_8+2) = SPI_Read(0);
- CS_ADXL355=1;
-
- bandera=*(puntero_8+0)&0x80;
- auxiliar=*dato;
- auxiliar=auxiliar>>12;
- if(bandera!=0){
- auxiliar=auxiliar|0xFFF00000;
- }
-
- return auxiliar;
-
-}
-
-
-void ADXL355_get_values(signed int *x_val, signed int *y_val, signed int *z_val){
- *x_val = ADXL355_read_data( 0x08 );
- *y_val = ADXL355_read_data( 0x0B );
- *z_val = ADXL355_read_data( 0x0E );
-}
-#line 184 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
-unsigned int ADXL355_muestra( unsigned char *vectorMuestra){
+unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
  unsigned short j;
+ unsigned short muestra;
+ if((ADXL355_read_byte( 0x04 )&0x01)==1){
  CS_ADXL355=0;
- SPI2_Write(0x11);
  for (j=0;j<9;j++){
- vectorMuestra[j] = SPI_Read(0);
+ muestra = ADXL355_read_byte(axisAddresses[j]);
+ if (j==2||j==5||j==8){
+ vectorMuestra[j] = (muestra>>4)&0x0F;
+ } else {
+ vectorMuestra[j] = muestra;
+ }
  }
  CS_ADXL355=1;
+ } else {
+ for (j=0;j<8;j++){
+ vectorMuestra[j] = 0;
+ }
+ vectorMuestra[8] = (ADXL355_read_byte( 0x04 )&0x7F);
+ }
  return;
 }
 #line 17 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
@@ -96,7 +72,6 @@ const unsigned short NUM_MUESTRAS = 199;
 
 
 unsigned char tiempo[5];
-unsigned char datos[10];
 unsigned char pduSPI[15];
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -132,7 +107,7 @@ void ConfiguracionPrincipal(){
  TRISA3_bit = 0;
  TRISA4_bit = 0;
  TRISB4_bit = 0;
- TRISB10_bit = 1;
+ TRISB10_bit = 0;
  TRISB11_bit = 1;
  TRISB12_bit = 1;
  TRISB13_bit = 1;
@@ -185,23 +160,13 @@ void ConfiguracionPrincipal(){
 void int_1() org IVT_ADDR_INT1INTERRUPT {
  INT1IF_bit = 0;
  contMuestras = 0;
- datos[0] = contCiclos;
 
-
- ADXL355_muestra(datosLeidos);
- datos[1] = (datosLeidos[0]);
- datos[2] = (datosLeidos[1]);
- datos[3] = (datosLeidos[2]>>4);
- datos[4] = (datosLeidos[3]);
- datos[5] = (datosLeidos[4]);
- datos[6] = (datosLeidos[5]>>4);
- datos[7] = (datosLeidos[6]);
- datos[8] = (datosLeidos[7]);
- datos[9] = (datosLeidos[8]>>4);
-#line 143 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
- for (x=0;x<10;x++){
- pduSPI[x]=datos[x];
+ pduSPI[0] = contCiclos;
+ ADXL355_read_data(datosLeidos);
+ for (x=1;x<10;x++){
+ pduSPI[x]=datosLeidos[x-1];
  }
+
  banTI = 1;
  RP1 = 1;
  Delay_us(20);
@@ -214,23 +179,11 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
 void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  T1IF_bit = 0;
  contMuestras++;
- datos[0] = contMuestras;
 
-
-
- ADXL355_muestra(datosLeidos);
- datos[1] = (datosLeidos[0]);
- datos[2] = (datosLeidos[1]);
- datos[3] = (datosLeidos[2]);
- datos[4] = (datosLeidos[3]);
- datos[5] = (datosLeidos[4]);
- datos[6] = (datosLeidos[5]);
- datos[7] = (datosLeidos[6]);
- datos[8] = (datosLeidos[7]);
- datos[9] = (datosLeidos[8]);
-#line 184 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
- for (x=0;x<10;x++){
- pduSPI[x]=datos[x];
+ pduSPI[0] = contMuestras;
+ ADXL355_read_data(datosLeidos);
+ for (x=1;x<10;x++){
+ pduSPI[x]=datosLeidos[x-1];
  }
  if (contMuestras==NUM_MUESTRAS){
  T1CON.TON = 0;
@@ -238,6 +191,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  pduSPI[x]=tiempo[x-10];
  }
  }
+
  banTI = 1;
  RP2 = 1;
  Delay_us(20);
@@ -281,23 +235,9 @@ void main() {
  tiempo[3] = 30;
  tiempo[4] = 0;
 
- datos[1] = 0;
- datos[2] = 0;
- datos[3] = 0;
- datos[4] = 0;
- datos[5] = 0;
- datos[6] = 0;
- datos[7] = 0;
- datos[8] = 0;
- datos[9] = 0;
 
 
 
-
-
- datox = 0;
- datoy = 0x6F6F6F6F;
- datoz = 0x6F6F6F6F;
 
  banTI = 0;
  banLec = 0;

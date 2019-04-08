@@ -1048,9 +1048,7 @@ adrc_bit
 adsidl
 adsidl
 adsidl_bit
-adxl355_get_values
 adxl355_init
-adxl355_muestra
 adxl355_read_byte
 adxl355_read_data
 adxl355_write_byte
@@ -2682,7 +2680,6 @@ da_bit
 dae
 dae
 dae_bit
-datos
 datosleidos
 datox
 datoy

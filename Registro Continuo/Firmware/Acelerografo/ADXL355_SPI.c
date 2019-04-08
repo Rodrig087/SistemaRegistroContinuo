@@ -97,18 +97,13 @@ unsigned short axisAddresses[] = {XDATA3, XDATA2, XDATA1, YDATA3, YDATA2, YDATA1
 void ADXL355_init();
 void ADXL355_write_byte(unsigned char address, unsigned char value);
 unsigned char ADXL355_read_byte(unsigned char address);
-unsigned int ADXL355_read_word(unsigned char address);
-void get_values(signed int *x_val, signed int *y_val, signed int *z_val);
-void get_offsets(signed int *x_val, signed int *y_val, signed int *z_val);
-void set_offsets(signed int *x_val, signed int *y_val, signed int *z_val);
-unsigned int ADXL355_muestra(void);
-void readMultipleData(int *addresses, int dataSize, int *readedData);
+unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
 
 
 void ADXL355_init(){
     ADXL355_write_byte(POWER_CTL, DRDY_OFF|TEMP_OFF|MEASURING);
     ADXL355_write_byte(Range, _2G);
-    ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_31_25_Hz);
+    ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);
 }
 
 
@@ -131,13 +126,26 @@ unsigned char ADXL355_read_byte(unsigned char address){
      return value;
 }
 
-unsigned int ADXL355_muestra( unsigned char *vectorMuestra){
-     unsigned short j;
-     CS_ADXL355=0;
-     SPI2_Write(0x11);                                 //Es la dirección de FIFO
-     for (j=0;j<9;j++){
-         vectorMuestra[j] = SPI_Read(0);
-     }
-     CS_ADXL355=1;
-     return;
+
+unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
+         unsigned short j;
+         unsigned short muestra;
+         if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
+             CS_ADXL355=0;
+             for (j=0;j<9;j++){
+                 muestra = ADXL355_read_byte(axisAddresses[j]);
+                 if (j==2||j==5||j==8){
+                    vectorMuestra[j] = (muestra>>4)&0x0F;
+                 } else {
+                    vectorMuestra[j] = muestra;
+                 }
+             }
+             CS_ADXL355=1;
+         } else {
+             for (j=0;j<8;j++){
+                 vectorMuestra[j] = 0;
+             }
+             vectorMuestra[8] = (ADXL355_read_byte(Status)&0x7F);                //Rellena el ultimo byte de la trama con el contenido del registro Status
+         }
+         return;
 }
