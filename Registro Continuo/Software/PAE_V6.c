@@ -23,6 +23,7 @@ unsigned short buffer;
 unsigned short banLinea;
 unsigned short banInicio;
 unsigned short banFile;
+unsigned short banNewFile;
 unsigned short numBytes;
 unsigned short contMuestras;
 unsigned char tramaInSPI[20];
@@ -30,12 +31,18 @@ unsigned char tramaDatos[NUM_ELEMENTOS];
 unsigned char tramaLarga[NUM_ELEMENTOS*NUM_CICLOS];
 unsigned char trama[NUM_ELEMENTOS];
 unsigned short tiempoSPI;
+
 FILE *fp;
-//char path[26];
-char path[] = "./Resultados/";
+char path[30];
+char ext[8];
+char nombreArchivo[16];
+unsigned int timeNewFile[2] = {23, 59};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
+unsigned short banNewFile;
+
 unsigned short contCiclos;
 unsigned short contador;
 pthread_t h1;
+									
 
 
 //Declaracion de funciones
@@ -56,13 +63,10 @@ int main(void) {
   banLinea = 0;
   banInicio = 0;
   banFile = 0;
+  banNewFile = 0;
   numBytes = 0;
   contCiclos = 0;
-  contador = 0;
-  
-  time_t t;
-  struct tm *tm;
-  char fechayhora[100];
+  contador = 0;  
  
   ConfiguracionPrincipal();
  
@@ -72,7 +76,6 @@ int main(void) {
 
   bcm2835_spi_end();
   bcm2835_close();
-  fclose (fp);
 
   return 0;
  
@@ -80,8 +83,6 @@ int main(void) {
 
 
 int ConfiguracionPrincipal(){
-	
-	CrearArchivo();
 	
 	//Cierra todo si algo esta abierto
 	if (bcm2835_spi_begin()){
@@ -121,9 +122,10 @@ int ConfiguracionPrincipal(){
 
 void NuevaLinea(){
 	
-	
-	
+	CrearArchivo();
 	contCiclos++;
+	
+	//**La ejecucion de este hilo toma alrededor de 5 seg, si justo se encuentra ejecutandose y se crea un nuevo archivo, ignorara el nuevo archivo y continuara escribiendo el archivo anterior
 	if (contCiclos==NUM_CICLOS){
 		contCiclos = 0;
 		pthread_create (&h1, NULL, thGrabarVector, (void*)tramaLarga);   		//Crea un hilo h1 para guardar el vector tramaDatos en el archivo binario
@@ -198,19 +200,54 @@ void NuevaMuestra(){
 	
 }
 
-
-void CrearArchivo(unsigned short){
+void CrearArchivo(){
 	
-	//Obtiene la hora y la fecha del sistema y la guarda en formato string en la variable fechayhora
+	
+	//Obtiene la hora y la fecha del sistema 
+	time_t t;
+	struct tm *tm;
 	t=time(NULL);
 	tm=localtime(&t);
-	strftime(fechayhora, 100, "%Y%m%d%H%M", tm);
 	
-	//Genera la ruta y donde se almacenara el archivo binario
-	strcat(path, fechayhora);
-	strcat( path, ".dat");
-	fp = fopen (path, "ab");	
+	//Cambia el estado de la bandera faltando un minuto para que se cumpla la hora fijada para la creacion de un archivo nuevo
+	if ((tm->tm_hour==timeNewFile[0])&&(tm->tm_min==timeNewFile[1]-1)){
+		banNewFile = 2;	
+	}
 	
+	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario
+	if ((tm->tm_hour==timeNewFile[0])&&(tm->tm_min==timeNewFile[1])&&(banNewFile==2)){
+		fclose (fp);
+		banNewFile = 0;
+	}
+	
+	//Verifica que la bandera de nuevo archivo sea igual a cero
+	//Si al invocar a esta funcion encuentra que ya existe un archivo con el nombre de la fecha actual, lo abrira y seguira escribiendo a continuacion (esto debido al comando "ab" en la funcion fopen)
+	//Si al invocar a esta funcion no encuentra ningun archivo con el nombre de la fecha actual creara un archivo con ese nombre. 
+	if (banNewFile==0){
+		
+		//Establece la fecha y hora actual como nombre que tendra el archivo binario 
+		strftime(nombreArchivo, 20, "%Y%m%d%H%M", tm);
+		//printf ("Se creo el archivo: %s.dat\n", nombreArchivo);
+		
+		//Asigna espacio en la memoria para el nombre completo de la ruta
+		char *path = malloc(strlen(nombreArchivo)+5+13);
+		
+		//Asigna el nombre de la ruta y la extencion a los array de caracteres
+		strcpy(ext, ".dat");
+		strcpy(path, "./Resultados/");
+		
+		//Realiza la concatenacion de array de caracteres
+		strcat(path, nombreArchivo);
+		strcat(path, ext);
+		
+		//Abre o crea el archivo binario
+		fp = fopen (path, "ab+");	
+		
+		//Cambia el valor de la bandera de nuevo archivo para que ignore esta funcion en la siguientes muestras y libera la memoria reservada para el nombre de la ruta 
+		banNewFile = 1;	
+		free(path);		
+	}
+			
 }
 
 
