@@ -23,8 +23,8 @@ unsigned short tiempoSPI;
 unsigned short tramaSize;
 char entrada[30];
 char salida[30];
-char ext1[4];
-char ext2[4];
+char ext1[8];
+char ext2[8];
 char nombreArchivo[16];
 FILE *lf;
 FILE *ef;
@@ -56,8 +56,8 @@ void RecuperarVector() {
 	scanf("%s", nombreArchivo);
 	
 	//Asigna espacio en la memoria para el nombre completo de la ruta
-	char *entrada = malloc(strlen(nombreArchivo)+4+13+1);
-	char *salida = malloc(strlen(nombreArchivo)+4+13+1);
+	char *entrada = malloc(strlen(nombreArchivo)+5+13);
+	char *salida = malloc(strlen(nombreArchivo)+5+13);
 	
 	//Asigna el nombre de la ruta y la extencion a los array de caracteres
 	strcpy(entrada, "./Resultados/");
@@ -72,11 +72,14 @@ void RecuperarVector() {
 	strcat(salida, ext2);
 	
 	//Abre el archivo binario de entrada y crea el archivo de texto de salida
-	lf = fopen (entrada, "rb");
+	//lf = fopen (entrada, "rb");
 	ef = fopen (salida, "wb");
 	
 	free(entrada);
-	free(salida);	
+	free(salida);
+
+	lf = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/201904091734.dat", "rb");
+	//ef = fopen ("/home/pi/Documents/RegistroContinuo/Software/Resultados/lectura.txt", "wb");
 	
 	while (contMuestras<numCiclos){
 		fread(tramaDatos, sizeof(char), tramaSize, lf);
