@@ -98,18 +98,25 @@ void ADXL355_init();
 void ADXL355_write_byte(unsigned char address, unsigned char value);
 unsigned char ADXL355_read_byte(unsigned char address);
 unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
+unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO, unsigned short numFIFO);
 
 
 void ADXL355_init(){
+    ADXL355_write_byte(Reset, 0x52);
+    ADXL355_write_byte(0x2D, 0x01);
+    ADXL355_write_byte(Status, 0xFF);
+    
     ADXL355_write_byte(POWER_CTL, DRDY_OFF|TEMP_OFF|MEASURING);
-    ADXL355_write_byte(Range, _2G);
+    ADXL355_write_byte(Range, INT_ACTIVE_HIGH |_2G);
     ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);
+    //ADXL355_write_byte(FIFO_SAMPLES, 0x4B);
+    ADXL355_write_byte(FIFO_SAMPLES, 0x02);
 }
 
 
 void ADXL355_write_byte(unsigned char address, unsigned char value){
      address = (address<<1)&0xFE;
-     CS_ADXL355=0;
+     CS_ADXL355 = 0;
      SPI2_Write(address);
      SPI2_Write(value);
      CS_ADXL355=1;
@@ -119,33 +126,56 @@ void ADXL355_write_byte(unsigned char address, unsigned char value){
 unsigned char ADXL355_read_byte(unsigned char address){
      unsigned char value = 0x00;
      address=(address<<1)|0x01;
-     CS_ADXL355=0;
+     CS_ADXL355 = 0;
      SPI2_Write(address);
      value=SPI2_Read(0);
-     CS_ADXL355=1;
+     CS_ADXL355 = 1;
      return value;
 }
 
 
 unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
-         unsigned short j;
-         unsigned short muestra;
-         if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
-             CS_ADXL355=0;
-             for (j=0;j<9;j++){
-                 muestra = ADXL355_read_byte(axisAddresses[j]);
-                 if (j==2||j==5||j==8){
-                    vectorMuestra[j] = (muestra>>4)&0x0F;
-                 } else {
-                    vectorMuestra[j] = muestra;
-                 }
+     unsigned short j;
+     unsigned short muestra;
+     if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
+         CS_ADXL355=0;
+         for (j=0;j<9;j++){
+             muestra = ADXL355_read_byte(axisAddresses[j]);
+             if (j==2||j==5||j==8){
+                vectorMuestra[j] = (muestra>>4)&0x0F;
+             } else {
+                vectorMuestra[j] = muestra;
              }
-             CS_ADXL355=1;
-         } else {
-             for (j=0;j<8;j++){
-                 vectorMuestra[j] = 0;
-             }
-             vectorMuestra[8] = (ADXL355_read_byte(Status)&0x7F);                //Rellena el ultimo byte de la trama con el contenido del registro Status
          }
-         return;
+         CS_ADXL355=1;
+     } else {
+         for (j=0;j<8;j++){
+             vectorMuestra[j] = 0;
+         }
+         vectorMuestra[8] = (ADXL355_read_byte(Status)&0x7F);                //Rellena el ultimo byte de la trama con el contenido del registro Status
+     }
+     return;
+}
+
+
+unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO, unsigned short numFIFO){
+     unsigned char add;
+     unsigned short j;
+     unsigned short muestra;
+     add = (FIFO_DATA<<1)|0x01;
+     CS_ADXL355 = 0;
+     SPI2_Write(add);
+     for (j=0; j<numFIFO; j++){
+         vectorFIFO[0+(j*9)] = SPI_Read(8);                                  //DATA X
+         vectorFIFO[1+(j*9)] = SPI_Read(7);
+         vectorFIFO[2+(j*9)] = SPI_Read(6)&0x0F;                             //Comprueba que se obtuvo el LSB del DATA X
+         vectorFIFO[3+(j*9)] = SPI_Read(5);                                  //DATA Y
+         vectorFIFO[4+(j*9)] = SPI_Read(4);
+         vectorFIFO[5+(j*9)] = SPI_Read(3)&0x0F;                             //Comprueba que se obtuvo el LSB del DATA Y
+         vectorFIFO[6+(j*9)] = SPI_Read(2);                                  //DATA Z
+         vectorFIFO[7+(j*9)] = SPI_Read(1);
+         vectorFIFO[8+(j*9)] = SPI_Read(0)&0x0F;                             //Comprueba que se obtuvo el LSB del DATA Z
+     }
+     CS_ADXL355 = 1;
+     return;
 }
