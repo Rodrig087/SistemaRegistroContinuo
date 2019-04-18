@@ -22,13 +22,13 @@ sbit RP2_Direction at TRISB4_bit;
 const short HDR = 0x3A;                                 //Constante de delimitador de inicio de trama
 const short END1 = 0x0D;                                //Constante de delimitador 1 de final de trama
 const short END2 = 0x0A;                                //Constante de delimitador 2 de final de trama
-const unsigned short NUM_MUESTRAS = 199;                //Constantes para almacenar el numero de muestras que se van a enviar en la interrupcion P2
+const unsigned short NUM_MUESTRAS = 249;                //Constantes para almacenar el numero de muestras que se van a enviar en la interrupcion P2
 //const unsigned int T2 = 222;
 
 unsigned char tiempo[5];                                //Vector para almacenar los datos de la cabecera
-unsigned char pduSPI[15];                               //Vector de trama de datos del puerto UART2
+unsigned char pduSPI[15];
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-unsigned char tramaCompleta[2000];
+//unsigned char tramaCompleta[2000];
 unsigned char lecturaRegistro;
 
 unsigned short i, x;
@@ -57,6 +57,7 @@ void ConfiguracionPrincipal(){
      CLKDIVbits.PLLPOST = 0;                            //N2=2
      CLKDIVbits.PLLPRE = 5;                             //N1=7
      PLLFBDbits.PLLDIV = 150;                           //M=152
+     
      //Configuracion de puertos
      ANSELA = 0;                                        //Configura PORTA como digital     *
      ANSELB = 0;                                        //Configura PORTB como digital     *

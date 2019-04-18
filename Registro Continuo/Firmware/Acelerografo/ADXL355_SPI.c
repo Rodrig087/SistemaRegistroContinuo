@@ -137,7 +137,7 @@ unsigned char ADXL355_read_byte(unsigned char address){
 unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
      unsigned short j;
      unsigned short muestra;
-     if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
+     if((ADXL355_read_byte(Status)&0x01)==1){                                //Verifica que el bit DATA_RDY del registro Status este en alto
          CS_ADXL355=0;
          for (j=0;j<9;j++){
              muestra = ADXL355_read_byte(axisAddresses[j]);
@@ -168,13 +168,14 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO, unsigned short numFIFO
      for (j=0; j<numFIFO; j++){
          vectorFIFO[0+(j*9)] = SPI_Read(8);                                  //DATA X
          vectorFIFO[1+(j*9)] = SPI_Read(7);
-         vectorFIFO[2+(j*9)] = SPI_Read(6)&0x0F;                             //Comprueba que se obtuvo el LSB del DATA X
+         //vectorFIFO[2+(j*9)] = (SPI_Read(6)>>4)&0x0F;
+         vectorFIFO[2+(j*9)] = SPI_Read(6)&0x0F;
          vectorFIFO[3+(j*9)] = SPI_Read(5);                                  //DATA Y
          vectorFIFO[4+(j*9)] = SPI_Read(4);
-         vectorFIFO[5+(j*9)] = SPI_Read(3)&0x0F;                             //Comprueba que se obtuvo el LSB del DATA Y
+         vectorFIFO[5+(j*9)] = SPI_Read(3);
          vectorFIFO[6+(j*9)] = SPI_Read(2);                                  //DATA Z
          vectorFIFO[7+(j*9)] = SPI_Read(1);
-         vectorFIFO[8+(j*9)] = SPI_Read(0)&0x0F;                             //Comprueba que se obtuvo el LSB del DATA Z
+         vectorFIFO[8+(j*9)] = SPI_Read(0);
      }
      CS_ADXL355 = 1;
      return;

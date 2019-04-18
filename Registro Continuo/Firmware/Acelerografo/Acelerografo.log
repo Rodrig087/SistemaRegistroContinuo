@@ -3,22 +3,22 @@ diagnostics: 0	121	Loading...
 diagnostics: 0	122	Compilation Started	adxl355_spi.c
 warning: 157	1503	Result is not defined in function: ''	adxl355_spi.c
 warning: 158	1503	Result is not defined in function: 'ADXL355_read_data'	adxl355_spi.c
-warning: 180	1503	Result is not defined in function: ''	adxl355_spi.c
+warning: 181	1503	Result is not defined in function: ''	adxl355_spi.c
 hint: 164	1163	Variable 'muestra' has been declared, but not used	adxl355_spi.c
-warning: 181	1503	Result is not defined in function: 'ADXL355_read_FIFO'	adxl355_spi.c
+warning: 182	1503	Result is not defined in function: 'ADXL355_read_FIFO'	adxl355_spi.c
 hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
 hint: 0	1004	interrupt handler (spi_1 at 0x0028)	Acelerografo.c
-warning: 235	1505	Suspicious pointer conversion	Acelerografo.c
-diagnostics: 245	123	Compiled Successfully	Acelerografo.c
-warning: 239	1519	Logical expression is always: 'False'	Acelerografo.c
+warning: 236	1505	Suspicious pointer conversion	Acelerografo.c
+diagnostics: 246	123	Compiled Successfully	Acelerografo.c
+warning: 240	1519	Logical expression is always: 'False'	Acelerografo.c
 hint: 127	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
 hint: 162	1164	Variable 'add' has been eliminated by optimizer	Acelerografo.c
-diagnostics: 0	127	All files Compiled in 94 ms	 
+diagnostics: 0	127	All files Compiled in 156 ms	 
 hint: 0	1144	Used RX (bytes): 27 (84%)   Free RX (bytes): 5 (16%)	Used RX (bytes): 27 (84%)   Free RX (bytes): 5 (16%)
 hint: 0	1144	Static RAM (bytes): 46   Dynamic RAM (bytes): 28626	Static RAM (bytes): 46   Dynamic RAM (bytes): 28626
-hint: 0	1144	Used ROM (bytes): 1941 (1%)  Free ROM (bytes): 174167 (99%)	Used ROM (bytes): 1941 (1%)  Free ROM (bytes): 174167 (99%)
+hint: 0	1144	Used ROM (bytes): 1937 (1%)  Free ROM (bytes): 174171 (99%)	Used ROM (bytes): 1937 (1%)  Free ROM (bytes): 174171 (99%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
-diagnostics: 0	128	Linked in 172 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 422 ms	 
-diagnostics: 0	103	Finished successfully: 16 abr. 2019, 17:48:19	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 188 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 547 ms	 
+diagnostics: 0	103	Finished successfully: 17 abr. 2019, 12:19:07	Acelerografo.mcpds

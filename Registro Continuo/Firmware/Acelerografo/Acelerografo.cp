@@ -78,13 +78,14 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO, unsigned short numFIFO
  for (j=0; j<numFIFO; j++){
  vectorFIFO[0+(j*9)] = SPI_Read(8);
  vectorFIFO[1+(j*9)] = SPI_Read(7);
+
  vectorFIFO[2+(j*9)] = SPI_Read(6)&0x0F;
  vectorFIFO[3+(j*9)] = SPI_Read(5);
  vectorFIFO[4+(j*9)] = SPI_Read(4);
- vectorFIFO[5+(j*9)] = SPI_Read(3)&0x0F;
+ vectorFIFO[5+(j*9)] = SPI_Read(3);
  vectorFIFO[6+(j*9)] = SPI_Read(2);
  vectorFIFO[7+(j*9)] = SPI_Read(1);
- vectorFIFO[8+(j*9)] = SPI_Read(0)&0x0F;
+ vectorFIFO[8+(j*9)] = SPI_Read(0);
  }
  CS_ADXL355 = 1;
  return;
@@ -98,13 +99,13 @@ sbit RP2_Direction at TRISB4_bit;
 const short HDR = 0x3A;
 const short END1 = 0x0D;
 const short END2 = 0x0A;
-const unsigned short NUM_MUESTRAS = 199;
+const unsigned short NUM_MUESTRAS = 249;
 
 
 unsigned char tiempo[5];
 unsigned char pduSPI[15];
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-unsigned char tramaCompleta[2000];
+
 unsigned char lecturaRegistro;
 
 unsigned short i, x;
@@ -133,6 +134,7 @@ void ConfiguracionPrincipal(){
  CLKDIVbits.PLLPOST = 0;
  CLKDIVbits.PLLPRE = 5;
  PLLFBDbits.PLLDIV = 150;
+
 
  ANSELA = 0;
  ANSELB = 0;
@@ -169,7 +171,7 @@ void ConfiguracionPrincipal(){
  INT1IE_bit = 1;
  INT1IF_bit = 0;
  IPC5bits.INT1IP = 0x01;
-#line 104 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 105 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  T1CON = 0x0010;
  T1CON.TON = 0;
  T1IE_bit = 1;
@@ -255,7 +257,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  SPI1BUF = 0xFF;
  }
 }
-#line 201 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 202 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 void main() {
 
  ConfiguracionPrincipal();
