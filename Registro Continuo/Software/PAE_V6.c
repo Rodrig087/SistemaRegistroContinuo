@@ -84,13 +84,10 @@ int main(void) {
 
 int ConfiguracionPrincipal(){
 	
-	//Cierra todo si algo esta abierto
-	if (bcm2835_spi_begin()){
-		bcm2835_spi_end();
-    }
-	if (bcm2835_init()){
-		bcm2835_close();
-    }
+	//Reinicia el modulo SPI
+	system("sudo rmmod  spi_bcm2835");
+	bcm2835_delayMicroseconds(500);
+	system("sudo modprobe spi_bcm2835");
 	
     //Configuracion libreria WiringPi:
     wiringPiSetup();

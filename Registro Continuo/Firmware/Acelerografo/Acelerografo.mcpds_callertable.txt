@@ -7,11 +7,10 @@ main
 				SPI2_Write
 					SPI2_Read
 int_1
-	ADXL355_read_FIFO
-		SPI2_Write
-		SPI_Read
-			SPI1_Read
+	ADXL355_read_data
+		ADXL355_read_byte
+			SPI2_Write
 			SPI2_Read
 spi_1
 Timer1Int
-	ADXL355_read_FIFO
+	ADXL355_read_data

@@ -1051,7 +1051,6 @@ adsidl_bit
 adxl355_init
 adxl355_read_byte
 adxl355_read_data
-adxl355_read_fifo
 adxl355_write_byte
 altdtr1
 altdtr1_0
@@ -5873,7 +5872,6 @@ lebdly2
 lebdly2bits
 lebdly3
 lebdly3bits
-lecturaregistro
 lendian
 lendian
 lendian_bit

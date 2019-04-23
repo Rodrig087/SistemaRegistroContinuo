@@ -22,14 +22,12 @@ sbit RP2_Direction at TRISB4_bit;
 const short HDR = 0x3A;                                 //Constante de delimitador de inicio de trama
 const short END1 = 0x0D;                                //Constante de delimitador 1 de final de trama
 const short END2 = 0x0A;                                //Constante de delimitador 2 de final de trama
-const unsigned short NUM_MUESTRAS = 249;                //Constantes para almacenar el numero de muestras que se van a enviar en la interrupcion P2
+const unsigned short NUM_MUESTRAS = 199;                //Constantes para almacenar el numero de muestras que se van a enviar en la interrupcion P2
 //const unsigned int T2 = 222;
 
 unsigned char tiempo[5];                                //Vector para almacenar los datos de la cabecera
-unsigned char pduSPI[15];
+unsigned char pduSPI[15];                               //Vector de trama de datos del puerto UART2
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-//unsigned char tramaCompleta[2000];
-unsigned char lecturaRegistro;
 
 unsigned short i, x;
 unsigned short  buffer;
@@ -57,7 +55,6 @@ void ConfiguracionPrincipal(){
      CLKDIVbits.PLLPOST = 0;                            //N2=2
      CLKDIVbits.PLLPRE = 5;                             //N1=7
      PLLFBDbits.PLLDIV = 150;                           //M=152
-     
      //Configuracion de puertos
      ANSELA = 0;                                        //Configura PORTA como digital     *
      ANSELB = 0;                                        //Configura PORTB como digital     *
@@ -80,7 +77,6 @@ void ConfiguracionPrincipal(){
      SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);        //*
      SPI1IE_bit = 1;                                    //Habilita la interrupcion por SPI1  *
      SPI1IF_bit = 0;                                    //Limpia la bandera de interrupcion por SPI *
-     IPC2bits.SPI1IP = 0x04;
      
      //Configuracion del puerto SPI2 en modo Master
      RPINR22bits.SDI2R = 0x21;                          //Configura el pin RB1/RPI33 como SDI2 *
@@ -89,26 +85,19 @@ void ConfiguracionPrincipal(){
      SPI2STAT.SPIEN = 1;                                //Habilita el SPI2 *
      SPI2_Init();                                       //Inicializa el modulo SPI2
 
-     //Configuracion de la interrupcion externa INT1
+     //Configuracion de la interrupcion externa
      RPINR0 = 0x2E00;                                   //Asigna INT1 al RB14/RPI46
      INT1IE_bit = 1;                                    //Habilita la interrupcion externa INT1
      INT1IF_bit = 0;                                    //Limpia la bandera de interrupcion externa INT1
-     IPC5bits.INT1IP = 0x01;                            //Prioridad en la interrupocion externa 1
-     
-     //Configuracion de la interrupcion externa INT2
-     /*RPINR1 = 0x002B;                                   //Asigna INT1 al RB11/RP43
-     INT2IE_bit = 1;                                    //Habilita la interrupcion externa INT2
-     INT2IF_bit = 0;                                    //Limpia la bandera de interrupcion externa INT1
-     IPC7bits.INT2IP = 0x03;                            //Prioridad en la interrupocion externa 1*/
+     IPC0 = 0x0001;                                     //Prioridad en la interrupocion externa 1
 
      //Configuracion del TMR1 con un tiempo de 5ms
      T1CON = 0x0010;
      T1CON.TON = 0;                                     //Apaga el Timer1
      T1IE_bit = 1;                                      //Habilita la interrupción de desbordamiento TMR1
      T1IF_bit = 0;                                      //Limpia la bandera de interrupcion del TMR2
-     //PR1 = 25000;                                       //Preload 5ms
-     PR1 = 20000;                                       //Preload 4ms
-     IPC0bits.T1IP = 0x02;                              //Prioridad de la interrupcion por desbordamiento del TMR1
+     IPC0 = 0x1000;                                     //Prioridad de la interrupcion por desbordamiento del TMR1
+     PR1 = 25000;
      
      ADXL355_init();
      
@@ -127,8 +116,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      contMuestras = 0;                                  //Limpia el contador de muestras
      
      pduSPI[0] = contCiclos;                            //Carga el primer valor de la trama que se enviara por el SPI con el valor de la muestra actual
-     //ADXL355_read_data(datosLeidos);
-     ADXL355_read_FIFO(datosLeidos, 1);                 //Lee el contenido del FIFO
+     ADXL355_read_data(datosLeidos);
      for (x=1;x<10;x++){
          pduSPI[x]=datosLeidos[x-1];                    //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
      }
@@ -147,23 +135,21 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      contMuestras++;                                    //Incrementa el contador de muestras
 
      pduSPI[0] = contMuestras;                          //Carga el primer valor de la trama de datos con el valor de la muestra actual
-     //ADXL355_read_data(datosLeidos);
-     ADXL355_read_FIFO(datosLeidos, 1);                 //Lee el contenido del FIFO
+     ADXL355_read_data(datosLeidos);
      for (x=1;x<10;x++){
-         pduSPI[x]=datosLeidos[x-1];                    //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
+         pduSPI[x]=datosLeidos[x-1];                      //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
      }
      if (contMuestras==NUM_MUESTRAS){
-        T1CON.TON = 0;                                  //Apaga el Timer1
+        T1CON.TON = 0;                                  //Apaga el Timer2
         for (x=10;x<15;x++){
             pduSPI[x]=tiempo[x-10];                     //Carga el vector de salida de datos SPI con los datos de la cabecera
         }
      }
      
      banTI = 1;                                         //Activa la bandera de inicio de trama
-    
-     RP2 = 1;                                         //Genera el pulso P2 para producir la interrupcion en la RPi
+     RP2 = 1;                                           //Genera el pulso P2 para producir la interrupcion en la RPi
      Delay_us(20);
-     RP2 = 0;                                         //Limpia la bandera de interrupcion por desbordamiento del Timer1
+     RP2 = 0;                                           //Limpia la bandera de interrupcion por desbordamiento del Timer1
 }
 
 //Interrupcion SPI1
@@ -188,12 +174,6 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
 }
 
-//Interrupcion INT2
-/*void int_2() org IVT_ADDR_INT2INTERRUPT {
-     INT2IF_bit = 0;                                    //Limpia la bandera de interrupcion externa INT2
-     //lecturaRegistro = ADXL355_read_byte(Status);
-}*/
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -212,16 +192,6 @@ void main() {
      //datox = 0;                                         //000 000 000
      //datoy = 0x6F6F6F6F;                                //111 111 111
      //datoz = 0x6F6F6F6F;                                //111 111 111
-     
-     datosLeidos[0] = 0x01;
-     datosLeidos[1] = 0x02;
-     datosLeidos[2] = 0x03;
-     datosLeidos[3] = 0x01;
-     datosLeidos[4] = 0x02;
-     datosLeidos[5] = 0x03;
-     datosLeidos[6] = 0x01;
-     datosLeidos[7] = 0x02;
-     datosLeidos[8] = 0x03;
 
      banTI = 0;
      banLec = 0;
