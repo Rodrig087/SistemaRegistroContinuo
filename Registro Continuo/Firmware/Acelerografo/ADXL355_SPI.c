@@ -98,12 +98,15 @@ void ADXL355_init();
 void ADXL355_write_byte(unsigned char address, unsigned char value);
 unsigned char ADXL355_read_byte(unsigned char address);
 unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
+unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO);
 
 
 void ADXL355_init(){
-    ADXL355_write_byte(POWER_CTL, DRDY_OFF|TEMP_OFF|MEASURING);
-    ADXL355_write_byte(Range, _2G);
+    ADXL355_write_byte(Reset,0x52);                                             //Resetea el dispositivo
+    Delay_ms(10);
+    ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);
     ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);
+    ADXL355_write_byte(Range, _2G);
 }
 
 
@@ -141,7 +144,29 @@ unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
              for (j=0;j<9;j++){
                  vectorMuestra[j] = 0;
              }
-             //vectorMuestra[8] = (ADXL355_read_byte(Status)&0x7F);                //Rellena el ultimo byte de la trama con el contenido del registro Status
          }
          return;
+}
+
+
+unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
+     unsigned char add;
+     add = (FIFO_DATA<<1)|0x01;
+     CS_ADXL355 = 0;
+     SPI2_Write(add);
+     //DATA X
+     vectorFIFO[0] = SPI2_Read(0);
+     vectorFIFO[1] = SPI2_Read(1);
+     vectorFIFO[2] = SPI2_Read(2);
+     //DATA Y
+     vectorFIFO[3] = SPI2_Read(0);
+     vectorFIFO[4] = SPI2_Read(1);
+     vectorFIFO[5] = SPI2_Read(2);
+     //DATA Z
+     vectorFIFO[6] = SPI2_Read(0);
+     vectorFIFO[7] = SPI2_Read(1);
+     vectorFIFO[8] = SPI2_Read(2);
+     CS_ADXL355 = 1;
+     Delay_us(5);
+     return;
 }

@@ -1051,6 +1051,7 @@ adsidl_bit
 adxl355_init
 adxl355_read_byte
 adxl355_read_data
+adxl355_read_fifo
 adxl355_write_byte
 altdtr1
 altdtr1_0
@@ -1276,7 +1277,9 @@ b6
 b7
 b8
 b9
+banciclo
 banesc
+baninicio
 banlec
 banresp
 banspi
@@ -2308,7 +2311,9 @@ con_cm3con_bit
 con_cm4con_bit
 configuracionprincipal
 contciclos
+contfifo
 contmuestras
+conttimer1
 corcon
 corconbits
 cosc
@@ -2680,7 +2685,9 @@ da_bit
 dae
 dae
 dae_bit
+datosfifo
 datosleidos
+datosleidos2
 datox
 datoy
 datoz
@@ -6090,6 +6097,8 @@ nullw_dma1con_bit
 nullw_dma2con_bit
 nullw_dma3con_bit
 num_muestras
+numfifo
+numsetsfifo
 nvmadr
 nvmadr_0
 nvmadr_0_bit
@@ -11282,6 +11291,7 @@ ton_t2con_bit
 ton_t3con_bit
 ton_t4con_bit
 ton_t5con_bit
+tramacompleta
 trapr
 trapr
 trapr_bit
@@ -12922,6 +12932,7 @@ xwm0
 xwm1
 xwm2
 xwm3
+y
 ye_0
 ye_0_bit
 ye_1

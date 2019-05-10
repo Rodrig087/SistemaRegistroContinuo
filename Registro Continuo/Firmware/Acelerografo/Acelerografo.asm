@@ -1,22 +1,36 @@
 
 _ADXL355_init:
 
-;adxl355_spi.c,103 :: 		void ADXL355_init(){
-;adxl355_spi.c,104 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF|TEMP_OFF|MEASURING);
+;adxl355_spi.c,104 :: 		void ADXL355_init(){
+;adxl355_spi.c,105 :: 		ADXL355_write_byte(Reset,0x52);                                             //Resetea el dispositivo
 	PUSH	W10
 	PUSH	W11
-	MOV.B	#6, W11
+	MOV.B	#82, W11
+	MOV.B	#47, W10
+	CALL	_ADXL355_write_byte
+;adxl355_spi.c,106 :: 		Delay_ms(10);
+	MOV	#2, W8
+	MOV	#14464, W7
+L_ADXL355_init0:
+	DEC	W7
+	BRA NZ	L_ADXL355_init0
+	DEC	W8
+	BRA NZ	L_ADXL355_init0
+	NOP
+	NOP
+;adxl355_spi.c,107 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);
+	MOV.B	#5, W11
 	MOV.B	#45, W10
 	CALL	_ADXL355_write_byte
-;adxl355_spi.c,105 :: 		ADXL355_write_byte(Range, _2G);
-	MOV.B	#1, W11
-	MOV.B	#44, W10
-	CALL	_ADXL355_write_byte
-;adxl355_spi.c,106 :: 		ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);
+;adxl355_spi.c,108 :: 		ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);
 	MOV.B	#4, W11
 	MOV.B	#40, W10
 	CALL	_ADXL355_write_byte
-;adxl355_spi.c,107 :: 		}
+;adxl355_spi.c,109 :: 		ADXL355_write_byte(Range, _2G);
+	MOV.B	#1, W11
+	MOV.B	#44, W10
+	CALL	_ADXL355_write_byte
+;adxl355_spi.c,110 :: 		}
 L_end_ADXL355_init:
 	POP	W11
 	POP	W10
@@ -25,25 +39,25 @@ L_end_ADXL355_init:
 
 _ADXL355_write_byte:
 
-;adxl355_spi.c,110 :: 		void ADXL355_write_byte(unsigned char address, unsigned char value){
-;adxl355_spi.c,111 :: 		address = (address<<1)&0xFE;
+;adxl355_spi.c,113 :: 		void ADXL355_write_byte(unsigned char address, unsigned char value){
+;adxl355_spi.c,114 :: 		address = (address<<1)&0xFE;
 	PUSH	W10
 	ZE	W10, W0
 	SL	W0, #1, W1
 	MOV	#254, W0
 	AND	W1, W0, W0
 	MOV.B	W0, W10
-;adxl355_spi.c,112 :: 		CS_ADXL355=0;
+;adxl355_spi.c,115 :: 		CS_ADXL355=0;
 	BCLR	LATA3_bit, BitPos(LATA3_bit+0)
-;adxl355_spi.c,113 :: 		SPI2_Write(address);
+;adxl355_spi.c,116 :: 		SPI2_Write(address);
 	ZE	W0, W10
 	CALL	_SPI2_Write
-;adxl355_spi.c,114 :: 		SPI2_Write(value);
+;adxl355_spi.c,117 :: 		SPI2_Write(value);
 	ZE	W11, W10
 	CALL	_SPI2_Write
-;adxl355_spi.c,115 :: 		CS_ADXL355=1;
+;adxl355_spi.c,118 :: 		CS_ADXL355=1;
 	BSET	LATA3_bit, BitPos(LATA3_bit+0)
-;adxl355_spi.c,116 :: 		}
+;adxl355_spi.c,119 :: 		}
 L_end_ADXL355_write_byte:
 	POP	W10
 	RETURN
@@ -51,38 +65,37 @@ L_end_ADXL355_write_byte:
 
 _ADXL355_read_byte:
 
-;adxl355_spi.c,119 :: 		unsigned char ADXL355_read_byte(unsigned char address){
-;adxl355_spi.c,120 :: 		unsigned char value = 0x00;
+;adxl355_spi.c,122 :: 		unsigned char ADXL355_read_byte(unsigned char address){
+;adxl355_spi.c,123 :: 		unsigned char value = 0x00;
 	PUSH	W10
-;adxl355_spi.c,121 :: 		address=(address<<1)|0x01;
+;adxl355_spi.c,124 :: 		address=(address<<1)|0x01;
 	ZE	W10, W0
 	SL	W0, #1, W0
 	IOR	W0, #1, W0
 	MOV.B	W0, W10
-;adxl355_spi.c,122 :: 		CS_ADXL355=0;
+;adxl355_spi.c,125 :: 		CS_ADXL355=0;
 	BCLR	LATA3_bit, BitPos(LATA3_bit+0)
-;adxl355_spi.c,123 :: 		SPI2_Write(address);
+;adxl355_spi.c,126 :: 		SPI2_Write(address);
 	ZE	W0, W10
 	CALL	_SPI2_Write
-;adxl355_spi.c,124 :: 		value=SPI2_Read(0);
+;adxl355_spi.c,127 :: 		value=SPI2_Read(0);
 	CLR	W10
 	CALL	_SPI2_Read
-;adxl355_spi.c,125 :: 		CS_ADXL355=1;
+;adxl355_spi.c,128 :: 		CS_ADXL355=1;
 	BSET	LATA3_bit, BitPos(LATA3_bit+0)
-;adxl355_spi.c,126 :: 		return value;
-;adxl355_spi.c,127 :: 		}
-;adxl355_spi.c,126 :: 		return value;
-;adxl355_spi.c,127 :: 		}
+;adxl355_spi.c,129 :: 		return value;
+;adxl355_spi.c,130 :: 		}
+;adxl355_spi.c,129 :: 		return value;
+;adxl355_spi.c,130 :: 		}
 L_end_ADXL355_read_byte:
 	POP	W10
 	RETURN
 ; end of _ADXL355_read_byte
 
 _ADXL355_read_data:
-	LNK	#2
 
-;adxl355_spi.c,130 :: 		unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
-;adxl355_spi.c,133 :: 		if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
+;adxl355_spi.c,133 :: 		unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
+;adxl355_spi.c,136 :: 		if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
 	PUSH	W10
 	MOV.B	#4, W10
 	CALL	_ADXL355_read_byte
@@ -90,22 +103,22 @@ _ADXL355_read_data:
 	ZE	W0, W0
 	AND	W0, #1, W0
 	CP	W0, #1
-	BRA Z	L__ADXL355_read_data45
-	GOTO	L_ADXL355_read_data0
-L__ADXL355_read_data45:
-;adxl355_spi.c,134 :: 		CS_ADXL355=0;
+	BRA Z	L__ADXL355_read_data77
+	GOTO	L_ADXL355_read_data2
+L__ADXL355_read_data77:
+;adxl355_spi.c,137 :: 		CS_ADXL355=0;
 	BCLR	LATA3_bit, BitPos(LATA3_bit+0)
-;adxl355_spi.c,135 :: 		for (j=0;j<9;j++){
+;adxl355_spi.c,138 :: 		for (j=0;j<9;j++){
 ; j start address is: 4 (W2)
 	CLR	W2
 ; j end address is: 4 (W2)
-L_ADXL355_read_data1:
+L_ADXL355_read_data3:
 ; j start address is: 4 (W2)
 	CP.B	W2, #9
-	BRA LTU	L__ADXL355_read_data46
-	GOTO	L_ADXL355_read_data2
-L__ADXL355_read_data46:
-;adxl355_spi.c,136 :: 		muestra = ADXL355_read_byte(axisAddresses[j]);
+	BRA LTU	L__ADXL355_read_data78
+	GOTO	L_ADXL355_read_data4
+L__ADXL355_read_data78:
+;adxl355_spi.c,139 :: 		muestra = ADXL355_read_byte(axisAddresses[j]);
 	ZE	W2, W1
 	MOV	#lo_addr(_axisAddresses), W0
 	ADD	W0, W1, W0
@@ -113,67 +126,163 @@ L__ADXL355_read_data46:
 	MOV.B	[W0], W10
 	CALL	_ADXL355_read_byte
 	POP	W10
-;adxl355_spi.c,137 :: 		vectorMuestra[j] = muestra;
+;adxl355_spi.c,140 :: 		vectorMuestra[j] = muestra;
 	ZE	W2, W1
 	ADD	W10, W1, W1
 	MOV.B	W0, [W1]
-;adxl355_spi.c,135 :: 		for (j=0;j<9;j++){
+;adxl355_spi.c,138 :: 		for (j=0;j<9;j++){
 	INC.B	W2
-;adxl355_spi.c,138 :: 		}
+;adxl355_spi.c,141 :: 		}
 ; j end address is: 4 (W2)
-	GOTO	L_ADXL355_read_data1
-L_ADXL355_read_data2:
-;adxl355_spi.c,139 :: 		CS_ADXL355=1;
+	GOTO	L_ADXL355_read_data3
+L_ADXL355_read_data4:
+;adxl355_spi.c,142 :: 		CS_ADXL355=1;
 	BSET	LATA3_bit, BitPos(LATA3_bit+0)
-;adxl355_spi.c,140 :: 		} else {
-	GOTO	L_ADXL355_read_data4
-L_ADXL355_read_data0:
-;adxl355_spi.c,141 :: 		for (j=0;j<9;j++){
+;adxl355_spi.c,143 :: 		} else {
+	GOTO	L_ADXL355_read_data6
+L_ADXL355_read_data2:
+;adxl355_spi.c,144 :: 		for (j=0;j<9;j++){
 ; j start address is: 4 (W2)
 	CLR	W2
 ; j end address is: 4 (W2)
-L_ADXL355_read_data5:
+L_ADXL355_read_data7:
 ; j start address is: 4 (W2)
-	CP.B	W2, #8
-	BRA LTU	L__ADXL355_read_data47
-	GOTO	L_ADXL355_read_data6
-L__ADXL355_read_data47:
-;adxl355_spi.c,142 :: 		vectorMuestra[j] = 0;
+	CP.B	W2, #9
+	BRA LTU	L__ADXL355_read_data79
+	GOTO	L_ADXL355_read_data8
+L__ADXL355_read_data79:
+;adxl355_spi.c,145 :: 		vectorMuestra[j] = 0;
 	ZE	W2, W0
 	ADD	W10, W0, W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;adxl355_spi.c,141 :: 		for (j=0;j<9;j++){
+;adxl355_spi.c,144 :: 		for (j=0;j<9;j++){
 	INC.B	W2
-;adxl355_spi.c,143 :: 		}
+;adxl355_spi.c,146 :: 		}
 ; j end address is: 4 (W2)
-	GOTO	L_ADXL355_read_data5
-L_ADXL355_read_data6:
-;adxl355_spi.c,145 :: 		}
-	ADD	W10, #8, W0
-	MOV	W0, [W14+0]
-	PUSH	W10
-	MOV.B	#4, W10
-	CALL	_ADXL355_read_byte
-	POP	W10
-	ZE	W0, W1
-	MOV	#127, W0
-	AND	W1, W0, W1
-	MOV	[W14+0], W0
-	MOV.B	W1, [W0]
+	GOTO	L_ADXL355_read_data7
+L_ADXL355_read_data8:
 ;adxl355_spi.c,147 :: 		}
-L_ADXL355_read_data4:
-;adxl355_spi.c,148 :: 		unresolved line
-;adxl355_spi.c,149 :: 		unresolved line
+L_ADXL355_read_data6:
+;adxl355_spi.c,148 :: 		return;
+;adxl355_spi.c,149 :: 		}
 L_end_ADXL355_read_data:
-	ULNK
 	RETURN
 ; end of _ADXL355_read_data
 
+_ADXL355_read_FIFO:
+	LNK	#2
+
+;adxl355_spi.c,152 :: 		unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
+;adxl355_spi.c,155 :: 		CS_ADXL355 = 0;
+	PUSH	W10
+	BCLR	LATA3_bit, BitPos(LATA3_bit+0)
+;adxl355_spi.c,156 :: 		SPI2_Write(add);
+	PUSH	W10
+	MOV	#35, W10
+	CALL	_SPI2_Write
+	POP	W10
+;adxl355_spi.c,158 :: 		vectorFIFO[0] = SPI2_Read(0);
+	MOV	W10, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	CLR	W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,159 :: 		vectorFIFO[1] = SPI2_Read(1);
+	ADD	W10, #1, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	MOV	#1, W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,160 :: 		vectorFIFO[2] = SPI2_Read(2);
+	ADD	W10, #2, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	MOV	#2, W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,162 :: 		vectorFIFO[3] = SPI2_Read(0);
+	ADD	W10, #3, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	CLR	W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,163 :: 		vectorFIFO[4] = SPI2_Read(1);
+	ADD	W10, #4, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	MOV	#1, W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,164 :: 		vectorFIFO[5] = SPI2_Read(2);
+	ADD	W10, #5, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	MOV	#2, W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,166 :: 		vectorFIFO[6] = SPI2_Read(0);
+	ADD	W10, #6, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	CLR	W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,167 :: 		vectorFIFO[7] = SPI2_Read(1);
+	ADD	W10, #7, W0
+	MOV	W0, [W14+0]
+	PUSH	W10
+	MOV	#1, W10
+	CALL	_SPI2_Read
+	POP	W10
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,168 :: 		vectorFIFO[8] = SPI2_Read(2);
+	ADD	W10, #8, W0
+	MOV	W0, [W14+0]
+	MOV	#2, W10
+	CALL	_SPI2_Read
+	MOV	[W14+0], W1
+	MOV.B	W0, [W1]
+;adxl355_spi.c,169 :: 		CS_ADXL355 = 1;
+	BSET	LATA3_bit, BitPos(LATA3_bit+0)
+;adxl355_spi.c,170 :: 		Delay_us(5);
+	MOV	#40, W7
+L_ADXL355_read_FIFO10:
+	DEC	W7
+	BRA NZ	L_ADXL355_read_FIFO10
+	NOP
+	NOP
+;adxl355_spi.c,172 :: 		}
+;adxl355_spi.c,171 :: 		return;
+;adxl355_spi.c,172 :: 		}
+L_end_ADXL355_read_FIFO:
+	POP	W10
+	ULNK
+	RETURN
+; end of _ADXL355_read_FIFO
+
 _ConfiguracionPrincipal:
 
-;Acelerografo.c,51 :: 		void ConfiguracionPrincipal(){
-;Acelerografo.c,54 :: 		CLKDIVbits.FRCDIV = 0;                             //FIN=FRC/1
+;Acelerografo.c,57 :: 		void ConfiguracionPrincipal(){
+;Acelerografo.c,60 :: 		CLKDIVbits.FRCDIV = 0;                                                     //FIN=FRC/1
 	PUSH	W10
 	PUSH	W11
 	PUSH	W12
@@ -182,14 +291,14 @@ _ConfiguracionPrincipal:
 	MOV	#63743, W0
 	AND	W1, W0, W0
 	MOV	WREG, CLKDIVbits
-;Acelerografo.c,55 :: 		CLKDIVbits.PLLPOST = 0;                            //N2=2
+;Acelerografo.c,61 :: 		CLKDIVbits.PLLPOST = 0;                                                    //N2=2
 	MOV	#lo_addr(CLKDIVbits), W0
 	MOV.B	[W0], W1
 	MOV.B	#63, W0
 	AND.B	W1, W0, W1
 	MOV	#lo_addr(CLKDIVbits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,56 :: 		CLKDIVbits.PLLPRE = 5;                             //N1=7
+;Acelerografo.c,62 :: 		CLKDIVbits.PLLPRE = 5;                                                     //N1=7
 	MOV.B	#5, W0
 	MOV.B	W0, W1
 	MOV	#lo_addr(CLKDIVbits), W0
@@ -199,7 +308,7 @@ _ConfiguracionPrincipal:
 	XOR.B	W1, [W0], W1
 	MOV	#lo_addr(CLKDIVbits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,57 :: 		PLLFBDbits.PLLDIV = 150;                           //M=152
+;Acelerografo.c,63 :: 		PLLFBDbits.PLLDIV = 150;                                                   //M=152
 	MOV	#150, W0
 	MOV	W0, W1
 	MOV	#lo_addr(PLLFBDbits), W0
@@ -209,29 +318,29 @@ _ConfiguracionPrincipal:
 	MOV	#lo_addr(PLLFBDbits), W0
 	XOR	W1, [W0], W1
 	MOV	W1, PLLFBDbits
-;Acelerografo.c,59 :: 		ANSELA = 0;                                        //Configura PORTA como digital     *
+;Acelerografo.c,66 :: 		ANSELA = 0;                                                                //Configura PORTA como digital     *
 	CLR	ANSELA
-;Acelerografo.c,60 :: 		ANSELB = 0;                                        //Configura PORTB como digital     *
+;Acelerografo.c,67 :: 		ANSELB = 0;                                                                //Configura PORTB como digital     *
 	CLR	ANSELB
-;Acelerografo.c,61 :: 		TRISA3_bit = 0;                                    //Configura el pin A3 como salida  *
+;Acelerografo.c,68 :: 		TRISA3_bit = 0;                                                            //Configura el pin A3 como salida  *
 	BCLR	TRISA3_bit, BitPos(TRISA3_bit+0)
-;Acelerografo.c,62 :: 		TRISA4_bit = 0;                                    //Configura el pin A4 como salida  *
+;Acelerografo.c,69 :: 		TRISA4_bit = 0;                                                            //Configura el pin A4 como salida  *
 	BCLR	TRISA4_bit, BitPos(TRISA4_bit+0)
-;Acelerografo.c,63 :: 		TRISB4_bit = 0;                                    //Configura el pin B4 como salida  *
+;Acelerografo.c,70 :: 		TRISB4_bit = 0;                                                            //Configura el pin B4 como salida  *
 	BCLR	TRISB4_bit, BitPos(TRISB4_bit+0)
-;Acelerografo.c,64 :: 		TRISB10_bit = 0;                                   //Configura el pin B10 como entrada *
-	BCLR	TRISB10_bit, BitPos(TRISB10_bit+0)
-;Acelerografo.c,65 :: 		TRISB11_bit = 1;                                   //Configura el pin B11 como entrada *
+;Acelerografo.c,71 :: 		TRISB10_bit = 1;                                                           //Configura el pin B10 como entrada *
+	BSET	TRISB10_bit, BitPos(TRISB10_bit+0)
+;Acelerografo.c,72 :: 		TRISB11_bit = 1;                                                           //Configura el pin B11 como entrada *
 	BSET	TRISB11_bit, BitPos(TRISB11_bit+0)
-;Acelerografo.c,66 :: 		TRISB12_bit = 1;                                   //Configura el pin B12 como entrada *
+;Acelerografo.c,73 :: 		TRISB12_bit = 1;                                                           //Configura el pin B12 como entrada *
 	BSET	TRISB12_bit, BitPos(TRISB12_bit+0)
-;Acelerografo.c,67 :: 		TRISB13_bit = 1;                                   //Configura el pin B13 como entrada *
+;Acelerografo.c,74 :: 		TRISB13_bit = 1;                                                           //Configura el pin B13 como entrada *
 	BSET	TRISB13_bit, BitPos(TRISB13_bit+0)
-;Acelerografo.c,69 :: 		INTCON2.GIE = 1;                                   //Habilita las interrupciones globales *
+;Acelerografo.c,76 :: 		INTCON2.GIE = 1;                                                           //Habilita las interrupciones globales *
 	BSET	INTCON2, #15
-;Acelerografo.c,76 :: 		SPI1STAT.SPIEN = 1;                                //Habilita el SPI1 *
+;Acelerografo.c,83 :: 		SPI1STAT.SPIEN = 1;                                                        //Habilita el SPI1 *
 	BSET	SPI1STAT, #15
-;Acelerografo.c,77 :: 		SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);        //*
+;Acelerografo.c,84 :: 		SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);        //*
 	MOV	#3, W13
 	MOV	#28, W12
 	CLR	W11
@@ -246,11 +355,21 @@ _ConfiguracionPrincipal:
 	PUSH	W0
 	CALL	_SPI1_Init_Advanced
 	SUB	#8, W15
-;Acelerografo.c,78 :: 		SPI1IE_bit = 1;                                    //Habilita la interrupcion por SPI1  *
+;Acelerografo.c,85 :: 		SPI1IE_bit = 1;                                                            //Habilita la interrupcion por SPI1  *
 	BSET	SPI1IE_bit, BitPos(SPI1IE_bit+0)
-;Acelerografo.c,79 :: 		SPI1IF_bit = 0;                                    //Limpia la bandera de interrupcion por SPI *
+;Acelerografo.c,86 :: 		SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI *
 	BCLR	SPI1IF_bit, BitPos(SPI1IF_bit+0)
-;Acelerografo.c,82 :: 		RPINR22bits.SDI2R = 0x21;                          //Configura el pin RB1/RPI33 como SDI2 *
+;Acelerografo.c,87 :: 		IPC2bits.SPI1IP = 0x03;                                                    //Prioridad de la interrupcion SPI1
+	MOV	#768, W0
+	MOV	W0, W1
+	MOV	#lo_addr(IPC2bits), W0
+	XOR	W1, [W0], W1
+	MOV	#1792, W0
+	AND	W1, W0, W1
+	MOV	#lo_addr(IPC2bits), W0
+	XOR	W1, [W0], W1
+	MOV	W1, IPC2bits
+;Acelerografo.c,90 :: 		RPINR22bits.SDI2R = 0x21;                                                  //Configura el pin RB1/RPI33 como SDI2 *
 	MOV.B	#33, W0
 	MOV.B	W0, W1
 	MOV	#lo_addr(RPINR22bits), W0
@@ -261,7 +380,7 @@ _ConfiguracionPrincipal:
 	XOR.B	W1, [W0], W1
 	MOV	#lo_addr(RPINR22bits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,83 :: 		RPOR2bits.RP38R = 0x08;                            //Configura el SDO2 en el pin RB6/RP38 *
+;Acelerografo.c,91 :: 		RPOR2bits.RP38R = 0x08;                                                    //Configura el SDO2 en el pin RB6/RP38 *
 	MOV.B	#8, W0
 	MOV.B	W0, W1
 	MOV	#lo_addr(RPOR2bits), W0
@@ -272,7 +391,7 @@ _ConfiguracionPrincipal:
 	XOR.B	W1, [W0], W1
 	MOV	#lo_addr(RPOR2bits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,84 :: 		RPOR1bits.RP37R = 0x09;                            //Configura el SCK2 en el pin RB5/RP37 *
+;Acelerografo.c,92 :: 		RPOR1bits.RP37R = 0x09;                                                    //Configura el SCK2 en el pin RB5/RP37 *
 	MOV	#2304, W0
 	MOV	W0, W1
 	MOV	#lo_addr(RPOR1bits), W0
@@ -282,46 +401,60 @@ _ConfiguracionPrincipal:
 	MOV	#lo_addr(RPOR1bits), W0
 	XOR	W1, [W0], W1
 	MOV	W1, RPOR1bits
-;Acelerografo.c,85 :: 		SPI2STAT.SPIEN = 1;                                //Habilita el SPI2 *
+;Acelerografo.c,93 :: 		SPI2STAT.SPIEN = 1;                                                        //Habilita el SPI2 *
 	BSET	SPI2STAT, #15
-;Acelerografo.c,86 :: 		SPI2_Init();                                       //Inicializa el modulo SPI2
+;Acelerografo.c,94 :: 		SPI2_Init();                                                               //Inicializa el modulo SPI2
 	CALL	_SPI2_Init
-;Acelerografo.c,89 :: 		RPINR0 = 0x2E00;                                   //Asigna INT1 al RB14/RPI46
+;Acelerografo.c,97 :: 		RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46
 	MOV	#11776, W0
 	MOV	WREG, RPINR0
-;Acelerografo.c,90 :: 		INT1IE_bit = 1;                                    //Habilita la interrupcion externa INT1
+;Acelerografo.c,98 :: 		INT1IE_bit = 1;                                                            //Habilita la interrupcion externa INT1
 	BSET	INT1IE_bit, BitPos(INT1IE_bit+0)
-;Acelerografo.c,91 :: 		INT1IF_bit = 0;                                    //Limpia la bandera de interrupcion externa INT1
+;Acelerografo.c,99 :: 		INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
 	BCLR	INT1IF_bit, BitPos(INT1IF_bit+0)
-;Acelerografo.c,92 :: 		IPC0 = 0x0001;                                     //Prioridad en la interrupocion externa 1
-	MOV	#1, W0
-	MOV	WREG, IPC0
-;Acelerografo.c,95 :: 		T1CON = 0x0010;
-	MOV	#16, W0
+;Acelerografo.c,100 :: 		IPC5bits.INT1IP = 0x01;                                                    //Prioridad en la interrupocion externa 1
+	MOV.B	#1, W0
+	MOV.B	W0, W1
+	MOV	#lo_addr(IPC5bits), W0
+	XOR.B	W1, [W0], W1
+	AND.B	W1, #7, W1
+	MOV	#lo_addr(IPC5bits), W0
+	XOR.B	W1, [W0], W1
+	MOV	#lo_addr(IPC5bits), W0
+	MOV.B	W1, [W0]
+;Acelerografo.c,103 :: 		T1CON = 0x0020;
+	MOV	#32, W0
 	MOV	WREG, T1CON
-;Acelerografo.c,96 :: 		T1CON.TON = 0;                                     //Apaga el Timer1
+;Acelerografo.c,104 :: 		T1CON.TON = 0;                                                             //Apaga el Timer1
 	BCLR	T1CON, #15
-;Acelerografo.c,97 :: 		T1IE_bit = 1;                                      //Habilita la interrupción de desbordamiento TMR1
+;Acelerografo.c,105 :: 		T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
 	BSET	T1IE_bit, BitPos(T1IE_bit+0)
-;Acelerografo.c,98 :: 		T1IF_bit = 0;                                      //Limpia la bandera de interrupcion del TMR2
+;Acelerografo.c,106 :: 		T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR2
 	BCLR	T1IF_bit, BitPos(T1IF_bit+0)
-;Acelerografo.c,99 :: 		IPC0 = 0x1000;                                     //Prioridad de la interrupcion por desbordamiento del TMR1
-	MOV	#4096, W0
-	MOV	WREG, IPC0
-;Acelerografo.c,100 :: 		PR1 = 25000;
-	MOV	#25000, W0
+;Acelerografo.c,107 :: 		PR1 = 62500;                                                               //Carga el preload para un tiempo de 100ms
+	MOV	#62500, W0
 	MOV	WREG, PR1
-;Acelerografo.c,102 :: 		ADXL355_init();
+;Acelerografo.c,108 :: 		IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
+	MOV	#8192, W0
+	MOV	W0, W1
+	MOV	#lo_addr(IPC0bits), W0
+	XOR	W1, [W0], W1
+	MOV	#28672, W0
+	AND	W1, W0, W1
+	MOV	#lo_addr(IPC0bits), W0
+	XOR	W1, [W0], W1
+	MOV	W1, IPC0bits
+;Acelerografo.c,110 :: 		ADXL355_init();
 	CALL	_ADXL355_init
-;Acelerografo.c,104 :: 		Delay_ms(100);                                     //Espera hasta que se estabilicen los cambios
+;Acelerografo.c,112 :: 		Delay_ms(100);                                                             //Espera hasta que se estabilicen los cambios
 	MOV	#13, W8
 	MOV	#13575, W7
-L_ConfiguracionPrincipal8:
+L_ConfiguracionPrincipal12:
 	DEC	W7
-	BRA NZ	L_ConfiguracionPrincipal8
+	BRA NZ	L_ConfiguracionPrincipal12
 	DEC	W8
-	BRA NZ	L_ConfiguracionPrincipal8
-;Acelerografo.c,106 :: 		}
+	BRA NZ	L_ConfiguracionPrincipal12
+;Acelerografo.c,114 :: 		}
 L_end_ConfiguracionPrincipal:
 	POP	W13
 	POP	W12
@@ -339,73 +472,259 @@ _int_1:
 	REPEAT	#12
 	PUSH	[W0++]
 
-;Acelerografo.c,114 :: 		void int_1() org IVT_ADDR_INT1INTERRUPT {
-;Acelerografo.c,115 :: 		INT1IF_bit = 0;                                    //Limpia la bandera de interrupcion externa INT1
+;Acelerografo.c,122 :: 		void int_1() org IVT_ADDR_INT1INTERRUPT {
+;Acelerografo.c,124 :: 		INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
 	PUSH	W10
+	PUSH	W11
 	BCLR	INT1IF_bit, BitPos(INT1IF_bit+0)
-;Acelerografo.c,116 :: 		contMuestras = 0;                                  //Limpia el contador de muestras
-	MOV	#lo_addr(_contMuestras), W1
+;Acelerografo.c,128 :: 		if (banInicio==1){
+	MOV	#lo_addr(_banInicio), W0
+	MOV.B	[W0], W0
+	CP.B	W0, #1
+	BRA Z	L__int_183
+	GOTO	L_int_114
+L__int_183:
+;Acelerografo.c,130 :: 		if (banCiclo==0){
+	MOV	#lo_addr(_banCiclo), W0
+	MOV.B	[W0], W0
+	CP.B	W0, #0
+	BRA Z	L__int_184
+	GOTO	L_int_115
+L__int_184:
+;Acelerografo.c,132 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                   //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+	MOV.B	#5, W11
+	MOV.B	#45, W10
+	CALL	_ADXL355_write_byte
+;Acelerografo.c,134 :: 		} else {
+	GOTO	L_int_116
+L_int_115:
+;Acelerografo.c,136 :: 		banCiclo = 0;                                                      //Limpia la bandera de ciclo completo
+	MOV	#lo_addr(_banCiclo), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,118 :: 		pduSPI[0] = contCiclos;                            //Carga el primer valor de la trama que se enviara por el SPI con el valor de la muestra actual
-	MOV	#lo_addr(_pduSPI), W1
+;Acelerografo.c,138 :: 		tramaCompleta[0] = contCiclos;                                     //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+	MOV	#lo_addr(_tramaCompleta), W1
 	MOV	#lo_addr(_contCiclos), W0
 	MOV.B	[W0], [W1]
-;Acelerografo.c,119 :: 		ADXL355_read_data(datosLeidos);
-	MOV	#lo_addr(_datosLeidos), W10
-	CALL	_ADXL355_read_data
-;Acelerografo.c,120 :: 		for (x=1;x<10;x++){
-	MOV	#lo_addr(_x), W1
-	MOV.B	#1, W0
+;Acelerografo.c,140 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
+	MOV.B	#5, W10
+	CALL	_ADXL355_read_byte
+	MOV	#lo_addr(_numFIFO), W1
 	MOV.B	W0, [W1]
-L_int_110:
-	MOV	#lo_addr(_x), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #10
-	BRA LTU	L__int_150
-	GOTO	L_int_111
-L__int_150:
-;Acelerografo.c,121 :: 		pduSPI[x]=datosLeidos[x-1];                    //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
-	MOV	#lo_addr(_x), W0
+;Acelerografo.c,142 :: 		numSetsFIFO = (numFIFO)/3;                                         //Lee el numero de sets disponibles en el FIFO
+	ZE	W0, W0
+	MOV	#3, W2
+	REPEAT	#17
+	DIV.S	W0, W2
+	MOV	W0, W1
+	MOV	#lo_addr(_numSetsFIFO), W0
+	MOV.B	W1, [W0]
+;Acelerografo.c,145 :: 		for (x=0;x<numSetsFIFO;x++){
+	CLR	W0
+	MOV	W0, _x
+L_int_117:
+	MOV	#lo_addr(_numSetsFIFO), W0
 	ZE	[W0], W1
-	MOV	#lo_addr(_pduSPI), W0
+	MOV	#lo_addr(_x), W0
+	CP	W1, [W0]
+	BRA GTU	L__int_185
+	GOTO	L_int_118
+L__int_185:
+;Acelerografo.c,146 :: 		ADXL355_read_FIFO(datosLeidos);                               //Lee una sola posicion del FIFO
+	MOV	#lo_addr(_datosLeidos), W10
+	CALL	_ADXL355_read_FIFO
+;Acelerografo.c,147 :: 		for (y=0;y<9;y++){
+	CLR	W0
+	MOV	W0, _y
+L_int_120:
+	MOV	_y, W0
+	CP	W0, #9
+	BRA LTU	L__int_186
+	GOTO	L_int_121
+L__int_186:
+;Acelerografo.c,148 :: 		datosFIFO[y+(x*9)] = datosLeidos[y];                       //LLena la trama datosFIFO
+	MOV	_x, W1
+	MOV	#9, W0
+	MUL.UU	W1, W0, W2
+	MOV	#lo_addr(_y), W0
+	ADD	W2, [W0], W1
+	MOV	#lo_addr(_datosFIFO), W0
 	ADD	W0, W1, W2
-	MOV	#lo_addr(_x), W0
-	ZE	[W0], W0
-	SUB	W0, #1, W1
-	MOV	#lo_addr(_datosLeidos), W0
-	ADD	W0, W1, W0
+	MOV	#lo_addr(_datosLeidos), W1
+	MOV	#lo_addr(_y), W0
+	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,120 :: 		for (x=1;x<10;x++){
-	MOV.B	#1, W1
+;Acelerografo.c,147 :: 		for (y=0;y<9;y++){
+	MOV	#1, W1
+	MOV	#lo_addr(_y), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,149 :: 		}
+	GOTO	L_int_120
+L_int_121:
+;Acelerografo.c,145 :: 		for (x=0;x<numSetsFIFO;x++){
+	MOV	#1, W1
 	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,150 :: 		}
+	GOTO	L_int_117
+L_int_118:
+;Acelerografo.c,155 :: 		for (x=0;x<(numSetsFIFO*9);x++){
+	CLR	W0
+	MOV	W0, _x
+L_int_123:
+	MOV	#lo_addr(_numSetsFIFO), W0
+	ZE	[W0], W1
+	MOV	#9, W0
+	MUL.SS	W1, W0, W2
+	MOV	#lo_addr(_x), W0
+	CP	W2, [W0]
+	BRA GTU	L__int_187
+	GOTO	L_int_124
+L__int_187:
+;Acelerografo.c,156 :: 		if ((x==0)||(x%9==0)){
+	MOV	_x, W0
+	CP	W0, #0
+	BRA NZ	L__int_188
+	GOTO	L__int_163
+L__int_188:
+	MOV	_x, W0
+	MOV	#9, W2
+	REPEAT	#17
+	DIV.U	W0, W2
+	MOV	W1, W0
+	CP	W0, #0
+	BRA NZ	L__int_189
+	GOTO	L__int_162
+L__int_189:
+	GOTO	L_int_128
+L__int_163:
+L__int_162:
+;Acelerografo.c,157 :: 		tramaCompleta[contFIFO+contMuestras+x] = contMuestras;
+	MOV	#lo_addr(_contMuestras), W0
+	ZE	[W0], W1
+	MOV	#lo_addr(_contFIFO), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_tramaCompleta), W0
+	ADD	W0, W1, W1
+	MOV	#lo_addr(_contMuestras), W0
+	MOV.B	[W0], [W1]
+;Acelerografo.c,158 :: 		tramaCompleta[contFIFO+contMuestras+x+1] = datosFIFO[x];
+	MOV	#lo_addr(_contMuestras), W0
+	ZE	[W0], W1
+	MOV	#lo_addr(_contFIFO), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W0
+	ADD	W0, #1, W1
+	MOV	#lo_addr(_tramaCompleta), W0
+	ADD	W0, W1, W2
+	MOV	#lo_addr(_datosFIFO), W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W0
+	MOV.B	[W0], [W2]
+;Acelerografo.c,159 :: 		contMuestras++;
+	MOV.B	#1, W1
+	MOV	#lo_addr(_contMuestras), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,122 :: 		}
-	GOTO	L_int_110
-L_int_111:
-;Acelerografo.c,124 :: 		banTI = 1;                                         //Activa la bandera de inicio de trama
+;Acelerografo.c,160 :: 		} else {
+	GOTO	L_int_129
+L_int_128:
+;Acelerografo.c,161 :: 		tramaCompleta[contFIFO+contMuestras+x] = datosFIFO[x];
+	MOV	#lo_addr(_contMuestras), W0
+	ZE	[W0], W1
+	MOV	#lo_addr(_contFIFO), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_tramaCompleta), W0
+	ADD	W0, W1, W2
+	MOV	#lo_addr(_datosFIFO), W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W0
+	MOV.B	[W0], [W2]
+;Acelerografo.c,162 :: 		}
+L_int_129:
+;Acelerografo.c,155 :: 		for (x=0;x<(numSetsFIFO*9);x++){
+	MOV	#1, W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,163 :: 		}
+	GOTO	L_int_123
+L_int_124:
+;Acelerografo.c,166 :: 		for (x=0;x<5;x++){
+	CLR	W0
+	MOV	W0, _x
+L_int_130:
+	MOV	_x, W0
+	CP	W0, #5
+	BRA LTU	L__int_190
+	GOTO	L_int_131
+L__int_190:
+;Acelerografo.c,167 :: 		tramaCompleta[2500+x] = tiempo[x];
+	MOV	#2500, W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_tramaCompleta), W0
+	ADD	W0, W1, W2
+	MOV	#lo_addr(_tiempo), W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W0
+	MOV.B	[W0], [W2]
+;Acelerografo.c,166 :: 		for (x=0;x<5;x++){
+	MOV	#1, W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,168 :: 		}
+	GOTO	L_int_130
+L_int_131:
+;Acelerografo.c,170 :: 		banTI = 1;                                                         //Activa la bandera de inicio de trama para permitir el envio de la trama por SPI
 	MOV	#lo_addr(_banTI), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,125 :: 		RP1 = 1;                                           //Genera el pulso P1 para producir la interrupcion en la RPi
+;Acelerografo.c,171 :: 		RP1 = 1;                                                           //Genera el pulso P1 para producir la interrupcion en la RPi
 	BSET	LATA4_bit, BitPos(LATA4_bit+0)
-;Acelerografo.c,126 :: 		Delay_us(20);
+;Acelerografo.c,172 :: 		Delay_us(20);
 	MOV	#160, W7
-L_int_113:
+L_int_133:
 	DEC	W7
-	BRA NZ	L_int_113
+	BRA NZ	L_int_133
 	NOP
 	NOP
-;Acelerografo.c,127 :: 		RP1 = 0;
+;Acelerografo.c,173 :: 		RP1 = 0;
 	BCLR	LATA4_bit, BitPos(LATA4_bit+0)
-;Acelerografo.c,128 :: 		T1CON.TON = 1;                                     //Enciende el Timer1
-	BSET	T1CON, #15
-;Acelerografo.c,129 :: 		contCiclos++;
+;Acelerografo.c,175 :: 		}
+L_int_116:
+;Acelerografo.c,177 :: 		contCiclos++;                                                          //Incrementa el contador de ciclos
 	MOV.B	#1, W1
 	MOV	#lo_addr(_contCiclos), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,130 :: 		}
+;Acelerografo.c,178 :: 		contMuestras = 0;                                                      //Limpia el contador de muestras
+	MOV	#lo_addr(_contMuestras), W1
+	CLR	W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,179 :: 		contFIFO = 0;                                                          //Limpia el contador de FIFOs
+	CLR	W0
+	MOV	W0, _contFIFO
+;Acelerografo.c,181 :: 		if (ADXL355_read_byte(POWER_CTL)&0x01==1){
+	MOV.B	#45, W10
+	CALL	_ADXL355_read_byte
+	BTSS	W0, #0
+	GOTO	L_int_135
+;Acelerografo.c,182 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                  //Coloca el ADXL en modo medicion
+	MOV.B	#4, W11
+	MOV.B	#45, W10
+	CALL	_ADXL355_write_byte
+;Acelerografo.c,183 :: 		}
+L_int_135:
+;Acelerografo.c,185 :: 		T1CON.TON = 1;                                                         //Enciende el Timer1
+	BSET	T1CON, #15
+;Acelerografo.c,188 :: 		}
+L_int_114:
+;Acelerografo.c,190 :: 		}
 L_end_int_1:
+	POP	W11
 	POP	W10
 	MOV	#26, W0
 	REPEAT	#12
@@ -426,107 +745,187 @@ _Timer1Int:
 	REPEAT	#12
 	PUSH	[W0++]
 
-;Acelerografo.c,133 :: 		void Timer1Int() org IVT_ADDR_T1INTERRUPT{
-;Acelerografo.c,134 :: 		T1IF_bit = 0;
+;Acelerografo.c,193 :: 		void Timer1Int() org IVT_ADDR_T1INTERRUPT{
+;Acelerografo.c,195 :: 		T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion por desbordamiento del Timer1
 	PUSH	W10
 	BCLR	T1IF_bit, BitPos(T1IF_bit+0)
-;Acelerografo.c,135 :: 		contMuestras++;                                    //Incrementa el contador de muestras
-	MOV.B	#1, W1
+;Acelerografo.c,198 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
+	MOV.B	#5, W10
+	CALL	_ADXL355_read_byte
+	MOV	#lo_addr(_numFIFO), W1
+	MOV.B	W0, [W1]
+;Acelerografo.c,200 :: 		numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
+	ZE	W0, W0
+	MOV	#3, W2
+	REPEAT	#17
+	DIV.S	W0, W2
+	MOV	W0, W1
+	MOV	#lo_addr(_numSetsFIFO), W0
+	MOV.B	W1, [W0]
+;Acelerografo.c,204 :: 		for (x=0;x<numSetsFIFO;x++){
+	CLR	W0
+	MOV	W0, _x
+L_Timer1Int36:
+	MOV	#lo_addr(_numSetsFIFO), W0
+	ZE	[W0], W1
+	MOV	#lo_addr(_x), W0
+	CP	W1, [W0]
+	BRA GTU	L__Timer1Int92
+	GOTO	L_Timer1Int37
+L__Timer1Int92:
+;Acelerografo.c,205 :: 		ADXL355_read_FIFO(datosLeidos);                                       //Lee una sola posicion del FIFO
+	MOV	#lo_addr(_datosLeidos), W10
+	CALL	_ADXL355_read_FIFO
+;Acelerografo.c,206 :: 		for (y=0;y<9;y++){
+	CLR	W0
+	MOV	W0, _y
+L_Timer1Int39:
+	MOV	_y, W0
+	CP	W0, #9
+	BRA LTU	L__Timer1Int93
+	GOTO	L_Timer1Int40
+L__Timer1Int93:
+;Acelerografo.c,207 :: 		datosFIFO[y+(x*9)] = datosLeidos[y];                               //LLena la trama datosFIFO
+	MOV	_x, W1
+	MOV	#9, W0
+	MUL.UU	W1, W0, W2
+	MOV	#lo_addr(_y), W0
+	ADD	W2, [W0], W1
+	MOV	#lo_addr(_datosFIFO), W0
+	ADD	W0, W1, W2
+	MOV	#lo_addr(_datosLeidos), W1
+	MOV	#lo_addr(_y), W0
+	ADD	W1, [W0], W0
+	MOV.B	[W0], [W2]
+;Acelerografo.c,206 :: 		for (y=0;y<9;y++){
+	MOV	#1, W1
+	MOV	#lo_addr(_y), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,208 :: 		}
+	GOTO	L_Timer1Int39
+L_Timer1Int40:
+;Acelerografo.c,204 :: 		for (x=0;x<numSetsFIFO;x++){
+	MOV	#1, W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,209 :: 		}
+	GOTO	L_Timer1Int36
+L_Timer1Int37:
+;Acelerografo.c,212 :: 		for (x=0;x<(numSetsFIFO*9);x++){      //0-224
+	CLR	W0
+	MOV	W0, _x
+L_Timer1Int42:
+	MOV	#lo_addr(_numSetsFIFO), W0
+	ZE	[W0], W1
+	MOV	#9, W0
+	MUL.SS	W1, W0, W2
+	MOV	#lo_addr(_x), W0
+	CP	W2, [W0]
+	BRA GTU	L__Timer1Int94
+	GOTO	L_Timer1Int43
+L__Timer1Int94:
+;Acelerografo.c,213 :: 		if ((x==0)||(x%9==0)){
+	MOV	_x, W0
+	CP	W0, #0
+	BRA NZ	L__Timer1Int95
+	GOTO	L__Timer1Int66
+L__Timer1Int95:
+	MOV	_x, W0
+	MOV	#9, W2
+	REPEAT	#17
+	DIV.U	W0, W2
+	MOV	W1, W0
+	CP	W0, #0
+	BRA NZ	L__Timer1Int96
+	GOTO	L__Timer1Int65
+L__Timer1Int96:
+	GOTO	L_Timer1Int47
+L__Timer1Int66:
+L__Timer1Int65:
+;Acelerografo.c,214 :: 		tramaCompleta[contFIFO+contMuestras+x] = contMuestras;
 	MOV	#lo_addr(_contMuestras), W0
-	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,137 :: 		pduSPI[0] = contMuestras;                          //Carga el primer valor de la trama de datos con el valor de la muestra actual
-	MOV	#lo_addr(_pduSPI), W1
+	ZE	[W0], W1
+	MOV	#lo_addr(_contFIFO), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_tramaCompleta), W0
+	ADD	W0, W1, W1
 	MOV	#lo_addr(_contMuestras), W0
 	MOV.B	[W0], [W1]
-;Acelerografo.c,138 :: 		ADXL355_read_data(datosLeidos);
-	MOV	#lo_addr(_datosLeidos), W10
-	CALL	_ADXL355_read_data
-;Acelerografo.c,139 :: 		for (x=1;x<10;x++){
-	MOV	#lo_addr(_x), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-L_Timer1Int15:
-	MOV	#lo_addr(_x), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #10
-	BRA LTU	L__Timer1Int52
-	GOTO	L_Timer1Int16
-L__Timer1Int52:
-;Acelerografo.c,140 :: 		pduSPI[x]=datosLeidos[x-1];                      //Carga el vector de salida de datos SPI con los datos de simulacion de muestreo
-	MOV	#lo_addr(_x), W0
-	ZE	[W0], W1
-	MOV	#lo_addr(_pduSPI), W0
-	ADD	W0, W1, W2
-	MOV	#lo_addr(_x), W0
-	ZE	[W0], W0
-	SUB	W0, #1, W1
-	MOV	#lo_addr(_datosLeidos), W0
-	ADD	W0, W1, W0
-	MOV.B	[W0], [W2]
-;Acelerografo.c,139 :: 		for (x=1;x<10;x++){
-	MOV.B	#1, W1
-	MOV	#lo_addr(_x), W0
-	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,141 :: 		}
-	GOTO	L_Timer1Int15
-L_Timer1Int16:
-;Acelerografo.c,142 :: 		if (contMuestras==NUM_MUESTRAS){
+;Acelerografo.c,216 :: 		tramaCompleta[contFIFO+contMuestras+x+1] = datosFIFO[x];
 	MOV	#lo_addr(_contMuestras), W0
-	MOV.B	[W0], W1
-	MOV.B	#199, W0
-	CP.B	W1, W0
-	BRA Z	L__Timer1Int53
-	GOTO	L_Timer1Int18
-L__Timer1Int53:
-;Acelerografo.c,143 :: 		T1CON.TON = 0;                                  //Apaga el Timer2
-	BCLR	T1CON, #15
-;Acelerografo.c,144 :: 		for (x=10;x<15;x++){
-	MOV	#lo_addr(_x), W1
-	MOV.B	#10, W0
-	MOV.B	W0, [W1]
-L_Timer1Int19:
-	MOV	#lo_addr(_x), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #15
-	BRA LTU	L__Timer1Int54
-	GOTO	L_Timer1Int20
-L__Timer1Int54:
-;Acelerografo.c,145 :: 		pduSPI[x]=tiempo[x-10];                     //Carga el vector de salida de datos SPI con los datos de la cabecera
-	MOV	#lo_addr(_x), W0
 	ZE	[W0], W1
-	MOV	#lo_addr(_pduSPI), W0
+	MOV	#lo_addr(_contFIFO), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W0
+	ADD	W0, #1, W1
+	MOV	#lo_addr(_tramaCompleta), W0
 	ADD	W0, W1, W2
+	MOV	#lo_addr(_datosFIFO), W1
 	MOV	#lo_addr(_x), W0
-	ZE	[W0], W0
-	SUB	W0, #10, W1
-	MOV	#lo_addr(_tiempo), W0
-	ADD	W0, W1, W0
+	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,144 :: 		for (x=10;x<15;x++){
+;Acelerografo.c,217 :: 		contMuestras++;
 	MOV.B	#1, W1
-	MOV	#lo_addr(_x), W0
+	MOV	#lo_addr(_contMuestras), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,146 :: 		}
-	GOTO	L_Timer1Int19
-L_Timer1Int20:
-;Acelerografo.c,147 :: 		}
-L_Timer1Int18:
-;Acelerografo.c,149 :: 		banTI = 1;                                         //Activa la bandera de inicio de trama
-	MOV	#lo_addr(_banTI), W1
+;Acelerografo.c,218 :: 		} else {
+	GOTO	L_Timer1Int48
+L_Timer1Int47:
+;Acelerografo.c,219 :: 		tramaCompleta[contFIFO+contMuestras+x] = datosFIFO[x];
+	MOV	#lo_addr(_contMuestras), W0
+	ZE	[W0], W1
+	MOV	#lo_addr(_contFIFO), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W1
+	MOV	#lo_addr(_tramaCompleta), W0
+	ADD	W0, W1, W2
+	MOV	#lo_addr(_datosFIFO), W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], W0
+	MOV.B	[W0], [W2]
+;Acelerografo.c,220 :: 		}
+L_Timer1Int48:
+;Acelerografo.c,212 :: 		for (x=0;x<(numSetsFIFO*9);x++){      //0-224
+	MOV	#1, W1
+	MOV	#lo_addr(_x), W0
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,221 :: 		}
+	GOTO	L_Timer1Int42
+L_Timer1Int43:
+;Acelerografo.c,223 :: 		contFIFO = (contMuestras*9);                                    //Incrementa el contador de FIFOs
+	MOV	#lo_addr(_contMuestras), W0
+	ZE	[W0], W1
+	MOV	#9, W0
+	MUL.SS	W1, W0, W0
+	MOV	W0, _contFIFO
+;Acelerografo.c,225 :: 		contTimer1++;                                                              //Incrementa una unidad cada vez que entra a la interrupcion por Timer1
+	MOV.B	#1, W1
+	MOV	#lo_addr(_contTimer1), W0
+	ADD.B	W1, [W0], [W0]
+;Acelerografo.c,227 :: 		if (contTimer1==9){                                                        //Verifica si se recibio los 5 FIFOS
+	MOV	#lo_addr(_contTimer1), W0
+	MOV.B	[W0], W0
+	CP.B	W0, #9
+	BRA Z	L__Timer1Int97
+	GOTO	L_Timer1Int49
+L__Timer1Int97:
+;Acelerografo.c,228 :: 		T1CON.TON = 0;                                                          //Apaga el Timer1
+	BCLR	T1CON, #15
+;Acelerografo.c,229 :: 		banCiclo = 1;                                                           //Activa la bandera que indica que se completo un ciclo de medicion
+	MOV	#lo_addr(_banCiclo), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,150 :: 		RP2 = 1;                                           //Genera el pulso P2 para producir la interrupcion en la RPi
-	BSET	LATB4_bit, BitPos(LATB4_bit+0)
-;Acelerografo.c,151 :: 		Delay_us(20);
-	MOV	#160, W7
-L_Timer1Int22:
-	DEC	W7
-	BRA NZ	L_Timer1Int22
-	NOP
-	NOP
-;Acelerografo.c,152 :: 		RP2 = 0;                                           //Limpia la bandera de interrupcion por desbordamiento del Timer1
-	BCLR	LATB4_bit, BitPos(LATB4_bit+0)
-;Acelerografo.c,153 :: 		}
+;Acelerografo.c,230 :: 		contTimer1 = 0;                                                         //Limpia el contador de interrupciones por Timer1
+	MOV	#lo_addr(_contTimer1), W1
+	CLR	W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,231 :: 		}
+L_Timer1Int49:
+;Acelerografo.c,235 :: 		}
 L_end_Timer1Int:
 	POP	W10
 	MOV	#26, W0
@@ -548,102 +947,99 @@ _spi_1:
 	REPEAT	#12
 	PUSH	[W0++]
 
-;Acelerografo.c,156 :: 		void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
-;Acelerografo.c,157 :: 		SPI1IF_bit = 0;                                    //Limpia la bandera de interrupcion por SPI
+;Acelerografo.c,238 :: 		void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
+;Acelerografo.c,239 :: 		SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI
 	BCLR	SPI1IF_bit, BitPos(SPI1IF_bit+0)
-;Acelerografo.c,158 :: 		buffer = SPI1BUF;                                  //Guarda el contenido del bufeer (lectura)
+;Acelerografo.c,240 :: 		buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
 	MOV	#lo_addr(_buffer), W1
 	MOV.B	SPI1BUF, WREG
 	MOV.B	W0, [W1]
-;Acelerografo.c,160 :: 		if ((banTI==1)){                                   //Verifica si la bandera de inicio de trama esta activa
+;Acelerografo.c,242 :: 		if ((banTI==1)){                                                           //Verifica si la bandera de inicio de trama esta activa
 	MOV	#lo_addr(_banTI), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_156
-	GOTO	L_spi_124
-L__spi_156:
-;Acelerografo.c,161 :: 		banLec = 1;                                     //Activa la bandera de lectura
+	BRA Z	L__spi_199
+	GOTO	L_spi_150
+L__spi_199:
+;Acelerografo.c,243 :: 		banLec = 1;                                                             //Activa la bandera de lectura
 	MOV	#lo_addr(_banLec), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,162 :: 		banTI = 0;
+;Acelerografo.c,244 :: 		banTI = 0;
 	MOV	#lo_addr(_banTI), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,163 :: 		i = 0;
-	MOV	#lo_addr(_i), W1
+;Acelerografo.c,245 :: 		i = 0;
 	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,164 :: 		SPI1BUF = pduSPI[i];
+	MOV	W0, _i
+;Acelerografo.c,246 :: 		SPI1BUF = tramaCompleta[i];
+	MOV	#lo_addr(_tramaCompleta), W1
 	MOV	#lo_addr(_i), W0
-	ZE	[W0], W1
-	MOV	#lo_addr(_pduSPI), W0
-	ADD	W0, W1, W0
+	ADD	W1, [W0], W0
 	MOV.B	[W0], W0
 	ZE	W0, W0
 	MOV	WREG, SPI1BUF
-;Acelerografo.c,165 :: 		}
-L_spi_124:
-;Acelerografo.c,166 :: 		if ((banLec==1)&&(buffer!=0xB1)){
+;Acelerografo.c,247 :: 		}
+L_spi_150:
+;Acelerografo.c,248 :: 		if ((banLec==1)&&(buffer!=0xB1)){
 	MOV	#lo_addr(_banLec), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_157
-	GOTO	L__spi_138
-L__spi_157:
+	BRA Z	L__spi_1100
+	GOTO	L__spi_170
+L__spi_1100:
 	MOV	#lo_addr(_buffer), W0
 	MOV.B	[W0], W1
 	MOV.B	#177, W0
 	CP.B	W1, W0
-	BRA NZ	L__spi_158
-	GOTO	L__spi_137
-L__spi_158:
-L__spi_136:
-;Acelerografo.c,167 :: 		SPI1BUF = pduSPI[i];
+	BRA NZ	L__spi_1101
+	GOTO	L__spi_169
+L__spi_1101:
+L__spi_168:
+;Acelerografo.c,249 :: 		SPI1BUF = tramaCompleta[i];
+	MOV	#lo_addr(_tramaCompleta), W1
 	MOV	#lo_addr(_i), W0
-	ZE	[W0], W1
-	MOV	#lo_addr(_pduSPI), W0
-	ADD	W0, W1, W0
+	ADD	W1, [W0], W0
 	MOV.B	[W0], W0
 	ZE	W0, W0
 	MOV	WREG, SPI1BUF
-;Acelerografo.c,168 :: 		i++;
-	MOV.B	#1, W1
+;Acelerografo.c,250 :: 		i++;
+	MOV	#1, W1
 	MOV	#lo_addr(_i), W0
-	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,166 :: 		if ((banLec==1)&&(buffer!=0xB1)){
-L__spi_138:
-L__spi_137:
-;Acelerografo.c,170 :: 		if ((banLec==1)&&(buffer==0xB1)){                  //Si detecta el delimitador de final de trama:
+	ADD	W1, [W0], [W0]
+;Acelerografo.c,248 :: 		if ((banLec==1)&&(buffer!=0xB1)){
+L__spi_170:
+L__spi_169:
+;Acelerografo.c,252 :: 		if ((banLec==1)&&(buffer==0xB1)){                                          //Si detecta el delimitador de final de trama:
 	MOV	#lo_addr(_banLec), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_159
-	GOTO	L__spi_140
-L__spi_159:
+	BRA Z	L__spi_1102
+	GOTO	L__spi_172
+L__spi_1102:
 	MOV	#lo_addr(_buffer), W0
 	MOV.B	[W0], W1
 	MOV.B	#177, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_160
-	GOTO	L__spi_139
-L__spi_160:
-L__spi_135:
-;Acelerografo.c,171 :: 		banLec = 0;                                     //Limpia la bandera de lectura
+	BRA Z	L__spi_1103
+	GOTO	L__spi_171
+L__spi_1103:
+L__spi_167:
+;Acelerografo.c,253 :: 		banLec = 0;                                                             //Limpia la bandera de lectura
 	MOV	#lo_addr(_banLec), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,172 :: 		banTI = 0;
+;Acelerografo.c,254 :: 		banTI = 0;
 	MOV	#lo_addr(_banTI), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,173 :: 		SPI1BUF = 0xFF;
+;Acelerografo.c,255 :: 		SPI1BUF = 0xFF;
 	MOV	#255, W0
 	MOV	WREG, SPI1BUF
-;Acelerografo.c,170 :: 		if ((banLec==1)&&(buffer==0xB1)){                  //Si detecta el delimitador de final de trama:
-L__spi_140:
-L__spi_139:
-;Acelerografo.c,175 :: 		}
+;Acelerografo.c,252 :: 		if ((banLec==1)&&(buffer==0xB1)){                                          //Si detecta el delimitador de final de trama:
+L__spi_172:
+L__spi_171:
+;Acelerografo.c,257 :: 		}
 L_end_spi_1:
 	MOV	#26, W0
 	REPEAT	#12
@@ -664,77 +1060,137 @@ _main:
 	MOV	#4, W0
 	IOR	68
 
-;Acelerografo.c,182 :: 		void main() {
-;Acelerografo.c,184 :: 		ConfiguracionPrincipal();
+;Acelerografo.c,264 :: 		void main() {
+;Acelerografo.c,266 :: 		ConfiguracionPrincipal();
 	CALL	_ConfiguracionPrincipal
-;Acelerografo.c,186 :: 		tiempo[0] = 19;                                    //Año
+;Acelerografo.c,268 :: 		tiempo[0] = 19;                                    //Año
 	MOV	#lo_addr(_tiempo), W1
 	MOV.B	#19, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,187 :: 		tiempo[1] = 49;                                    //Dia
+;Acelerografo.c,269 :: 		tiempo[1] = 49;                                    //Dia
 	MOV	#lo_addr(_tiempo+1), W1
 	MOV.B	#49, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,188 :: 		tiempo[2] = 9;                                     //Hora
+;Acelerografo.c,270 :: 		tiempo[2] = 9;                                     //Hora
 	MOV	#lo_addr(_tiempo+2), W1
 	MOV.B	#9, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,189 :: 		tiempo[3] = 30;                                    //Minuto
+;Acelerografo.c,271 :: 		tiempo[3] = 30;                                    //Minuto
 	MOV	#lo_addr(_tiempo+3), W1
 	MOV.B	#30, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,190 :: 		tiempo[4] = 0;                                     //Segundo
+;Acelerografo.c,272 :: 		tiempo[4] = 0;                                     //Segundo
 	MOV	#lo_addr(_tiempo+4), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,196 :: 		banTI = 0;
+;Acelerografo.c,274 :: 		datosLeidos[0] = 111;
+	MOV	#lo_addr(_datosLeidos), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,275 :: 		datosLeidos[1] = 111;
+	MOV	#lo_addr(_datosLeidos+1), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,276 :: 		datosLeidos[2] = 111;
+	MOV	#lo_addr(_datosLeidos+2), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,277 :: 		datosLeidos[3] = 111;
+	MOV	#lo_addr(_datosLeidos+3), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,278 :: 		datosLeidos[4] = 111;
+	MOV	#lo_addr(_datosLeidos+4), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,279 :: 		datosLeidos[5] = 111;
+	MOV	#lo_addr(_datosLeidos+5), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,280 :: 		datosLeidos[6] = 111;
+	MOV	#lo_addr(_datosLeidos+6), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,281 :: 		datosLeidos[7] = 111;
+	MOV	#lo_addr(_datosLeidos+7), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,282 :: 		datosLeidos[8] = 111;
+	MOV	#lo_addr(_datosLeidos+8), W1
+	MOV.B	#111, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,284 :: 		banTI = 0;
 	MOV	#lo_addr(_banTI), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,197 :: 		banLec = 0;
+;Acelerografo.c,285 :: 		banLec = 0;
 	MOV	#lo_addr(_banLec), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,198 :: 		i = 0;
-	MOV	#lo_addr(_i), W1
+;Acelerografo.c,286 :: 		banCiclo = 0;
+	MOV	#lo_addr(_banCiclo), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,199 :: 		x = 0;
-	MOV	#lo_addr(_x), W1
+;Acelerografo.c,288 :: 		i = 0;
 	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,201 :: 		contMuestras = 0;
+	MOV	W0, _i
+;Acelerografo.c,289 :: 		x = 0;
+	CLR	W0
+	MOV	W0, _x
+;Acelerografo.c,290 :: 		y = 0;
+	CLR	W0
+	MOV	W0, _y
+;Acelerografo.c,292 :: 		contMuestras = 0;
 	MOV	#lo_addr(_contMuestras), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,202 :: 		contCiclos = 0;
+;Acelerografo.c,293 :: 		contCiclos = 0;
 	MOV	#lo_addr(_contCiclos), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,203 :: 		RP1 = 0;
+;Acelerografo.c,294 :: 		contFIFO = 0;
+	CLR	W0
+	MOV	W0, _contFIFO
+;Acelerografo.c,295 :: 		numFIFO = 0;
+	MOV	#lo_addr(_numFIFO), W1
+	CLR	W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,296 :: 		numSetsFIFO = 0;
+	MOV	#lo_addr(_numSetsFIFO), W1
+	CLR	W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,297 :: 		contTimer1 = 0;
+	MOV	#lo_addr(_contTimer1), W1
+	CLR	W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,299 :: 		RP1 = 0;
 	BCLR	LATA4_bit, BitPos(LATA4_bit+0)
-;Acelerografo.c,204 :: 		RP2 = 0;
+;Acelerografo.c,300 :: 		RP2 = 0;
 	BCLR	LATB4_bit, BitPos(LATB4_bit+0)
-;Acelerografo.c,206 :: 		puntero_8 = &auxiliar;
+;Acelerografo.c,302 :: 		puntero_8 = &auxiliar;
 	MOV	#lo_addr(_auxiliar), W0
 	MOV	W0, _puntero_8
-;Acelerografo.c,208 :: 		SPI1BUF = 0x00;
+;Acelerografo.c,304 :: 		SPI1BUF = 0x00;
 	CLR	SPI1BUF
-;Acelerografo.c,210 :: 		while(1){
-L_main31:
-;Acelerografo.c,212 :: 		Delay_ms(500);
+;Acelerografo.c,310 :: 		banInicio = 1;
+	MOV	#lo_addr(_banInicio), W1
+	MOV.B	#1, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,312 :: 		while(1){
+L_main57:
+;Acelerografo.c,314 :: 		Delay_ms(500);
 	MOV	#62, W8
 	MOV	#2340, W7
-L_main33:
+L_main59:
 	DEC	W7
-	BRA NZ	L_main33
+	BRA NZ	L_main59
 	DEC	W8
-	BRA NZ	L_main33
+	BRA NZ	L_main59
 	NOP
 	NOP
-;Acelerografo.c,214 :: 		}
-	GOTO	L_main31
-;Acelerografo.c,216 :: 		}
+;Acelerografo.c,316 :: 		}
+	GOTO	L_main57
+;Acelerografo.c,318 :: 		}
 L_end_main:
 L__main_end_loop:
 	BRA	L__main_end_loop
