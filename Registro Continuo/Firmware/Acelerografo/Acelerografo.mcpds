@@ -47,8 +47,13 @@ Count=0
 [PLDS]
 Count=0
 [Useses]
-Count=1
+Count=6
 File0=SPI
+File1=UART
+File2=C_Stdlib
+File3=C_Type
+File4=Conversions
+File5=C_String
 [EXPANDED NODES]
 Node1=Sources
 Node2=Output Files
