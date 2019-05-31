@@ -110,11 +110,13 @@ void ConfiguracionPrincipal(){
      IPC5bits.INT1IP = 0x01;                                                    //Prioridad en la interrupocion externa 1
 
      //Configuracion del TMR1 con un tiempo de 100ms
-     T1CON = 0x0020;
+     //T1CON = 0x0020;
+     T1CON = 0x0010;
      T1CON.TON = 0;                                                             //Apaga el Timer1
      T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
-     PR1 = 62500;                                                               //Carga el preload para un tiempo de 100ms
+     //PR1 = 62500;                                                               //Carga el preload para un tiempo de 100ms
+     PR1 = 25000;
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
      
      //Configuracion del TMR2 con un tiempo de 75ms
@@ -205,7 +207,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
         if (banSetReloj==1){                                                    //Verifica si la hora del sistema se configuro satisfactoriamente
            banInicio=2;                                                         //Cambia el estado de la bandera banInicio para permitir el muestreo de la señal
         } else {
-           U1RXIE_bit = 1;                                                         //Habilita la interrupcion por UARTRx
+           U1RXIE_bit = 1;                                                      //Habilita la interrupcion por UARTRx
         }
      }
         
@@ -282,10 +284,10 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion por desbordamiento del Timer1
      
-     //ADXL355_read_byte(Status);
      numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
-     //numFIFO = 75;
-     numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
+
+     //numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
+     numSetsFIFO = 3;
 
      //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
      //En cada interrupcion debe haber 25 sets de mediciones +-1
@@ -374,18 +376,18 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
      }
 
      if (banTIGPS==1){                                                          //llego
-
         if (byteGPS!=0x2A){
            tramaGPS[i_gps] = byteGPS;                                           //LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS
            banTFGPS = 0;                                                        //Limpia la bandera de final de trama
            if (i_gps<70){
               i_gps++;                                                          //Incrementa el valor del subindice mientras sea menor a 70
            }
-           if (tramaGPS[1]!=0x47){                                              //Verifica si el segundo elemento guardado es una "P"
-              RP2 = 1;
-              banTIGPS = 0;                                                     //Detiene el proceso limpiando la bandera banTIGPS
-              U1RXIE_bit = 0;                                                   //Apaga la interrupcion por UARTRx
-              //RP2 = 0;
+           if ((i_gps>1)&&(tramaGPS[1]!=0x47)){                                //Verifica si el segundo elemento guardado es una "P"
+              
+              i_gps = 0;
+              banTIGPS = 0;
+              banTCGPS = 0;
+              U1RXIE_bit = 0;
            }
         } else {
            tramaGPS[i_gps] = byteGPS;
@@ -393,12 +395,14 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
            //RP2 = 0;
         }
         if (banTFGPS==1){
+           RP2 = 1;
            banTIGPS = 0;                                                        //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
            banTCGPS = 1;                                                        //Activa la bandera de trama completa
         }
      }
 
      if (banTCGPS==1){
+        //RP2 = 1;
         if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 && tramaGPS[18]==0x41 ){      //"GPRMC" y "A"
            for (x=0;x<6;x++){
                datosGPS[x] = tramaGPS[7+x];                                     //Guarda los datos de hhmmss

@@ -177,11 +177,13 @@ void ConfiguracionPrincipal(){
  IPC5bits.INT1IP = 0x01;
 
 
- T1CON = 0x0020;
+
+ T1CON = 0x0010;
  T1CON.TON = 0;
  T1IE_bit = 1;
  T1IF_bit = 0;
- PR1 = 62500;
+
+ PR1 = 25000;
  IPC0bits.T1IP = 0x02;
 
 
@@ -247,7 +249,7 @@ void AjustarRelojSistema(unsigned char *tramaDatosGPS, unsigned char *tramaTiemp
  datoString[0] = tramaDatosGPS[10];
  datoString[1] = tramaDatosGPS[11];
  tramaTiempo[5] = (short) atoi(ptrDatoString);
-#line 189 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 191 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  tiempoSegundos = (tramaTiempo[0]*3600)+(tramaTiempo[1]*60)+(tramaTiempo[2]);
  banSetReloj = 1;
 
@@ -332,7 +334,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
  T1CON.TON = 1;
 
  }
-#line 277 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 279 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 }
 
 
@@ -341,10 +343,10 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
  T1IF_bit = 0;
 
-
  numFIFO = ADXL355_read_byte( 0x05 );
 
- numSetsFIFO = (numFIFO)/3;
+
+ numSetsFIFO = 3;
 
 
 
@@ -420,7 +422,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
  U1RXIF_bit = 0;
  byteGPS = UART1_Read();
-#line 369 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 371 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  if (banTIGPS==0){
  if (byteGPS == 0x24){
  banTIGPS = 1;
@@ -429,18 +431,18 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
 
  if (banTIGPS==1){
-
  if (byteGPS!=0x2A){
  tramaGPS[i_gps] = byteGPS;
  banTFGPS = 0;
  if (i_gps<70){
  i_gps++;
  }
- if (tramaGPS[1]!=0x47){
- RP2 = 1;
- banTIGPS = 0;
- U1RXIE_bit = 0;
+ if ((i_gps>1)&&(tramaGPS[1]!=0x47)){
 
+ i_gps = 0;
+ banTIGPS = 0;
+ banTCGPS = 0;
+ U1RXIE_bit = 0;
  }
  } else {
  tramaGPS[i_gps] = byteGPS;
@@ -448,12 +450,14 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
  }
  if (banTFGPS==1){
+ RP2 = 1;
  banTIGPS = 0;
  banTCGPS = 1;
  }
  }
 
  if (banTCGPS==1){
+
  if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 && tramaGPS[18]==0x41 ){
  for (x=0;x<6;x++){
  datosGPS[x] = tramaGPS[7+x];
