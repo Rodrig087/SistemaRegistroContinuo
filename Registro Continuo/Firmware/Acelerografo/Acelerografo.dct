@@ -1062,7 +1062,7 @@ adxl355_read_byte
 adxl355_read_data
 adxl355_read_fifo
 adxl355_write_byte
-ajustarrelojsistema
+ajustartiemposistema
 altdtr1
 altdtr1_0
 altdtr1_0_bit
@@ -1291,10 +1291,14 @@ b7
 b8
 b9
 banciclo
+banconf
 banesc
 baninicio
 banlec
+banleer
+banmuestrear
 banresp
+bansetgps
 bansetreloj
 banspi
 bantc
@@ -2711,7 +2715,6 @@ dae_bit
 datosfifo
 datosgps
 datosleidos
-datosleidos2
 datox
 datoy
 datoz
@@ -3669,6 +3672,7 @@ fclcon2
 fclcon2bits
 fclcon3
 fclcon3bits
+fechasistema
 ferr
 ferr
 ferr
@@ -6118,6 +6122,7 @@ mtbs_bit
 mtbs_pwmcon1_bit
 mtbs_pwmcon2_bit
 mtbs_pwmcon3_bit
+muestrear
 n
 n
 n_bit
@@ -9045,6 +9050,7 @@ rcount_8
 rcount_8_bit
 rcount_9
 rcount_9_bit
+recuperarfechagps
 refocon
 refoconbits
 refomd
@@ -11126,7 +11132,7 @@ tgen
 tgen_bit
 tiempo
 tiempodeajuste
-tiemposegundos
+tiemposistema
 timer1int
 timer2int
 tmr1

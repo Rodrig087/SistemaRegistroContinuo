@@ -1,0 +1,4 @@
+1. Actualizar pip:
+	pip install -U pip
+2. Instalar pyModbus utilizando pip:
+	sudo pip install pyModbusTCP

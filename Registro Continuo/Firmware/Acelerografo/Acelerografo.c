@@ -30,7 +30,6 @@ unsigned char datosGPS[13];
 unsigned char tiempo[6];                                                        //Vector para almacenar los datos de la cabecera
 unsigned char pduSPI[15];                                                       //Vector de trama de datos del puerto UART2
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
-unsigned char datosLeidos2[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];                                                   //Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
 unsigned short numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
@@ -43,23 +42,100 @@ unsigned short contCiclos;
 unsigned int contFIFO;
 
 unsigned short banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
-unsigned short  banResp, banSPI, banLec, banEsc, banCiclo, banInicio, banSetReloj;
+unsigned short banResp, banSPI, banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
+unsigned short banMuestrear, banLeer, banConf;
 
 long datox, datoy, datoz, auxiliar;
 unsigned char *puntero_8, direccion;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
-unsigned long tiempoSegundos;
-unsigned short tiempoDeAjuste[2] = {10, 0};                                     //{hh, mm}
-unsigned long segundoDeAjuste;
+unsigned short tiempoDeAjuste[2] = {10, 0};                                     //Hora a la que se desea igualar el reloj RTC{hh, mm}
+unsigned long tiempoSistema, fechaSistema, segundoDeAjuste;
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////////  Declaracion de funciones  /////////////////////////////////////////////////////////
+void ConfiguracionPrincipal();
+void Muestrear();
+void ConfigurarGPS();
+unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
+unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
+void AjustarTiempoSistema(unsigned long hGPS, unsigned long fGPS, unsigned char *tramaTiempoSistema);
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+//////////////////////////////////////////////////////////////      Main      ////////////////////////////////////////////////////////////////
+void main() {
+
+     ConfiguracionPrincipal();
+     ConfigurarGPS();
+
+     tiempo[0] = 12;                                                            //Hora
+     tiempo[1] = 12;                                                            //Minuto
+     tiempo[2] = 12;                                                            //Segundo
+     tiempo[3] = 12;                                                            //Dia
+     tiempo[4] = 12;                                                            //Mes
+     tiempo[5] = 19;                                                            //Año
+
+     banTI = 0;
+     banLec = 0;
+     banCiclo = 0;
+     banSetReloj = 0;
+     banSetGPS = 0;
+     banTIGPS = 0;
+     banTFGPS = 0;
+     banTCGPS = 0;
+
+     banMuestrear = 0;
+     banLeer = 0;
+     banConf = 0;
+
+     i = 0;
+     x = 0;
+     y = 0;
+     i_gps = 0;
+     tiempoSistema = 0;
+     fechaSistema = 190101;
+     segundoDeAjuste = (3600*tiempoDeAjuste[0]) + (60*tiempoDeAjuste[1]);       //Calcula el segundo en el que se efectuara el ajuste de hora = hh*3600 + mm*60
+
+     contMuestras = 0;
+     contCiclos = 0;
+     contFIFO = 0;
+     numFIFO = 0;
+     numSetsFIFO = 0;
+     contTimer1 = 0;
+
+     byteGPS = 0;
+
+     RP1 = 0;
+     RP2 = 0;
+
+     puntero_8 = &auxiliar;
+
+     SPI1BUF = 0x00;
+
+     banInicio = 0;
+     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UARTRx
+     INT1IE_bit = 1;
+
+     while(1){
+
+              Delay_ms(500);
+
+     }
+
+}
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 
 
 //////////////////////////////////////////////////////////////// Funciones ////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Funcion para realizar la Configuracion de parametros
+// Funcion para realizar la configuracion principal
 void ConfiguracionPrincipal(){
      
      //configuracion del oscilador                                              //FPLLO = FIN*(M/(N1+N2)) = 80.017MHz
@@ -85,7 +161,7 @@ void ConfiguracionPrincipal(){
      RPINR18bits.U1RXR = 0x22;                                                  //Configura el pin RB2/RPI34 como Rx1 *
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
      UART1_Init(9600);                                                          //Inicializa el UART1 con una velocidad de 9600 baudios
-     U1RXIE_bit = 0;                                                            //Habilita la interrupcion por UART1 RX *
+     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
      U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
 
@@ -110,13 +186,11 @@ void ConfiguracionPrincipal(){
      IPC5bits.INT1IP = 0x01;                                                    //Prioridad en la interrupocion externa 1
 
      //Configuracion del TMR1 con un tiempo de 100ms
-     //T1CON = 0x0020;
-     T1CON = 0x0010;
+     T1CON = 0x0020;
      T1CON.TON = 0;                                                             //Apaga el Timer1
      T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
-     //PR1 = 62500;                                                               //Carga el preload para un tiempo de 100ms
-     PR1 = 25000;
+     PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
      
      //Configuracion del TMR2 con un tiempo de 75ms
@@ -135,10 +209,71 @@ void ConfiguracionPrincipal(){
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para relizar el muesteo
+void Muestrear(){
+
+     if (banCiclo==0){
+
+         ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                   //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+
+     } else {
+
+         banCiclo = 0;                                                      //Limpia la bandera de ciclo completo
+
+         tramaCompleta[0] = contCiclos;                                     //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+         numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
+         numSetsFIFO = (numFIFO)/3;                                         //Lee el numero de sets disponibles en el FIFO
+
+         //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
+         for (x=0;x<numSetsFIFO;x++){
+             ADXL355_read_FIFO(datosLeidos);                                //Lee una sola posicion del FIFO
+             for (y=0;y<9;y++){
+                 datosFIFO[y+(x*9)] = datosLeidos[y];                       //LLena la trama datosFIFO
+             }
+         }
+
+         //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
+         for (x=0;x<(numSetsFIFO*9);x++){
+             if ((x==0)||(x%9==0)){
+                tramaCompleta[contFIFO+contMuestras+x] = contMuestras;
+                tramaCompleta[contFIFO+contMuestras+x+1] = datosFIFO[x];
+                contMuestras++;
+             } else {
+                tramaCompleta[contFIFO+contMuestras+x] = datosFIFO[x];
+             }
+         }
+
+         //LLena la trama tiempo con el valor del tiempo actual del sistema y luega rellena la tramaCompleta con los valores de esta trama
+         AjustarTiempoSistema(tiempoSistema, fechaSistema, tiempo);
+         for (x=0;x<6;x++){
+             tramaCompleta[2500+x] = tiempo[x];
+         }
+
+         banTI = 1;                                                         //Activa la bandera de inicio de trama para permitir el envio de la trama por SPI
+         RP1 = 1;                                                           //Genera el pulso P1 para producir la interrupcion en la RPi
+         Delay_us(20);
+         RP1 = 0;
+
+     }
+
+     contCiclos++;                                                          //Incrementa el contador de ciclos
+     contMuestras = 0;                                                      //Limpia el contador de muestras
+     contFIFO = 0;                                                          //Limpia el contador de FIFOs
+
+     if (ADXL355_read_byte(POWER_CTL)&0x01==1){
+        ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                  //Coloca el ADXL en modo medicion
+     }
+
+     T1CON.TON = 1;                                                         //Enciende el Timer1
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para configurar el GPS
 void ConfigurarGPS(){
      UART1_Write_Text("$PMTK605*31\r\n");
-     //UART1_Write_Text("$PMTK104*37\r\n");
      UART1_Write_Text("$PMTK220,1000*1F\r\n");
      UART1_Write_Text("$PMTK251,115200*1F\r\n");
      Delay_ms(1000);                                                            //Tiempo necesario para que se de efecto el cambio de configuracion
@@ -148,54 +283,178 @@ void ConfigurarGPS(){
      UART1_Write_Text("$PMTK319,1*24\r\n");
      UART1_Write_Text("$PMTK413*34\r\n");
      UART1_Write_Text("$PMTK513,1*28\r\n");
+     Delay_ms(1000);
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Funcion para configurar el GPS
-void AjustarRelojSistema(unsigned char *tramaDatosGPS, unsigned char *tramaTiempo){
+//Funcion para tomar la fecha del GPS
+unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
 
+     unsigned int tramaFecha[4];
+     unsigned long fechaGPS;
+     char datoStringF[3];
+     char *ptrDatoStringF = &datoStringF;
+     datoStringF[2] = '\0';
+     tramaFecha[3] = '\0';
+
+      //Dia
+     /*datoStringF[0] = tramaDatosGPS[6];
+     datoStringF[1] = tramaDatosGPS[7];*/
+     datoStringF[0] = '1';
+     datoStringF[1] = '7';
+     /*tramaFecha[0] =  atoi(ptrDatoStringF);*/
+     tramaFecha[0] =  17;
+
+     //Mes
+     /*datoStringF[0] = tramaDatosGPS[8];
+     datoStringF[1] = tramaDatosGPS[9];*/
+     datoStringF[0] = '0';
+     datoStringF[1] = '6';
+    /*tramaFecha[1] = atoi(ptrDatoStringF);*/
+     tramaFecha[1] = 6;
+
+     //Año
+     /*datoStringF[0] = tramaDatosGPS[10];
+     datoStringF[1] = tramaDatosGPS[11];*/
+     datoStringF[0] = '1';
+     datoStringF[1] = '9';
+     //tramaFecha[2] = atoi(ptrDatoStringF);
+     tramaFecha[2] = 0;
+
+     //fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);    //10000*dd + 100*mm + aa
+     fechaGPS = (tramaFecha[0]*3600)+(tramaFecha[1]*60)+(tramaFecha[2]);
+
+     return fechaGPS;
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para tomar la hora del GPS
+unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
+
+     unsigned int tramaTiempo[4];
+     unsigned long horaGPS;
      char datoString[3];
      char *ptrDatoString = &datoString;
      datoString[2] = '\0';
-     
+     tramaTiempo[3] = '\0';
+
+     //Horas
      datoString[0] = tramaDatosGPS[0];
      datoString[1] = tramaDatosGPS[1];
-     tramaTiempo[0] = (short) atoi(ptrDatoString);
-     
-     datoString[0] = tramaDatosGPS[2];
+     datoString[0] = '1';
+     datoString[1] = '0';
+     //tramaTiempo[0] = atoi(ptrDatoString);
+     tramaTiempo[0] = atoi("10");
+
+     //Minutos
+    datoString[0] = tramaDatosGPS[2];
      datoString[1] = tramaDatosGPS[3];
-     tramaTiempo[1] = (short) atoi(ptrDatoString);
-     
-     datoString[0] = tramaDatosGPS[4];
+     datoString[0] = '4';
+     datoString[1] = '5';
+     //tramaTiempo[1] = atoi(ptrDatoString);
+     tramaTiempo[1] = atoi("45");
+
+     //Segundos
+    datoString[0] = tramaDatosGPS[4];
      datoString[1] = tramaDatosGPS[5];
-     tramaTiempo[2] = (short) atoi(ptrDatoString);
-     
-     datoString[0] = tramaDatosGPS[6];
-     datoString[1] = tramaDatosGPS[7];
-     tramaTiempo[3] = (short) atoi(ptrDatoString);
-     
-     datoString[0] = tramaDatosGPS[8];
-     datoString[1] = tramaDatosGPS[9];
-     tramaTiempo[4] = (short) atoi(ptrDatoString);
-     
-     datoString[0] = tramaDatosGPS[10];
-     datoString[1] = tramaDatosGPS[11];
-     tramaTiempo[5] = (short) atoi(ptrDatoString);
-     
-     /*for (i=0;i<6;i++){
-         *ptrDatoString = tramaDatosGPS[(i*2)];
-         *(ptrDatoString+1) = tramaDatosGPS[(i*2)+1];
-         tramaTiempo[i] = atoi(ptrDatoString);
-     }*/
-     tiempoSegundos = (tramaTiempo[0]*3600)+(tramaTiempo[1]*60)+(tramaTiempo[2]);        //Calcula el segundo actual = hh*3600 + mm*60 + ss
-     banSetReloj = 1;                                                                    //Cambia el estado de la bandera cuando ha terminado de configurar el reloj
-     
+     datoString[0] = '1';
+     datoString[1] = '1';
+     //tramaTiempo[2] = atoi(ptrDatoString);
+     tramaTiempo[2] = atoi("11");
+
+     horaGPS = (tramaTiempo[0]*3600)+(tramaTiempo[1]*60)+(tramaTiempo[2]);      //Calcula el segundo actual = hh*3600 + mm*60 + ss
+     return horaGPS;
+
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Funcion para ajustar la hora y la fecha del sistema
+void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema){
+
+     unsigned char hora;
+     unsigned char minuto;
+     unsigned char segundo;
+     unsigned char dia;
+     unsigned char mes;
+     unsigned char anio;
+
+     hora = longHora / 3600;
+     minuto = (longHora%3600) / 60;
+     segundo = (longHora%3600) % 60;
+
+     dia = longFecha / 10000;
+     mes = (longFecha%10000) / 100;
+     anio = (longFecha%10000) % 100;
+
+     tramaTiempoSistema[0] = hora;
+     tramaTiempoSistema[1] = minuto;
+     tramaTiempoSistema[2] = segundo;
+     tramaTiempoSistema[3] = dia;
+     tramaTiempoSistema[4] = mes;
+     tramaTiempoSistema[5] = anio;
+
+     banSetReloj = 1;                                                           //Cambia el estado de la bandera cuando ha terminado de configurar el reloj
+
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-////////////////////////////////////////////////////////////// Interrupciones //////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////// Interrupciones /////////////////////////////////////////////////////////////
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Interrupcion SPI1
+void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
+
+     SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI
+     buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
+
+     //////////////// Rutina para iniciar el muestreo ////////////////
+     if ((buffer==0xA0)&&(banMuestrear==0)){
+        banInicio = 2;
+
+     }
+
+     //////////////// Rutina para Lectura ////////////////
+     if ((buffer==0xB0)&&(banLeer==0)){
+        banLeer = 1;
+        i = 0;
+     }
+     if ((banLeer==1)&&(buffer!=0xB0)&&(buffer!=0xBF)){
+        SPI1BUF = tiempo[i];
+        i++;
+     }
+     if ((banLeer==1)&&(buffer==0xBF)){
+        banLeer = 0;
+     }
+
+     //////////////// Rutina de Configuracion ////////////////
+     if ((buffer==0xC0)&&(banConf==0)){
+
+     }
+
+     /*//Rutina para procesar la trama de solicitud de lectura desde la RPi
+     if ((banTI==1)){                                                           //Verifica si la bandera de inicio de trama esta activa
+        banLec = 1;                                                             //Activa la bandera de lectura
+        banTI = 0;
+        i = 0;
+        SPI1BUF = tramaCompleta[i];
+     }
+     if ((banLec==1)&&(buffer!=0xB1)){
+        SPI1BUF = tramaCompleta[i];
+        i++;
+     }
+     if ((banLec==1)&&(buffer==0xB1)){                                          //Si detecta el delimitador de final de trama:
+        banLec = 0;                                                             //Limpia la bandera de lectura
+        banTI = 0;
+        SPI1BUF = 0xFF;
+     }*/
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Interrupcion INT1
@@ -203,79 +462,25 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
      
-     if (banInicio==1){
-        if (banSetReloj==1){                                                    //Verifica si la hora del sistema se configuro satisfactoriamente
-           banInicio=2;                                                         //Cambia el estado de la bandera banInicio para permitir el muestreo de la señal
-        } else {
-           U1RXIE_bit = 1;                                                      //Habilita la interrupcion por UARTRx
-        }
+     AjustarTiempoSistema(tiempoSistema, fechaSistema, tiempo);
+     RP1 = 1;                                                           //Genera el pulso P1 para producir la interrupcion en la RPi
+     Delay_us(20);
+     RP1 = 0;
+     
+     if (tiempoSistema==segundoDeAjuste){
+        U1RXIE_bit = 1;                                                         //Enciende la interrupcion por UARTRx para igualar el tiempo del sistema con el GPS
+     } else {
+        tiempoSistema++;                                                        //Si el reloj esta igualado incrementa la cuenta del segundo
      }
         
      //Con esto se asegura que el proceso comience cuando se haya completado la configuracion inicial
      //Esta bandera tambien me puede servir para iniciar el sistema mediante comandos enviados desde la RPi por SPI
-     if (banInicio==2){
-         if (banCiclo==0){
-
-             ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                   //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-
-         } else {
-
-             banCiclo = 0;                                                      //Limpia la bandera de ciclo completo
-
-             tramaCompleta[0] = contCiclos;                                     //LLena el primer elemento de la tramaCompleta con el contador de ciclos
-             //ADXL355_read_byte(Status);
-             numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
-            //numFIFO = 75;
-             numSetsFIFO = (numFIFO)/3;                                         //Lee el numero de sets disponibles en el FIFO
-             
-             //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
-             for (x=0;x<numSetsFIFO;x++){
-                 ADXL355_read_FIFO(datosLeidos);                               //Lee una sola posicion del FIFO
-                 for (y=0;y<9;y++){
-                     datosFIFO[y+(x*9)] = datosLeidos[y];                       //LLena la trama datosFIFO
-                 }
-             }
-             
-             //ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                   //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-             
-             //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
-             for (x=0;x<(numSetsFIFO*9);x++){
-                 if ((x==0)||(x%9==0)){
-                    tramaCompleta[contFIFO+contMuestras+x] = contMuestras;
-                    tramaCompleta[contFIFO+contMuestras+x+1] = datosFIFO[x];
-                    contMuestras++;
-                 } else {
-                    tramaCompleta[contFIFO+contMuestras+x] = datosFIFO[x];
-                 }
-             }
-             
-             //Este bucle llena los 5 ultimos elementos de la tramaCompleta con los elementos de la trama tiempo
-             for (x=0;x<6;x++){
-                 tramaCompleta[2500+x] = tiempo[x];
-             }
-             
-             banTI = 1;                                                         //Activa la bandera de inicio de trama para permitir el envio de la trama por SPI
-             RP1 = 1;                                                           //Genera el pulso P1 para producir la interrupcion en la RPi
-             Delay_us(20);
-             RP1 = 0;
-
-         }
-         
-         contCiclos++;                                                          //Incrementa el contador de ciclos
-         contMuestras = 0;                                                      //Limpia el contador de muestras
-         contFIFO = 0;                                                          //Limpia el contador de FIFOs
-         
-         if (ADXL355_read_byte(POWER_CTL)&0x01==1){
-            ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                  //Coloca el ADXL en modo medicion
-         }
-         
-         T1CON.TON = 1;                                                         //Enciende el Timer1
+     if (banInicio==1){
+     
+        void Muestrear();
      
      }
      
-     /*if (banInicio!=2){
-        banInicio = 2;                                                          //Establece la bandera para empezar con el muestreo en la siguiente interrupcion
-     }*/
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -286,8 +491,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
      numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
 
-     //numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
-     numSetsFIFO = 3;
+     numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
 
      //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
      //En cada interrupcion debe haber 25 sets de mediciones +-1
@@ -332,30 +536,6 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT{
      
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Interrupcion SPI1
-void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
-
-     SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI
-     buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
-     //Rutina para procesar la trama de solicitud de lectura desde la RPi
-     if ((banTI==1)){                                                           //Verifica si la bandera de inicio de trama esta activa
-        banLec = 1;                                                             //Activa la bandera de lectura
-        banTI = 0;
-        i = 0;
-        SPI1BUF = tramaCompleta[i];
-     }
-     if ((banLec==1)&&(buffer!=0xB1)){
-        SPI1BUF = tramaCompleta[i];
-        i++;
-     }
-     if ((banLec==1)&&(buffer==0xB1)){                                          //Si detecta el delimitador de final de trama:
-        banLec = 0;                                                             //Limpia la bandera de lectura
-        banTI = 0;
-        SPI1BUF = 0xFF;
-     }
-
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Interrupcion UART1
@@ -364,45 +544,36 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
      U1RXIF_bit = 0;
      byteGPS = UART1_Read();                                                    //Lee el byte de la trama enviada por el GPS
 
-     /*RP2 = 1;
-     Delay_us(5);
-     RP2 = 0;*/
-
      if (banTIGPS==0){
-        if (byteGPS == 0x24){                                                   //Verifica si el byte recibido es el simbolo "$" que indica el inicio de una trama GPS
+        if ((byteGPS==0x24)&&(i_gps==0)){                                       //Verifica si el primer byte recibido es el simbolo "$" que indica el inicio de una trama GPS
            banTIGPS = 1;                                                        //Activa la bandera de inicio de trama
            i_gps = 0;                                                           //Limpia el subindice de la trama GPS
         }
      }
 
-     if (banTIGPS==1){                                                          //llego
-        if (byteGPS!=0x2A){
+     if (banTIGPS==1){
+        if (byteGPS!=0x2A){                                                     //0x2A = "*"
            tramaGPS[i_gps] = byteGPS;                                           //LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS
            banTFGPS = 0;                                                        //Limpia la bandera de final de trama
            if (i_gps<70){
               i_gps++;                                                          //Incrementa el valor del subindice mientras sea menor a 70
            }
-           if ((i_gps>1)&&(tramaGPS[1]!=0x47)){                                //Verifica si el segundo elemento guardado es una "P"
-              
-              i_gps = 0;
-              banTIGPS = 0;
-              banTCGPS = 0;
-              U1RXIE_bit = 0;
+           if ((i_gps>1)&&(tramaGPS[1]!=0x47)){                                 //Verifica si el segundo elemento guardado es diferente de G
+              i_gps = 0;                                                        //Limpia el subindice para almacenar la trama desde el principio
+              banTIGPS = 0;                                                     //Limpia la bandera de inicio de trama
+              banTCGPS = 0;                                                     //Limpia la bandera de trama completa
            }
         } else {
            tramaGPS[i_gps] = byteGPS;
            banTFGPS = 1;                                                        //Activa la bandera de final de trama GPS
-           //RP2 = 0;
         }
         if (banTFGPS==1){
-           RP2 = 1;
            banTIGPS = 0;                                                        //Limpia la bandera de inicio de trama para no permitir que se almacene mas datos en la trama de respuesta
            banTCGPS = 1;                                                        //Activa la bandera de trama completa
         }
      }
 
      if (banTCGPS==1){
-        //RP2 = 1;
         if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 && tramaGPS[18]==0x41 ){      //"GPRMC" y "A"
            for (x=0;x<6;x++){
                datosGPS[x] = tramaGPS[7+x];                                     //Guarda los datos de hhmmss
@@ -414,80 +585,37 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
                    }
                }
            }
-           AjustarRelojSistema(datosGPS, tiempo);
-
+           banSetGPS = 1;                                                       //Activa esta bandera si se logro recuperar la hora del GPS;
+           
+           datosGPS[0] = '1';
+           datosGPS[1] = '7';
+           datosGPS[2] = '2';
+           datosGPS[3] = '4';
+           datosGPS[4] = '0';
+           datosGPS[5] = '0';
+           
+           datosGPS[6] = '2';
+           datosGPS[7] = '6';
+           datosGPS[8] = '0';
+           datosGPS[9] = '6';
+           datosGPS[10] = '1';
+           datosGPS[11] = '9';
+           datosGPS[12] = '\0';
+           
+           tiempoSistema = RecuperarFechaGPS(datosGPS);
+           fechaSistema = RecuperarFechaGPS(datosGPS);
+           
+           /*tiempoSistema = 63960;
+           fechaSistema = 250619;*/
+           
+           U1RXIE_bit = 0;                                                      //Apaga la interrupcion por UARTRx
+          /*if (INT1IE_bit==0){
+              INT1IE_bit = 1;                                                   //Habilita la interrupcion externa INT1 solo despues de que ha recuperado la hora del GPS
+           }*/
         }
-        i_gps = 0;
-        banTIGPS = 0;
-        banTCGPS = 0;
-        U1RXIE_bit = 0;                                                         //Apaga la interrupcion por UARTRx
+        i_gps = 0;                                                              //Limpia el subindice para almacenar la trama desde el principio
+        banTIGPS = 0;                                                           //Limpia la bandera de inicio de trama
+        banTCGPS = 0;                                                           //Limpia la bandera de trama completa
      }
 
 }
-
-
-//////////////////////////////////////////////////////////////      Main      //////////////////////////////////////////////////////////////
-void main() {
-
-     ConfiguracionPrincipal();
-     ConfigurarGPS();
-
-     tiempo[0] = 12;                                                            //Hora
-     tiempo[1] = 12;                                                            //Minuto
-     tiempo[2] = 0;                                                             //Segundo
-     tiempo[3] = 1;                                                             //Dia
-     tiempo[4] = 1;                                                             //Mes
-     tiempo[5] = 19;                                                            //Año
-     
-     datosLeidos[0] = 111;
-     datosLeidos[1] = 111;
-     datosLeidos[2] = 111;
-     datosLeidos[3] = 111;
-     datosLeidos[4] = 111;
-     datosLeidos[5] = 111;
-     datosLeidos[6] = 111;
-     datosLeidos[7] = 111;
-     datosLeidos[8] = 111;
-
-     banTI = 0;
-     banLec = 0;
-     banCiclo = 0;
-     banSetReloj = 0;
-     banTIGPS = 0;
-     banTFGPS = 0;
-     banTCGPS = 0;
-
-     i = 0;
-     x = 0;
-     y = 0;
-     i_gps = 0;
-     tiempoSegundos = 0;
-     segundoDeAjuste = (3600*tiempoDeAjuste[0]) + (60*tiempoDeAjuste[1]);       //Calcula el segundo en el que se efectuara el ajuste de hora = hh*3600 + mm*60
-
-     contMuestras = 0;
-     contCiclos = 0;
-     contFIFO = 0;
-     numFIFO = 0;
-     numSetsFIFO = 0;
-     contTimer1 = 0;
-     
-     byteGPS = 0;
-     
-     RP1 = 0;
-     RP2 = 0;
-
-     puntero_8 = &auxiliar;
-
-     SPI1BUF = 0x00;
-
-     banInicio = 2;
-     INT1IE_bit = 1;                                                            //Habilita la interrupcion externa INT1
-
-     while(1){
-
-              Delay_ms(500);
-
-     }
-
-}
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -18,7 +18,7 @@ unsigned short numBytes;
 unsigned short contMuestras;
 unsigned int numCiclos;
 unsigned char tramaInSPI[20];
-unsigned char tramaDatos[15+(NUM_MUESTRAS*10)];
+unsigned char tramaDatos[16+(NUM_MUESTRAS*10)];
 unsigned short tiempoSPI;
 unsigned short tramaSize;
 char entrada[30];
@@ -38,7 +38,7 @@ int main(void) {
   i = 0;
   x = 0;
   contMuestras = 0;
-  tramaSize = 15+(NUM_MUESTRAS*10);
+  tramaSize = 16+(NUM_MUESTRAS*10);
      
   RecuperarVector();
  
@@ -101,4 +101,4 @@ void RecuperarVector() {
 
 
 //Compilar:
-//gcc ConvertirBinario_V2.c -o convertirV2 
+//gcc ConvertirBinario_V2.2.c -o convertirV2 

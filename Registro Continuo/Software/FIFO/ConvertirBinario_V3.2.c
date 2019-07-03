@@ -20,7 +20,7 @@ unsigned short numBytes;
 unsigned int contMuestras;
 unsigned int numCiclos;
 unsigned char tramaInSPI[20];
-unsigned char tramaDatos[15+(NUM_MUESTRAS*10)];
+unsigned char tramaDatos[16+(NUM_MUESTRAS*10)];
 unsigned short axisData[3];
 unsigned int axisValue;
 double aceleracion;
@@ -47,7 +47,7 @@ int main(void) {
   axisValue = 0;
   aceleracion = 0.0;  
   contMuestras = 0;
-  tramaSize = 15+(NUM_MUESTRAS*10);
+  tramaSize = 16+(NUM_MUESTRAS*10);
      
   RecuperarVector();
  
