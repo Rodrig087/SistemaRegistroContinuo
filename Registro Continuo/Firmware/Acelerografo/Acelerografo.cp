@@ -80,7 +80,87 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 17 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
+
+
+
+
+void ConfigurarGPS(){
+ UART1_Write_Text("$PMTK605*31\r\n");
+ UART1_Write_Text("$PMTK220,1000*1F\r\n");
+ UART1_Write_Text("$PMTK251,115200*1F\r\n");
+ Delay_ms(1000);
+ UART1_Init(115200);
+ UART1_Write_Text("$PMTK313,1*2E\r\n");
+ UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+ UART1_Write_Text("$PMTK319,1*24\r\n");
+ UART1_Write_Text("$PMTK413*34\r\n");
+ UART1_Write_Text("$PMTK513,1*28\r\n");
+ Delay_ms(1000);
+}
+
+
+
+
+unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
+
+ unsigned int tramaFecha[4];
+ unsigned long fechaGPS;
+ char datoStringF[3];
+ char *ptrDatoStringF = &datoStringF;
+ datoStringF[2] = '\0';
+ tramaFecha[3] = '\0';
+#line 34 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
+ datoStringF[0] = '1';
+ datoStringF[1] = '7';
+
+ tramaFecha[0] = 17;
+#line 42 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
+ datoStringF[0] = '0';
+ datoStringF[1] = '6';
+
+ tramaFecha[1] = 6;
+#line 50 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
+ datoStringF[0] = '1';
+ datoStringF[1] = '9';
+
+ tramaFecha[2] = 0;
+
+
+ fechaGPS = (tramaFecha[0]*3600)+(tramaFecha[1]*60)+(tramaFecha[2]);
+
+ return fechaGPS;
+
+}
+#line 106 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
+void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema){
+
+ unsigned char hora;
+ unsigned char minuto;
+ unsigned char segundo;
+ unsigned char dia;
+ unsigned char mes;
+ unsigned char anio;
+
+ hora = longHora / 3600;
+ minuto = (longHora%3600) / 60;
+ segundo = (longHora%3600) % 60;
+
+ dia = longFecha / 10000;
+ mes = (longFecha%10000) / 100;
+ anio = (longFecha%10000) % 100;
+
+ tramaTiempoSistema[0] = hora;
+ tramaTiempoSistema[1] = minuto;
+ tramaTiempoSistema[2] = segundo;
+ tramaTiempoSistema[3] = dia;
+ tramaTiempoSistema[4] = mes;
+ tramaTiempoSistema[5] = anio;
+
+
+
+}
+#line 18 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -184,7 +264,7 @@ void main() {
 
  SPI1BUF = 0x00;
 
- banInicio = 0;
+ banInicio = 1;
  U1RXIE_bit = 1;
  INT1IE_bit = 1;
 
@@ -248,7 +328,7 @@ void ConfiguracionPrincipal(){
 
 
  RPINR0 = 0x2E00;
- INT1IE_bit = 0;
+ INT1IE_bit = 1;
  INT1IF_bit = 0;
  IPC5bits.INT1IP = 0x01;
 
@@ -339,86 +419,6 @@ void Muestrear(){
 
 
 
-void ConfigurarGPS(){
- UART1_Write_Text("$PMTK605*31\r\n");
- UART1_Write_Text("$PMTK220,1000*1F\r\n");
- UART1_Write_Text("$PMTK251,115200*1F\r\n");
- Delay_ms(1000);
- UART1_Init(115200);
- UART1_Write_Text("$PMTK313,1*2E\r\n");
- UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- UART1_Write_Text("$PMTK319,1*24\r\n");
- UART1_Write_Text("$PMTK413*34\r\n");
- UART1_Write_Text("$PMTK513,1*28\r\n");
- Delay_ms(1000);
-}
-
-
-
-
-unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
-
- unsigned int tramaFecha[4];
- unsigned long fechaGPS;
- char datoStringF[3];
- char *ptrDatoStringF = &datoStringF;
- datoStringF[2] = '\0';
- tramaFecha[3] = '\0';
-#line 304 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
- datoStringF[0] = '1';
- datoStringF[1] = '7';
-
- tramaFecha[0] = 17;
-#line 312 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
- datoStringF[0] = '0';
- datoStringF[1] = '6';
-
- tramaFecha[1] = 6;
-#line 320 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
- datoStringF[0] = '1';
- datoStringF[1] = '9';
-
- tramaFecha[2] = 0;
-
-
- fechaGPS = (tramaFecha[0]*3600)+(tramaFecha[1]*60)+(tramaFecha[2]);
-
- return fechaGPS;
-
-}
-#line 376 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
-void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema){
-
- unsigned char hora;
- unsigned char minuto;
- unsigned char segundo;
- unsigned char dia;
- unsigned char mes;
- unsigned char anio;
-
- hora = longHora / 3600;
- minuto = (longHora%3600) / 60;
- segundo = (longHora%3600) % 60;
-
- dia = longFecha / 10000;
- mes = (longFecha%10000) / 100;
- anio = (longFecha%10000) % 100;
-
- tramaTiempoSistema[0] = hora;
- tramaTiempoSistema[1] = minuto;
- tramaTiempoSistema[2] = segundo;
- tramaTiempoSistema[3] = dia;
- tramaTiempoSistema[4] = mes;
- tramaTiempoSistema[5] = anio;
-
- banSetReloj = 1;
-
-}
-
-
-
-
-
 
 
 
@@ -426,31 +426,22 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
  SPI1IF_bit = 0;
  buffer = SPI1BUF;
-
-
- if ((buffer==0xA0)&&(banMuestrear==0)){
- banInicio = 2;
-
- }
-
-
- if ((buffer==0xB0)&&(banLeer==0)){
- banLeer = 1;
+#line 309 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+ if ((banTI==1)){
+ banLec = 1;
+ banTI = 0;
  i = 0;
+ SPI1BUF = tramaCompleta[i];
  }
- if ((banLeer==1)&&(buffer!=0xB0)&&(buffer!=0xBF)){
- SPI1BUF = tiempo[i];
+ if ((banLec==1)&&(buffer!=0xB1)){
+ SPI1BUF = tramaCompleta[i];
  i++;
  }
- if ((banLeer==1)&&(buffer==0xBF)){
- banLeer = 0;
+ if ((banLec==1)&&(buffer==0xB1)){
+ banLec = 0;
+ banTI = 0;
+ SPI1BUF = 0xFF;
  }
-
-
- if ((buffer==0xC0)&&(banConf==0)){
-
- }
-#line 456 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 }
 
 
@@ -459,26 +450,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
 
  INT1IF_bit = 0;
-
- AjustarTiempoSistema(tiempoSistema, fechaSistema, tiempo);
- RP1 = 1;
- Delay_us(20);
- RP1 = 0;
-
- if (tiempoSistema==segundoDeAjuste){
- U1RXIE_bit = 1;
- } else {
- tiempoSistema++;
- }
-
-
-
+#line 349 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  if (banInicio==1){
 
- void Muestrear();
+ Muestrear();
 
  }
-
 }
 
 
@@ -488,7 +465,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  T1IF_bit = 0;
 
  numFIFO = ADXL355_read_byte( 0x05 );
-
  numSetsFIFO = (numFIFO)/3;
 
 
@@ -504,7 +480,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  for (x=0;x<(numSetsFIFO*9);x++){
  if ((x==0)||(x%9==0)){
  tramaCompleta[contFIFO+contMuestras+x] = contMuestras;
-
  tramaCompleta[contFIFO+contMuestras+x+1] = datosFIFO[x];
  contMuestras++;
  } else {
@@ -602,9 +577,9 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
  tiempoSistema = RecuperarFechaGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
-#line 611 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 479 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  U1RXIE_bit = 0;
-#line 615 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 483 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  }
  i_gps = 0;
  banTIGPS = 0;

@@ -1,3 +1,6 @@
+//Compilar:
+//gcc PAE_V7.c -o muestrear -lbcm2835 -lwiringPi -lpthread
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <wiringPi.h>
@@ -11,7 +14,7 @@
 #define P2 2
 #define P1 0
 #define NUM_MUESTRAS 199
-#define NUM_ELEMENTOS 2505
+#define NUM_ELEMENTOS 2506
 #define TIEMPO_SPI 10
 #define NUM_CICLOS 5
 
@@ -55,6 +58,7 @@ void CrearArchivo();
 
 int main(void) {
 
+  printf("Iniciando...\n");
   piHiPri (99);
   i = 0;
   x = 0;
@@ -87,12 +91,6 @@ int ConfiguracionPrincipal(){
 	system("sudo rmmod  spi_bcm2835");
 	bcm2835_delayMicroseconds(500);
 	system("sudo modprobe spi_bcm2835");
-	
-    //Configuracion libreria WiringPi:
-    wiringPiSetup();
-    pinMode(P1, INPUT);
-    pinMode(P2, INPUT);
-    wiringPiISR (P1, INT_EDGE_RISING, &NuevoCiclo);
 
     //Configuracion libreria bcm2835:
 	if (!bcm2835_init()){
@@ -112,11 +110,20 @@ int ConfiguracionPrincipal(){
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
 	
+	//Configuracion libreria WiringPi:
+    wiringPiSetup();
+    pinMode(P1, INPUT);
+    pinMode(P2, INPUT);
+    wiringPiISR (P1, INT_EDGE_RISING, &NuevoCiclo);
+	
+	printf("Configuracion completa\n");
+	
 }
 
 
 void NuevoCiclo(){
 	
+	printf("Nuevo ciclo\n");
 	CrearArchivo();
 	contCiclos++;
 	
@@ -151,7 +158,6 @@ void NuevoCiclo(){
 
 void CrearArchivo(){
 	
-	
 	//Obtiene la hora y la fecha del sistema 
 	time_t t;
 	struct tm *tm;
@@ -167,6 +173,7 @@ void CrearArchivo(){
 	if ((tm->tm_hour==timeNewFile[0])&&(tm->tm_min==timeNewFile[1])&&(banNewFile==2)){
 		fclose (fp);
 		banNewFile = 0;
+		printf("Archivo creado\n");
 	}
 	
 	//Verifica que la bandera de nuevo archivo sea igual a cero
@@ -194,9 +201,12 @@ void CrearArchivo(){
 		
 		//Cambia el valor de la bandera de nuevo archivo para que ignore esta funcion en la siguientes muestras y libera la memoria reservada para el nombre de la ruta 
 		banNewFile = 1;	
-		free(path);		
+		free(path);	
+		printf("   Archivo abierto\n");	
 	}
-			
+ 
+	
+	
 }
 
 
@@ -206,7 +216,7 @@ void GuardarVector(unsigned char* tramaD, unsigned int contador){
 		x = (contador*NUM_ELEMENTOS)+i;
 		tramaLarga[x] = tramaD[i]; 
 	}
-	
+	printf("   Datos recibidos\n");
 }
 
 
@@ -224,9 +234,8 @@ void *thGrabarVector(void *arg) {
 	} else {
 		banFile = 0;
 	}
-		
+	printf("      Datos guardados\n");	
 	return NULL;
-	
 }
 
 

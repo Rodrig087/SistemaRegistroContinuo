@@ -18,9 +18,17 @@ main
 			UART1_Write
 		UART1_Init
 int_1
-	AjustarTiempoSistema
-		_Divide_32x32
-		_Modulus_32x32
+	Muestrear
+		ADXL355_write_byte
+		ADXL355_read_byte
+			SPI2_Write
+			SPI2_Read
+		ADXL355_read_FIFO
+			SPI2_Write
+			SPI2_Read
+		AjustarTiempoSistema
+			_Divide_32x32
+			_Modulus_32x32
 urx_1
 	UART1_Read
 	RecuperarFechaGPS
@@ -28,8 +36,4 @@ spi_1
 Timer2Int
 Timer1Int
 	ADXL355_read_byte
-		SPI2_Write
-		SPI2_Read
 	ADXL355_read_FIFO
-		SPI2_Write
-		SPI2_Read
