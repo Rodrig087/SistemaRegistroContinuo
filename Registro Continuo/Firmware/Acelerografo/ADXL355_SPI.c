@@ -45,6 +45,7 @@
 
 
 /*FILTER SETTINGS REGISTER  Filter*/
+//HPF:
 #define NO_HIGH_PASS_FILTER 0x00
 #define _247ODR             0x10
 #define _62_084ODR          0x20
@@ -52,14 +53,15 @@
 #define _3_862ODR           0x40
 #define _0_954ODR           0x50
 #define _0_238ODR           0x60
+//LPF:
 #define _1000_Hz            0x00
 #define _500_Hz             0x01
 #define _250_Hz             0x02
 #define _125_Hz             0x03
-#define _62_5_Hz            0x04
-#define _31_25_Hz           0x05
-#define _15_625_Hz          0x06
-#define _7_813_Hz           0x07
+#define _62_5_Hz            0x04    //250Hz        //1
+#define _31_25_Hz           0x05    //125Hz        //2
+#define _15_625_Hz          0x06    //62.5Hz       //4
+#define _7_813_Hz           0x07    //31.25Hz      //8
 #define _3_906_Hz           0x08
 #define _1_953_Hz           0x09
 #define _0_977_Hz           0x0A
@@ -101,12 +103,25 @@ unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
 unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO);
 
 
-void ADXL355_init(){
+void ADXL355_init(short tMuestreo){
     ADXL355_write_byte(Reset,0x52);                                             //Resetea el dispositivo
     Delay_ms(10);
     ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);
-    ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);
     ADXL355_write_byte(Range, _2G);
+    switch (tMuestreo){
+           case 1:
+                ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_62_5_Hz);       //ODR=250Hz 1
+                break;
+           case 2:
+                ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_31_25_Hz);      //ODR=125Hz 2
+                break;
+           case 4:
+                ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_15_625_Hz);     //ODR=125Hz 4
+                break;
+           case 8:
+                ADXL355_write_byte(Filter, NO_HIGH_PASS_FILTER|_7_813_Hz );     //ODR=125Hz 8
+                break;
+    }
 }
 
 

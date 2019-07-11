@@ -1,6 +1,6 @@
 #line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 #line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
-#line 94 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
+#line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -11,12 +11,25 @@ unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
 unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO);
 
 
-void ADXL355_init(){
+void ADXL355_init(short tMuestreo){
  ADXL355_write_byte( 0x2F ,0x52);
  Delay_ms(10);
  ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
- ADXL355_write_byte( 0x28 ,  0x00 | 0x04 );
  ADXL355_write_byte( 0x2C ,  0x01 );
+ switch (tMuestreo){
+ case 1:
+ ADXL355_write_byte( 0x28 ,  0x00 | 0x04 );
+ break;
+ case 2:
+ ADXL355_write_byte( 0x28 ,  0x00 | 0x05 );
+ break;
+ case 4:
+ ADXL355_write_byte( 0x28 ,  0x00 | 0x06 );
+ break;
+ case 8:
+ ADXL355_write_byte( 0x28 ,  0x00 | 0x07  );
+ break;
+ }
 }
 
 
@@ -187,6 +200,8 @@ unsigned short buffer;
 unsigned short contMuestras;
 unsigned short contCiclos;
 unsigned int contFIFO;
+short tasaMuestreo;
+short numTMR1;
 
 unsigned short banTC, banTI, banTF;
 unsigned short banResp, banSPI, banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
@@ -219,6 +234,10 @@ void main() {
 
  ConfiguracionPrincipal();
  ConfigurarGPS();
+
+ tasaMuestreo = 8;
+ ADXL355_init(tasaMuestreo);
+ numTMR1 = (tasaMuestreo*10)-1;
 
  tiempo[0] = 12;
  tiempo[1] = 12;
@@ -348,8 +367,6 @@ void ConfiguracionPrincipal(){
  PR2 = 46875;
  IPC1bits.T2IP = 0x05;
 
- ADXL355_init();
-
  Delay_ms(200);
 
 }
@@ -362,10 +379,11 @@ void Muestrear(){
  if (banCiclo==0){
 
  ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
+ T1CON.TON = 1;
 
- } else {
+ } else if (banCiclo==1) {
 
- banCiclo = 0;
+ banCiclo = 2;
 
  tramaCompleta[0] = contCiclos;
  numFIFO = ADXL355_read_byte( 0x05 );
@@ -396,6 +414,10 @@ void Muestrear(){
  tramaCompleta[2500+x] = tiempo[x];
  }
 
+ contMuestras = 0;
+ contFIFO = 0;
+ T1CON.TON = 1;
+
  banTI = 1;
  RP1 = 1;
  Delay_us(20);
@@ -404,14 +426,12 @@ void Muestrear(){
  }
 
  contCiclos++;
- contMuestras = 0;
- contFIFO = 0;
 
  if (ADXL355_read_byte( 0x2D )&0x01==1){
  ADXL355_write_byte( 0x2D ,  0x04 | 0x00 );
  }
 
- T1CON.TON = 1;
+
 
 }
 
@@ -426,7 +446,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
  SPI1IF_bit = 0;
  buffer = SPI1BUF;
-#line 309 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 316 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banTI==1)){
  banLec = 1;
  banTI = 0;
@@ -450,7 +470,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
 
  INT1IF_bit = 0;
-#line 349 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 356 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  if (banInicio==1){
 
  Muestrear();
@@ -491,7 +511,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
  contTimer1++;
 
- if (contTimer1==9){
+ if (contTimer1==numTMR1){
  T1CON.TON = 0;
  banCiclo = 1;
  contTimer1 = 0;
@@ -577,9 +597,9 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
  tiempoSistema = RecuperarFechaGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
-#line 479 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 486 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  U1RXIE_bit = 0;
-#line 483 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 490 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  }
  i_gps = 0;
  banTIGPS = 0;

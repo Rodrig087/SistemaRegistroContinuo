@@ -6162,6 +6162,7 @@ nullw_dma3con_bit
 num_muestras
 numfifo
 numsetsfifo
+numtmr1
 nvmadr
 nvmadr_0
 nvmadr_0_bit
@@ -11049,6 +11050,7 @@ t5ip2
 t5md
 t5md
 t5md_bit
+tasamuestreo
 tbf
 tbf
 tbf

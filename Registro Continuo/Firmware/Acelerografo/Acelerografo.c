@@ -41,6 +41,8 @@ unsigned short buffer;
 unsigned short contMuestras;
 unsigned short contCiclos;
 unsigned int contFIFO;
+short tasaMuestreo;
+short numTMR1;
 
 unsigned short banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
 unsigned short banResp, banSPI, banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
@@ -73,7 +75,11 @@ void main() {
 
      ConfiguracionPrincipal();
      ConfigurarGPS();
-
+     
+     tasaMuestreo = 8;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
+     ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
+     numTMR1 = (tasaMuestreo*10)-1;                                             //Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
+     
      tiempo[0] = 12;                                                            //Hora
      tiempo[1] = 12;                                                            //Minuto
      tiempo[2] = 12;                                                            //Segundo
@@ -202,8 +208,6 @@ void ConfiguracionPrincipal(){
      PR2 = 46875;                                                               //Carga el preload para un tiempo de 75ms
      IPC1bits.T2IP = 0x05;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
      
-     ADXL355_init();
-     
      Delay_ms(200);                                                             //Espera hasta que se estabilicen los cambios
 
 }
@@ -216,10 +220,11 @@ void Muestrear(){
      if (banCiclo==0){
 
          ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                       //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+         T1CON.TON = 1;                                                         //Enciende el Timer1
 
-     } else {
+     } else if (banCiclo==1) {
 
-         banCiclo = 0;                                                          //Limpia la bandera de ciclo completo
+         banCiclo = 2;                                                          //Limpia la bandera de ciclo completo
 
          tramaCompleta[0] = contCiclos;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
          numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
@@ -236,7 +241,7 @@ void Muestrear(){
          //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
          for (x=0;x<(numSetsFIFO*9);x++){
              if ((x==0)||(x%9==0)){
-                tramaCompleta[contFIFO+contMuestras+x] = contMuestras;
+                tramaCompleta[contFIFO+contMuestras+x] = contMuestras;          //Funciona bien
                 tramaCompleta[contFIFO+contMuestras+x+1] = datosFIFO[x];
                 contMuestras++;
              } else {
@@ -250,6 +255,10 @@ void Muestrear(){
              tramaCompleta[2500+x] = tiempo[x];
          }
 
+         contMuestras = 0;                                                      //Limpia el contador de muestras
+         contFIFO = 0;                                                          //Limpia el contador de FIFOs
+         T1CON.TON = 1;                                                         //Enciende el Timer1
+         
          banTI = 1;                                                             //Activa la bandera de inicio de trama para permitir el envio de la trama por SPI
          RP1 = 1;                                                               //Genera el pulso P1 para producir la interrupcion en la RPi
          Delay_us(20);
@@ -258,14 +267,12 @@ void Muestrear(){
      }
 
      contCiclos++;                                                              //Incrementa el contador de ciclos
-     contMuestras = 0;                                                          //Limpia el contador de muestras
-     contFIFO = 0;                                                              //Limpia el contador de FIFOs
 
      if (ADXL355_read_byte(POWER_CTL)&0x01==1){
         ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                      //Coloca el ADXL en modo medicion
      }
 
-     T1CON.TON = 1;                                                             //Enciende el Timer1
+
 
 }
 
@@ -386,7 +393,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
      contTimer1++;                                                              //Incrementa una unidad cada vez que entra a la interrupcion por Timer1
      
-     if (contTimer1==9){                                                        //Verifica si se recibio los 5 FIFOS
+     if (contTimer1==numTMR1){                                                  //Verifica si se cumplio el numero de interrupciones por TMR1 para la tasa de muestreo seleccionada
         T1CON.TON = 0;                                                          //Apaga el Timer1
         banCiclo = 1;                                                           //Activa la bandera que indica que se completo un ciclo de medicion
         contTimer1 = 0;                                                         //Limpia el contador de interrupciones por Timer1
