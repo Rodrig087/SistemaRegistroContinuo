@@ -114,7 +114,8 @@ int ConfiguracionPrincipal(){
     wiringPiSetup();
     pinMode(P1, INPUT);
     pinMode(P2, INPUT);
-    wiringPiISR (P1, INT_EDGE_RISING, &NuevoCiclo);
+    //wiringPiISR (P1, INT_EDGE_RISING, &NuevoCiclo);
+	wiringPiISR (P1, INT_EDGE_RISING, NuevoCiclo);
 	
 	printf("Configuracion completa\n");
 	
@@ -151,7 +152,7 @@ void NuevoCiclo(){
 	banInicio = 0;
     contMuestras = 1;
 	
-	contador++;
+	//contador++;
 
 }
 
@@ -205,11 +206,10 @@ void CrearArchivo(){
 		printf("   Archivo abierto\n");	
 	}
  
-	
-	
 }
 
 
+//Esta funcion sirve para almacenar las tramas de 1 segundo en una sola trama larga de x segundos
 void GuardarVector(unsigned char* tramaD, unsigned int contador){
 	
 	for (i=0; i<NUM_ELEMENTOS; i++){
@@ -220,6 +220,7 @@ void GuardarVector(unsigned char* tramaD, unsigned int contador){
 }
 
 
+//Esta funcion sirve para guardar la trama larga de x segundos en el archivo binario
 void *thGrabarVector(void *arg) {
 	
 	char *trama = (char*)arg;													//Se realiza un casting, se convierte la variable arg de puntero tipo void a puntero tipo char

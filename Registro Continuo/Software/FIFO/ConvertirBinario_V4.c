@@ -30,7 +30,7 @@ unsigned long periodoMuestreo;
 unsigned char tramaInSPI[20];
 unsigned char tramaDatos[16+(NUM_MUESTRAS*10)];
 unsigned short axisData[3];
-unsigned int axisValue;
+int axisValue;
 double aceleracion;
 unsigned short tiempoSPI;
 unsigned short tramaSize;
@@ -193,7 +193,8 @@ void RecuperarVector() {
 						axisValue = ((axisData[0]<<12)&0xFF000)+((axisData[1]<<4)&0xFF0)+((axisData[2]>>4)&0xF);
 						// Apply two complement
 						if (axisValue >= 0x80000) {
-							axisValue = ~axisValue + 1;
+							axisValue = axisValue & 0x7FFFF;		 //Se descarta el bit 20 que indica el signo (1=negativo)
+							axisValue = -1*(((~axisValue)+1)& 0x7FFFF);
 						}
 						aceleracion = axisValue * (9.8/pow(2,18));
 						if (contEje==0){
