@@ -1,5 +1,5 @@
 //Compilar:
-//gcc PAE_V7.c -o muestrear -lbcm2835 -lwiringPi -lpthread
+//gcc PAE_V9.c -o muestrearV9 -lbcm2835 -lwiringPi -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +35,8 @@ unsigned char tramaLarga[NUM_ELEMENTOS*NUM_CICLOS];
 unsigned char trama[NUM_ELEMENTOS];
 unsigned short tiempoSPI;
 
+unsigned char menu;
+
 FILE *fp;
 char path[30];
 char ext[8];
@@ -45,7 +47,6 @@ unsigned short banNewFile;
 unsigned short contCiclos;
 unsigned short contador;
 pthread_t h1;
-									
 
 
 //Declaracion de funciones
@@ -54,12 +55,14 @@ void NuevoCiclo();
 void *thGrabarVector(void * arg);
 void GuardarVector(unsigned char* tramaD, unsigned int contador);
 void CrearArchivo();
-
+void IniciarMuestreo();
+void DetenerMuestreo();
+void ObtenerTiempoGPS();
+void MostrarTiempoGPS();
 
 int main(void) {
 
   printf("Iniciando...\n");
-  piHiPri (99);
   i = 0;
   x = 0;
   contMuestras = 0;
@@ -72,14 +75,42 @@ int main(void) {
   contador = 0;  
 
   ConfiguracionPrincipal();
-
+  
+  printf("Menu: \n");
+  printf("     i => Iniciar muestreo \n");
+  printf("     d => Detener muestreo \n");
+  printf("     h => Obtener hora del GPS \n");
+  printf("     s => Salir del programa \n");
+  
   while(1){
-
+	  
+	menu = getchar();
+	
+	switch(menu){
+		case 'i':
+			IniciarMuestreo();
+			break;
+		case 'd':
+			DetenerMuestreo();
+			break;
+		case 'h':
+			ObtenerTiempoGPS();
+			//MostrarTiempoGPS();
+			break;
+		case 's':
+			DetenerMuestreo();
+			printf("Adios\n");
+			bcm2835_spi_end();
+			bcm2835_close();
+			exit(0);
+			break;
+		
+	}
+	
   }
-
-  bcm2835_spi_end();
-  bcm2835_close();
-
+  
+  
+ 
   return 0;
 
  }
@@ -114,11 +145,50 @@ int ConfiguracionPrincipal(){
     wiringPiSetup();
     pinMode(P1, INPUT);
     pinMode(P2, INPUT);
-    //wiringPiISR (P1, INT_EDGE_RISING, &NuevoCiclo);
 	wiringPiISR (P1, INT_EDGE_RISING, NuevoCiclo);
+	wiringPiISR (P2, INT_EDGE_RISING, MostrarTiempoGPS);
 	
 	printf("Configuracion completa\n");
 	
+}
+
+
+void IniciarMuestreo(){
+	printf("Iniciando el muestreo..\n");
+	bcm2835_spi_transfer(0xA0);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xA0);	
+	banNewFile=0;							//Limpia esta bandera para crear un archivo nuevo cada vez que se inicia el muestreo
+}
+
+void DetenerMuestreo(){
+	printf("Deteniendo el muestreo..\n");
+	bcm2835_spi_transfer(0xAF);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xAF);	
+}
+
+void ObtenerTiempoGPS(){
+	printf("Obteniendo hora del GPS..\n");
+	bcm2835_spi_transfer(0xC0);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xC0);		
+}
+
+void MostrarTiempoGPS(){
+	
+	//printf("Interrupcion P2\n");
+	printf("Hora GPS:\n");	
+	for (i=0;i<8;i++){
+        buffer = bcm2835_spi_transfer(0x00);
+        tramaDatos[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+    }
+    bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+	for (i=1;i<7;i++){
+		printf("%d\n",tramaDatos[i]);
+	}
 }
 
 

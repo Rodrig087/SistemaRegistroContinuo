@@ -4045,6 +4045,7 @@ homirq_bit
 hompol
 hompol
 hompol_bit
+horasistema
 i
 i_gps
 i2c1add
@@ -5180,6 +5181,7 @@ intdiv_1
 intdiv_1_bit
 intdiv_2
 intdiv_2_bit
+interrupcionp2
 inthldh_0
 inthldh_0_bit
 inthldh_1
@@ -5689,6 +5691,7 @@ iwcol
 iwcol_bit
 iwcol_i2c1stat_bit
 iwcol_i2c2stat_bit
+j
 jdatah
 jdatah_0
 jdatah_0_bit
@@ -9052,6 +9055,7 @@ rcount_8_bit
 rcount_9
 rcount_9_bit
 recuperarfechagps
+recuperarhoragps
 refocon
 refoconbits
 refomd
@@ -11134,7 +11138,6 @@ tgen
 tgen_bit
 tiempo
 tiempodeajuste
-tiemposistema
 timer1int
 timer2int
 tmr1

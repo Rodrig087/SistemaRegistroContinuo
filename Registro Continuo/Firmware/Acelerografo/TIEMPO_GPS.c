@@ -60,7 +60,7 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/*///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Funcion para tomar la hora del GPS
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
 
@@ -88,7 +88,7 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
      tramaTiempo[1] = atoi("45");
 
      //Segundos
-    datoString[0] = tramaDatosGPS[4];
+     datoString[0] = tramaDatosGPS[4];
      datoString[1] = tramaDatosGPS[5];
      datoString[0] = '1';
      datoString[1] = '1';
@@ -126,8 +126,6 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
      tramaTiempoSistema[3] = dia;
      tramaTiempoSistema[4] = mes;
      tramaTiempoSistema[5] = anio;
-
-     //banSetReloj = 1;                                                           //Cambia el estado de la bandera cuando ha terminado de configurar el reloj
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
