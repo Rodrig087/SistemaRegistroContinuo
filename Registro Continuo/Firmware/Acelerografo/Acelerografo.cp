@@ -117,31 +117,29 @@ void ConfigurarGPS(){
 
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
 
- unsigned int tramaFecha[4];
+ unsigned long tramaFecha[4];
  unsigned long fechaGPS;
  char datoStringF[3];
  char *ptrDatoStringF = &datoStringF;
  datoStringF[2] = '\0';
  tramaFecha[3] = '\0';
-#line 34 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
- datoStringF[0] = '1';
- datoStringF[1] = '7';
-
- tramaFecha[0] = 17;
-#line 42 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
- datoStringF[0] = '0';
- datoStringF[1] = '6';
-
- tramaFecha[1] = 6;
-#line 50 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/tiempo_gps.c"
- datoStringF[0] = '1';
- datoStringF[1] = '9';
-
- tramaFecha[2] = 0;
 
 
- fechaGPS = (tramaFecha[0]*3600)+(tramaFecha[1]*60)+(tramaFecha[2]);
+ datoStringF[0] = tramaDatosGPS[6];
+ datoStringF[1] = tramaDatosGPS[7];
+ tramaFecha[0] = atoi(ptrDatoStringF);
 
+
+ datoStringF[0] = tramaDatosGPS[8];
+ datoStringF[1] = tramaDatosGPS[9];
+ tramaFecha[1] = atoi(ptrDatoStringF);
+
+
+ datoStringF[0] = tramaDatosGPS[10];
+ datoStringF[1] = tramaDatosGPS[11];
+ tramaFecha[2] = atoi(ptrDatoStringF);
+
+ fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);
  return fechaGPS;
 
 }
@@ -151,7 +149,7 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
 
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
 
- unsigned int tramaTiempo[4];
+ unsigned long tramaTiempo[4];
  unsigned long horaGPS;
  char datoString[3];
  char *ptrDatoString = &datoString;
@@ -161,26 +159,17 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
 
  datoString[0] = tramaDatosGPS[0];
  datoString[1] = tramaDatosGPS[1];
- datoString[0] = '1';
- datoString[1] = '0';
-
- tramaTiempo[0] = atoi("10");
+ tramaTiempo[0] = atoi(ptrDatoString);
 
 
  datoString[0] = tramaDatosGPS[2];
  datoString[1] = tramaDatosGPS[3];
- datoString[0] = '4';
- datoString[1] = '5';
-
- tramaTiempo[1] = atoi("45");
+ tramaTiempo[1] = atoi(ptrDatoString);
 
 
  datoString[0] = tramaDatosGPS[4];
  datoString[1] = tramaDatosGPS[5];
- datoString[0] = '1';
- datoString[1] = '1';
-
- tramaTiempo[2] = atoi("11");
+ tramaTiempo[2] = atoi(ptrDatoString);
 
  horaGPS = (tramaTiempo[0]*3600)+(tramaTiempo[1]*60)+(tramaTiempo[2]);
  return horaGPS;
@@ -299,6 +288,7 @@ void main() {
  banTCGPS = 0;
 
  banMuestrear = 0;
+ banInicio = 0;
  banLeer = 0;
  banConf = 0;
 
@@ -307,7 +297,6 @@ void main() {
  y = 0;
  i_gps = 0;
  horaSistema = 0;
- horaSistema = 190101;
  segundoDeAjuste = (3600*tiempoDeAjuste[0]) + (60*tiempoDeAjuste[1]);
 
  contMuestras = 0;
@@ -324,7 +313,7 @@ void main() {
 
  SPI1BUF = 0x00;
 
- banInicio = 1;
+
 
  while(1){
 
@@ -399,14 +388,6 @@ void ConfiguracionPrincipal(){
  PR1 = 62500;
  IPC0bits.T1IP = 0x02;
 
-
- T2CON = 0x0020;
- T2CON.TON = 0;
- T2IE_bit = 1;
- T2IF_bit = 0;
- PR2 = 46875;
- IPC1bits.T2IP = 0x05;
-
  Delay_ms(200);
 
 }
@@ -449,7 +430,7 @@ void Muestrear(){
  }
 
 
-
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  for (x=0;x<6;x++){
  tramaCompleta[2500+x] = tiempo[x];
  }
@@ -491,15 +472,33 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if (banMuestrear==0){
  if (buffer==0xA0){
  banMuestrear = 1;
- INT1IE_bit = 1;
+
+ banCiclo = 0;
+ contMuestras = 0;
+ contCiclos = 0;
+ contFIFO = 0;
+ numFIFO = 0;
+ numSetsFIFO = 0;
+ contTimer1 = 0;
+
+ banInicio = 1;
+
  }
  }
 
 
  if (banMuestrear==1){
  if (buffer==0xAF){
+ banInicio = 0;
  banMuestrear = 0;
+
+ if (INT1IE_bit==1){
  INT1IE_bit = 0;
+ }
+
+ if (T1CON.TON==1){
+ T1CON.TON = 0;
+ }
  }
  }
 
@@ -515,7 +514,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
  }
  }
-
 
  if (banSetReloj==1){
  banSetReloj = 2;
@@ -553,6 +551,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
 
  INT1IF_bit = 0;
+
+ horaSistema++;
+
+ if (horaSistema==86400){
+ horaSistema = 0;
+ }
 
  if (banInicio==1){
  Muestrear();
@@ -599,16 +603,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  contTimer1 = 0;
  }
 
-
-
-}
-
-
-
-void Timer2Int() org IVT_ADDR_T2INTERRUPT{
-
- T2IF_bit = 0;
-
 }
 
 
@@ -624,6 +618,8 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  if (banTIGPS==0){
  if ((byteGPS==0x24)&&(i_gps==0)){
  banTIGPS = 1;
+ } else {
+
  }
  }
 
@@ -643,6 +639,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  tramaGPS[i_gps] = byteGPS;
  banTIGPS = 2;
  banTCGPS = 1;
+
  }
  }
 
@@ -658,25 +655,16 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
  }
-#line 478 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
- tiempo[0] = 11;
- tiempo[1] = 12;
- tiempo[2] = 13;
- tiempo[3] = 31;
- tiempo[4] = 12;
- tiempo[5] = 19;
 
+ horaSistema = RecuperarHoraGPS(datosGPS);
+ fechaSistema = RecuperarFechaGPS(datosGPS);
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
 
-
- U1RXIE_bit = 0;
+ InterrupcionP2();
  banSetReloj = 1;
- RP2 = 1;
- Delay_us(20);
- RP2 = 0;
 
  } else {
-
- U1RXIE_bit = 0;
+ InterrupcionP2();
  banSetReloj = 0;
  }
 
@@ -686,6 +674,11 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
 
 void InterrupcionP2(){
+
+ if (INT1IE_bit==0){
+ INT1IE_bit = 1;
+ }
+ U1RXIE_bit = 0;
  RP2 = 1;
  Delay_us(20);
  RP2 = 0;

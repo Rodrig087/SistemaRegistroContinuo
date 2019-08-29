@@ -98,6 +98,7 @@ void main() {
      banTCGPS = 0;
 
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
+     banInicio = 0;                                                             //Bandera de inicio de muestreo
      banLeer = 0;
      banConf = 0;
 
@@ -106,7 +107,6 @@ void main() {
      y = 0;
      i_gps = 0;
      horaSistema = 0;
-     horaSistema = 190101;
      segundoDeAjuste = (3600*tiempoDeAjuste[0]) + (60*tiempoDeAjuste[1]);       //Calcula el segundo en el que se efectuara el ajuste de hora = hh*3600 + mm*60
 
      contMuestras = 0;
@@ -123,7 +123,7 @@ void main() {
 
      SPI1BUF = 0x00;
 
-     banInicio = 1;
+
 
      while(1){
 
@@ -197,15 +197,7 @@ void ConfiguracionPrincipal(){
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
      PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
-     
-     //Configuracion del TMR2 con un tiempo de 75ms
-     T2CON = 0x0020;
-     T2CON.TON = 0;                                                             //Apaga el Timer2
-     T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
-     T2IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR2
-     PR2 = 46875;                                                               //Carga el preload para un tiempo de 75ms
-     IPC1bits.T2IP = 0x05;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
-     
+
      Delay_ms(200);                                                             //Espera hasta que se estabilicen los cambios
 
 }
@@ -248,7 +240,7 @@ void Muestrear(){
          }
 
          //LLena la trama tiempo con el valor del tiempo actual del sistema y luega rellena la tramaCompleta con los valores de esta trama
-         //AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
          for (x=0;x<6;x++){
              tramaCompleta[2500+x] = tiempo[x];
          }
@@ -290,15 +282,33 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      if (banMuestrear==0){
         if (buffer==0xA0){
            banMuestrear = 1;                                                    //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
-           INT1IE_bit = 1;                                                      //Habilita la interrupcion externa INT1
+           
+           banCiclo = 0;
+           contMuestras = 0;
+           contCiclos = 0;
+           contFIFO = 0;
+           numFIFO = 0;
+           numSetsFIFO = 0;
+           contTimer1 = 0;
+           
+           banInicio = 1;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+
         }
      }
      
      //Rutina para detener el muestreo
      if (banMuestrear==1){
         if (buffer==0xAF){
+           banInicio = 0;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
            banMuestrear = 0;                                                    //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
-           INT1IE_bit = 0;                                                      //Desabilita la interrupcion externa INT1
+           //Desabilita la interrupcion INT1 si esta habilitada:
+           if (INT1IE_bit==1){
+              INT1IE_bit = 0;
+           }
+           //Desabilita la interrupcion TMR1 si esta habilitada:
+           if (T1CON.TON==1){
+              T1CON.TON = 0;
+           }
         }
      }
      
@@ -314,7 +324,6 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            }
         }
      }
-     
      //Rutina para enviar la hora GPS a la RPi
      if (banSetReloj==1){
         banSetReloj = 2;
@@ -352,6 +361,12 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
      
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
+     
+     horaSistema++;                                                             //Incrementa el reloj del sistema
+
+     if (horaSistema==86400){                                                   //(24*3600)+(0*60)+(0) = 86400
+        horaSistema = 0;                                                        //Reinicia el reloj al llegar a las 24:00:00 horas
+     }
      
      if (banInicio==1){
         Muestrear();
@@ -397,17 +412,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
         banCiclo = 1;                                                           //Activa la bandera que indica que se completo un ciclo de medicion
         contTimer1 = 0;                                                         //Limpia el contador de interrupciones por Timer1
      }
-     
 
-
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Interrupcion por desbordamiento del Timer2
-void Timer2Int() org IVT_ADDR_T2INTERRUPT{
-
-     T2IF_bit = 0;
-     
 }
 
 
@@ -423,6 +428,8 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
      if (banTIGPS==0){
         if ((byteGPS==0x24)&&(i_gps==0)){                                       //Verifica si el primer byte recibido es el simbolo "$" que indica el inicio de una trama GPS
            banTIGPS = 1;                                                        //Activa la bandera de inicio de trama
+        } else {
+           //InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
         }
      }
 
@@ -442,6 +449,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
            tramaGPS[i_gps] = byteGPS;
            banTIGPS = 2;                                                        //Cambia el estado de la bandera de inicio de trama para no permitir que se almacene mas datos en la trama
            banTCGPS = 1;                                                        //Activa la bandera de trama completa
+           //InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
         }
      }
 
@@ -458,41 +466,15 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
                }
            }
 
-           /*//Datos de prueba
-           datosGPS[0] = '1';  //hora: 18:18:00
-           datosGPS[1] = '8';
-           datosGPS[2] = '1';
-           datosGPS[3] = '8';
-           datosGPS[4] = '0';
-           datosGPS[5] = '0';
-           datosGPS[6] = '2';  //fecha: 27/07/19
-           datosGPS[7] = '7';
-           datosGPS[8] = '0';
-           datosGPS[9] = '7';
-           datosGPS[10] = '1';
-           datosGPS[11] = '9';
-           datosGPS[12] = '\0';
            horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
-           fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS*/
-           
-            tiempo[0] = 11;                                                            //Hora
-            tiempo[1] = 12;                                                            //Minuto
-            tiempo[2] = 13;                                                            //Segundo
-            tiempo[3] = 31;                                                            //Dia
-            tiempo[4] = 12;                                                            //Mes
-            tiempo[5] = 19;                                                            //Año
-           
-           //AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+           fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
+           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
 
-           U1RXIE_bit = 0;                                                      //Apaga la interrupcion por UARTRx
+           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
-           RP2 = 1;                                                             //Genera el pulso P2 para producir la interrupcion en la RPi
-           Delay_us(20);
-           RP2 = 0;
 
         } else {
-           //Si la trama recibida no es la GPRMC descarta todo y no actualizaa el reloj
-           U1RXIE_bit = 0;                                                      //Apaga la interrupcion por UARTRx
+           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
         }
 
@@ -502,7 +484,12 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
 ///////// Interrupcion P2 ////////////
 void InterrupcionP2(){
-     RP2 = 1;                                                                   //Genera el pulso P2 para producir la interrupcion en la RPi
+     //Habilita la interrupcion INT1 para incrementar la hora del sistema con cada pulso PPS
+     if (INT1IE_bit==0){
+        INT1IE_bit = 1;
+     }
+     U1RXIE_bit = 0;                                                            //Apaga la interrupcion por UARTRx
+     RP2 = 1;
      Delay_us(20);
      RP2 = 0;
 }

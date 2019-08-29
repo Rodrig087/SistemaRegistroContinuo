@@ -1,5 +1,5 @@
 //Compilar:
-//gcc PAE_V9.c -o muestrearV9 -lbcm2835 -lwiringPi -lpthread
+//gcc PAE_V10.c -o muestrearV10 -lbcm2835 -lwiringPi -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -16,7 +16,7 @@
 #define NUM_MUESTRAS 199
 #define NUM_ELEMENTOS 2506
 #define TIEMPO_SPI 10
-#define NUM_CICLOS 5
+#define NUM_CICLOS 1
 
 
 //Declaracion de variables
@@ -41,7 +41,8 @@ FILE *fp;
 char path[30];
 char ext[8];
 char nombreArchivo[16];
-unsigned int timeNewFile[2] = {23, 59};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
+unsigned int timeNewFile[2] = {12, 35};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
+//unsigned int timeNewFile[2] = {10, 50};	
 unsigned short banNewFile;
 
 unsigned short contCiclos;
@@ -52,7 +53,7 @@ pthread_t h1;
 //Declaracion de funciones
 int ConfiguracionPrincipal();
 void NuevoCiclo();
-void *thGrabarVector(void * arg);
+void GrabarVector(char* trama);
 void GuardarVector(unsigned char* tramaD, unsigned int contador);
 void CrearArchivo();
 void IniciarMuestreo();
@@ -75,41 +76,15 @@ int main(void) {
   contador = 0;  
 
   ConfiguracionPrincipal();
+  DetenerMuestreo();
+  ObtenerTiempoGPS();
+ 
   
-  printf("Menu: \n");
-  printf("     i => Iniciar muestreo \n");
-  printf("     d => Detener muestreo \n");
-  printf("     h => Obtener hora del GPS \n");
-  printf("     s => Salir del programa \n");
-  
-  while(1){
-	  
-	menu = getchar();
-	
-	switch(menu){
-		case 'i':
-			IniciarMuestreo();
-			break;
-		case 'd':
-			DetenerMuestreo();
-			break;
-		case 'h':
-			ObtenerTiempoGPS();
-			//MostrarTiempoGPS();
-			break;
-		case 's':
-			DetenerMuestreo();
-			printf("Adios\n");
-			bcm2835_spi_end();
-			bcm2835_close();
-			exit(0);
-			break;
-		
-	}
-	
+  while(1){	
   }
   
-  
+  bcm2835_spi_end();
+  bcm2835_close();
  
   return 0;
 
@@ -176,7 +151,7 @@ void ObtenerTiempoGPS(){
 }
 
 void MostrarTiempoGPS(){
-	printf("Hora GPS:\n");	
+	printf("Hora GPS: ");	
 	for (i=0;i<8;i++){
         buffer = bcm2835_spi_transfer(0x00);
         tramaDatos[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
@@ -195,19 +170,25 @@ void MostrarTiempoGPS(){
 			}
 		} 		
 	} 
+	
+	IniciarMuestreo();
+	
+}
+
+void Temporizador(){
+	
 }
 
 
 void NuevoCiclo(){
 	
-	printf("Nuevo ciclo\n");
+	//printf("Nuevo ciclo\n");
 	CrearArchivo();
 	contCiclos++;
 	
 	if (contCiclos==NUM_CICLOS){
 		contCiclos = 0;
-		pthread_create (&h1, NULL, thGrabarVector, (void*)tramaLarga);   		//Crea un hilo h1 para guardar el vector tramaDatos en el archivo binario
-		pthread_join (h1, NULL);
+		GrabarVector(tramaLarga);
 	}
 
 	bcm2835_spi_transfer(0xB0);                                                 //Envia el delimitador de inicio de trama
@@ -228,13 +209,12 @@ void NuevoCiclo(){
 	banInicio = 0;
     contMuestras = 1;
 	
-	//contador++;
-
 }
 
 
 void CrearArchivo(){
 	
+	//printf("   Entro\n");	
 	//Obtiene la hora y la fecha del sistema 
 	time_t t;
 	struct tm *tm;
@@ -250,14 +230,15 @@ void CrearArchivo(){
 	if ((tm->tm_hour==timeNewFile[0])&&(tm->tm_min==timeNewFile[1])&&(banNewFile==2)){
 		fclose (fp);
 		banNewFile = 0;
-		printf("Archivo creado\n");
+		//printf("Nuevo archivo creado\n");
+		DetenerMuestreo();
+		ObtenerTiempoGPS();
 	}
 	
 	//Verifica que la bandera de nuevo archivo sea igual a cero
 	//Si al invocar a esta funcion encuentra que ya existe un archivo con el nombre de la fecha actual, lo abrira y seguira escribiendo a continuacion (esto debido al comando "ab" en la funcion fopen)
 	//Si al invocar a esta funcion no encuentra ningun archivo con el nombre de la fecha actual creara un archivo con ese nombre. 
 	if (banNewFile==0){
-		
 		//Establece la fecha y hora actual como nombre que tendra el archivo binario 
 		strftime(nombreArchivo, 20, "%Y%m%d%H%M", tm);
 		//printf ("Se creo el archivo: %s.dat\n", nombreArchivo);
@@ -281,7 +262,7 @@ void CrearArchivo(){
 		free(path);	
 		printf("   Archivo abierto\n");	
 	}
- 
+		 
 }
 
 
@@ -292,14 +273,13 @@ void GuardarVector(unsigned char* tramaD, unsigned int contador){
 		x = (contador*NUM_ELEMENTOS)+i;
 		tramaLarga[x] = tramaD[i]; 
 	}
-	printf("   Datos recibidos\n");
+	//printf("   Datos recibidos\n");
 }
 
 
 //Esta funcion sirve para guardar la trama larga de x segundos en el archivo binario
-void *thGrabarVector(void *arg) {
-	
-	char *trama = (char*)arg;													//Se realiza un casting, se convierte la variable arg de puntero tipo void a puntero tipo char
+void GrabarVector(char* trama) {
+														//Se realiza un casting, se convierte la variable arg de puntero tipo void a puntero tipo char
 	unsigned int outFwrite;
 	
 	if (fp!=NULL){
@@ -311,11 +291,7 @@ void *thGrabarVector(void *arg) {
 	} else {
 		banFile = 0;
 	}
-	printf("      Datos guardados\n");	
-	return NULL;
+	//printf("      Datos guardados\n");	
 }
 
 
-
-//Compilar:
-//gcc PAE_V7.c -o muestrear -lbcm2835 -lwiringPi -lpthread

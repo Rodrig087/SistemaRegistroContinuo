@@ -154,7 +154,7 @@ int ConfiguracionPrincipal(){
 
 
 void IniciarMuestreo(){
-	printf("Iniciando el muestreo...\n");
+	printf("Iniciando el muestreo..\n");
 	bcm2835_spi_transfer(0xA0);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xA0);	
@@ -162,20 +162,22 @@ void IniciarMuestreo(){
 }
 
 void DetenerMuestreo(){
-	printf("Deteniendo el muestreo...\n");
+	printf("Deteniendo el muestreo..\n");
 	bcm2835_spi_transfer(0xAF);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xAF);	
 }
 
 void ObtenerTiempoGPS(){
-	printf("Obteniendo hora del GPS...\n");
+	printf("Obteniendo hora del GPS..\n");
 	bcm2835_spi_transfer(0xC0);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xC0);		
 }
 
 void MostrarTiempoGPS(){
+	
+	//printf("Interrupcion P2\n");
 	printf("Hora GPS:\n");	
 	for (i=0;i<8;i++){
         buffer = bcm2835_spi_transfer(0x00);
@@ -185,16 +187,8 @@ void MostrarTiempoGPS(){
     bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 	for (i=1;i<7;i++){
-		if (i<3){
-			printf("%0.2d:",tramaDatos[i]);
-		} else {
-			if (i<6){
-				printf("%0.2d/",tramaDatos[i]);
-			} else {
-				printf("%0.2d\n",tramaDatos[i]);	
-			}
-		} 		
-	} 
+		printf("%d\n",tramaDatos[i]);
+	}
 }
 
 
