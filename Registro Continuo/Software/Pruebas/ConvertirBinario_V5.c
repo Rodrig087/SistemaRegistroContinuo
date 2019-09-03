@@ -153,27 +153,24 @@ void RecuperarVector() {
 	//Escritura de datos en los archivos de texto
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	fprintf(fileX, "Eje: Norte\n");
-	fprintf(fileX, "Periodo de muestreo (ms): %d\n", periodoMuestreo);	
+	fprintf(fileX, "Periodo de muestreo (ms): %d\n", (periodoMuestreo*factorDiezmado));	
 	fprintf(fileX, "Tiempo de inicio de muestreo (min): %d\n", tiempoInicial);
 	fprintf(fileX, "Tiempo de muestreo (min): %d\n", numCiclos);
-	fprintf(fileX, "Factor de diezmado: %d\n", factorDiezmado);
 	fprintf(fileX, "\n");
 	
 	fprintf(fileY, "Eje: Este\n");
-	fprintf(fileY, "Periodo de muestreo (ms): %d\n", periodoMuestreo);	
+	fprintf(fileY, "Periodo de muestreo (ms): %d\n", (periodoMuestreo*factorDiezmado));	
 	fprintf(fileY, "Tiempo de inicio de muestreo (min): %d\n", tiempoInicial);
 	fprintf(fileY, "Tiempo de muestreo (min): %d\n", numCiclos);
-	fprintf(fileY, "Factor de diezmado: %d\n", factorDiezmado);
 	fprintf(fileY, "\n");
 	
 	fprintf(fileZ, "Eje: Z\n");
-	fprintf(fileZ, "Periodo de muestreo (ms): %d\n", periodoMuestreo);	
+	fprintf(fileZ, "Periodo de muestreo (ms): %d\n", (periodoMuestreo*factorDiezmado));	
 	fprintf(fileZ, "Tiempo de inicio de muestreo (min): %d\n", tiempoInicial);
 	fprintf(fileZ, "Tiempo de muestreo (min): %d\n", numCiclos);
-	fprintf(fileZ, "Factor de diezmado: %d\n", factorDiezmado);
 	fprintf(fileZ, "\n");
 	
-	fread(tramaDatos, sizeof(char), tramaSize, lf);					//Se salta la linea de ceros
+	//fread(tramaDatos, sizeof(char), tramaSize, lf);					//Se salta la linea de ceros
 	for (x=0;x<(tiempoInicial*60);x++){
 		fread(tramaDatos, sizeof(char), tramaSize, lf);				//Se salta el numero de minutos que indique la variable tiempoInicial
 	}
@@ -227,12 +224,12 @@ void RecuperarVector() {
 							fprintf(fileZ, "%0.3d ", tramaDatos[0]);
 							fprintf(fileZ, "%2.8f ", aceleracion);	 //Escribe en el archivo fileZ los datos del eje z					
 							
-							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-6]);
-							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-5]);
-							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-4]);
-							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-3]);
-							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-2]);
-							fprintf(fileZ, "%0.2d\n", tramaDatos[tramaSize-1]);
+							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-3]);
+							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-2]);
+							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-1]);
+							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-6]);
+							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-5]);
+							fprintf(fileZ, "%0.2d\n", tramaDatos[tramaSize-4]);
 							
 							banGuardar = 0;							 //Despues de que termina de guardar la muestra del eje Z limpia la bandera banGuardar
 						}	

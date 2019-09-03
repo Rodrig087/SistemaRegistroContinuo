@@ -44,6 +44,7 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
      tramaFecha[2] = atoi(ptrDatoStringF);
 
      fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);      //10000*dd + 100*mm + aa
+     
      return fechaGPS;
 
 }
@@ -99,13 +100,14 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
      dia = longFecha / 10000;
      mes = (longFecha%10000) / 100;
      anio = (longFecha%10000) % 100;
+     
+     tramaTiempoSistema[0] = dia;
+     tramaTiempoSistema[1] = mes;
+     tramaTiempoSistema[2] = anio;
+     tramaTiempoSistema[3] = hora;
+     tramaTiempoSistema[4] = minuto;
+     tramaTiempoSistema[5] = segundo;
 
-     tramaTiempoSistema[0] = hora;
-     tramaTiempoSistema[1] = minuto;
-     tramaTiempoSistema[2] = segundo;
-     tramaTiempoSistema[3] = dia;
-     tramaTiempoSistema[4] = mes;
-     tramaTiempoSistema[5] = anio;
 
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

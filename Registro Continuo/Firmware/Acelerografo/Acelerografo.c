@@ -52,7 +52,6 @@ long datox, datoy, datoz, auxiliar;
 unsigned char *puntero_8, direccion;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
-unsigned short tiempoDeAjuste[2] = {10, 0};                                     //Hora a la que se desea igualar el reloj RTC{hh, mm}
 unsigned long horaSistema, fechaSistema, segundoDeAjuste;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -81,13 +80,6 @@ void main() {
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
      numTMR1 = (tasaMuestreo*10)-1;                                             //Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
      
-     tiempo[0] = 1;                                                            //Hora
-     tiempo[1] = 2;                                                            //Minuto
-     tiempo[2] = 3;                                                            //Segundo
-     tiempo[3] = 4;                                                            //Dia
-     tiempo[4] = 5;                                                            //Mes
-     tiempo[5] = 6;                                                            //Año
-
      banTI = 0;
      banLec = 0;
      banCiclo = 0;
@@ -107,7 +99,6 @@ void main() {
      y = 0;
      i_gps = 0;
      horaSistema = 0;
-     segundoDeAjuste = (3600*tiempoDeAjuste[0]) + (60*tiempoDeAjuste[1]);       //Calcula el segundo en el que se efectuara el ajuste de hora = hh*3600 + mm*60
 
      contMuestras = 0;
      contCiclos = 0;
@@ -340,7 +331,8 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
      
      //Rutina de lectura de los datos del acelerometro
-     if (banLec==1){                                                            //Verifica si la bandera de inicio de trama esta activa
+     //if (banLec==1){
+     if ((banLec==1)&&(buffer==0xB0)){                                          //Verifica si la bandera de inicio de trama esta activa
         banLec = 2;                                                             //Activa la bandera de lectura
         i = 0;
         SPI1BUF = tramaCompleta[i];
@@ -428,8 +420,6 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
      if (banTIGPS==0){
         if ((byteGPS==0x24)&&(i_gps==0)){                                       //Verifica si el primer byte recibido es el simbolo "$" que indica el inicio de una trama GPS
            banTIGPS = 1;                                                        //Activa la bandera de inicio de trama
-        } else {
-           //InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
         }
      }
 
@@ -449,7 +439,6 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
            tramaGPS[i_gps] = byteGPS;
            banTIGPS = 2;                                                        //Cambia el estado de la bandera de inicio de trama para no permitir que se almacene mas datos en la trama
            banTCGPS = 1;                                                        //Activa la bandera de trama completa
-           //InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
         }
      }
 
@@ -465,19 +454,15 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
                    }
                }
            }
-
            horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
            fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
-
            InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
-
         } else {
            InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
         }
-
      }
 
 }

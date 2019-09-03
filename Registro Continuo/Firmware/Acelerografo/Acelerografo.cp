@@ -140,6 +140,7 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
  tramaFecha[2] = atoi(ptrDatoStringF);
 
  fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);
+
  return fechaGPS;
 
 }
@@ -196,12 +197,13 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
  mes = (longFecha%10000) / 100;
  anio = (longFecha%10000) % 100;
 
- tramaTiempoSistema[0] = hora;
- tramaTiempoSistema[1] = minuto;
- tramaTiempoSistema[2] = segundo;
- tramaTiempoSistema[3] = dia;
- tramaTiempoSistema[4] = mes;
- tramaTiempoSistema[5] = anio;
+ tramaTiempoSistema[0] = dia;
+ tramaTiempoSistema[1] = mes;
+ tramaTiempoSistema[2] = anio;
+ tramaTiempoSistema[3] = hora;
+ tramaTiempoSistema[4] = minuto;
+ tramaTiempoSistema[5] = segundo;
+
 
 }
 #line 18 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
@@ -242,7 +244,6 @@ long datox, datoy, datoz, auxiliar;
 unsigned char *puntero_8, direccion;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
-unsigned short tiempoDeAjuste[2] = {10, 0};
 unsigned long horaSistema, fechaSistema, segundoDeAjuste;
 
 
@@ -271,13 +272,6 @@ void main() {
  ADXL355_init(tasaMuestreo);
  numTMR1 = (tasaMuestreo*10)-1;
 
- tiempo[0] = 1;
- tiempo[1] = 2;
- tiempo[2] = 3;
- tiempo[3] = 4;
- tiempo[4] = 5;
- tiempo[5] = 6;
-
  banTI = 0;
  banLec = 0;
  banCiclo = 0;
@@ -297,7 +291,6 @@ void main() {
  y = 0;
  i_gps = 0;
  horaSistema = 0;
- segundoDeAjuste = (3600*tiempoDeAjuste[0]) + (60*tiempoDeAjuste[1]);
 
  contMuestras = 0;
  contCiclos = 0;
@@ -530,7 +523,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
- if (banLec==1){
+
+ if ((banLec==1)&&(buffer==0xB0)){
  banLec = 2;
  i = 0;
  SPI1BUF = tramaCompleta[i];
@@ -618,8 +612,6 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  if (banTIGPS==0){
  if ((byteGPS==0x24)&&(i_gps==0)){
  banTIGPS = 1;
- } else {
-
  }
  }
 
@@ -639,7 +631,6 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  tramaGPS[i_gps] = byteGPS;
  banTIGPS = 2;
  banTCGPS = 1;
-
  }
  }
 
@@ -655,19 +646,15 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
  }
-
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-
  InterrupcionP2();
  banSetReloj = 1;
-
  } else {
  InterrupcionP2();
  banSetReloj = 0;
  }
-
  }
 
 }
