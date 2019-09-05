@@ -33,8 +33,7 @@ unsigned char tramaDatos[NUM_ELEMENTOS];
 FILE *fp;
 char path[30];
 char ext[8];
-char nombreArchivo[16];
-//unsigned int timeNewFile[2] = {15, 46};												
+char nombreArchivo[16];												
 unsigned int timeNewFile[2] = {0, 0};											//Variable para configurar la hora a la que se desea generar un archivo nuevo
 unsigned short banNewFile;
 
@@ -124,7 +123,6 @@ void IniciarMuestreo(){
 	bcm2835_spi_transfer(0xA0);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xA0);	
-	//banNewFile=0;							//Limpia esta bandera para crear un archivo nuevo cada vez que se inicia el muestreo
 }
 
 void DetenerMuestreo(){
@@ -142,16 +140,16 @@ void ObtenerTiempoGPS(){
 }
 
 void MostrarTiempoGPS(){
+	
 	printf("Hora GPS: ");	
 	for (i=0;i<10;i++){
-	//for (i=0;i<8;i++){
         buffer = bcm2835_spi_transfer(0x00);
         tiempoGPS[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
     bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
-							
+    bcm2835_delayMicroseconds(TIEMPO_SPI);							
+	
 	printf("%0.2d:",tiempoGPS[4]);											   	//hh
 	printf("%0.2d:",tiempoGPS[5]);												//mm
 	printf("%0.2d ",tiempoGPS[6]);												//ss
@@ -167,7 +165,6 @@ void MostrarTiempoGPS(){
 
 void NuevoCiclo(){
 	
-	//printf("Nuevo ciclo\n");
 	bcm2835_spi_transfer(0xB0);                                                 //Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);                                      
 
@@ -186,9 +183,7 @@ void NuevoCiclo(){
 
 
 void CrearArchivo(){
-	
-	//printf("   Entro\n");	
-	
+		
 	//Obtiene la hora y la fecha del sistema:
 	time_t t;
 	struct tm *tm;
@@ -196,7 +191,6 @@ void CrearArchivo(){
 	tm=localtime(&t);
 	//Cambia el estado de la bandera faltando un minuto para que se cumpla la hora fijada para la creacion de un archivo nuevo:
 	if ((tm->tm_hour==23)&&((tm->tm_min==59))){
-    //if ((tm->tm_hour==timeNewFile[0])&&((tm->tm_min==timeNewFile[1]-1))){
 		banNewFile = 2;	
 	}
 	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario
@@ -213,8 +207,7 @@ void CrearArchivo(){
 	if (banNewFile==0){
 		//Establece la fecha y hora actual como nombre que tendra el archivo binario 
 		strftime(nombreArchivo, 20, "%Y%m%d%H%M", tm);
-		//printf ("Se creo el archivo: %s.dat\n", nombreArchivo);
-		
+				
 		//Asigna espacio en la memoria para el nombre completo de la ruta
 		char *path = malloc(strlen(nombreArchivo)+5+13);
 		

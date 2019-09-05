@@ -4,7 +4,6 @@
 //Descripcion: Esta es la cuarta version del programa de intepretacion de datos del archivo binario. Esta version se encarga de generar 3 archivos correspondientes a lo 3 ejes con un factor de diezmado fijado de antemano para facilitar su graficacion.
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -228,14 +227,7 @@ void RecuperarVector() {
 						if (contEje==2){
 							fprintf(fileZ, "%0.3d ", tramaDatos[0]);
 							fprintf(fileZ, "%2.8f ", aceleracion);	 //Escribe en el archivo fileZ los datos del eje z					
-							
-							/* fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-3]);
-							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-2]);
-							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-1]);
-							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-6]);
-							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-5]);
-							fprintf(fileZ, "%0.2d\n", tramaDatos[tramaSize-4]); */
-							
+														
 							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-5]);
 							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-4]);
 							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-3]);
@@ -244,7 +236,6 @@ void RecuperarVector() {
 							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-6]);
 							fprintf(fileZ, "%0.1d-", tramaDatos[tramaSize-2]);
 							fprintf(fileZ, "%0.1d\n", tramaDatos[tramaSize-1]);
-
 							
 							banGuardar = 0;							 //Despues de que termina de guardar la muestra del eje Z limpia la bandera banGuardar
 						}	
