@@ -1,7 +1,8 @@
 //Autor: Milton Muñoz
 //Fecha: 17/06/2019
-//Compilar: gcc ConvertirBinario_V5.c -o convertirV5
+//Compilar: gcc ConvertirBinario_V6.c -o convertirV6
 //Descripcion: Esta es la cuarta version del programa de intepretacion de datos del archivo binario. Esta version se encarga de generar 3 archivos correspondientes a lo 3 ejes con un factor de diezmado fijado de antemano para facilitar su graficacion.
+
 
 
 #include <stdio.h>
@@ -236,6 +237,7 @@ void RecuperarVector() {
 							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-6]);
 							fprintf(fileZ, "%0.1d-", tramaDatos[tramaSize-2]);
 							fprintf(fileZ, "%0.1d\n", tramaDatos[tramaSize-1]);
+
 							
 							banGuardar = 0;							 //Despues de que termina de guardar la muestra del eje Z limpia la bandera banGuardar
 						}	

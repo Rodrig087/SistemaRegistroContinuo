@@ -28,11 +28,11 @@ const unsigned short NUM_MUESTRAS = 199;                                        
 
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned char tiempo[8];                                                        //Vector para almacenar los datos de la cabecera
+unsigned char tiempo[6];                                                        //Vector para almacenar los datos de la cabecera
 unsigned char pduSPI[15];                                                       //Vector de trama de datos del puerto UART2
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];                                                   //Vector para almacenar 27 muestras de 3 ejes del vector FIFO
-unsigned char tramaCompleta[2508];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
+unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
 unsigned short numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
 unsigned short contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
 
@@ -51,7 +51,7 @@ unsigned short banMuestrear, banLeer, banConf;
 long datox, datoy, datoz, auxiliar;
 unsigned char *puntero_8, direccion;
 
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, banEncendido;
+unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
 unsigned long horaSistema, fechaSistema, segundoDeAjuste;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -93,7 +93,6 @@ void main() {
      banInicio = 0;                                                             //Bandera de inicio de muestreo
      banLeer = 0;
      banConf = 0;
-     banEncendido = 0;
 
      i = 0;
      x = 0;
@@ -233,7 +232,7 @@ void Muestrear(){
 
          //LLena la trama tiempo con el valor del tiempo actual del sistema y luega rellena la tramaCompleta con los valores de esta trama
          AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-         for (x=0;x<8;x++){                                                     //**x<6
+         for (x=0;x<6;x++){
              tramaCompleta[2500+x] = tiempo[x];
          }
 
@@ -354,7 +353,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
      
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
-     tiempo[7] = 1;                                                             //PPS = 1; RTC = 2
+     
      horaSistema++;                                                             //Incrementa el reloj del sistema
 
      if (horaSistema==86400){                                                   //(24*3600)+(0*60)+(0) = 86400
@@ -455,23 +454,14 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
                    }
                }
            }
-           banEncendido = 1;                                                    //Cambia en estado de la bandera para indicar que ya se configuro la hora al encenderse
            horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
            fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
-           tiempo[6] = 1;                                                       //Este campo indica si se actualizo la hora con el GPS
            InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
         } else {
-
-           if (banEncendido==0){                                                //Verifica si el dsPIC se encendio por primera vez
-              banSetReloj = 0;                                                  //Limpia la bandera para permitir otra peticion de toma de datos del GPS
-           } else {
-              banSetReloj = 1;                                                  //Activa la bandera para hacer uso de la hora actual
-              tiempo[6] = 0;                                                    //Este valor indica que no se actualizo la hora con el GPS
-           }
            InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
-
+           banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
         }
      }
 

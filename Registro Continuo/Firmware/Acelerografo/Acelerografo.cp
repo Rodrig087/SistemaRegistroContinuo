@@ -1,4 +1,4 @@
-#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "C:/Users/Ivan/Desktop/InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 #line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
 #line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
@@ -206,7 +206,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
 
 
 }
-#line 18 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 18 "C:/Users/Ivan/Desktop/InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -220,11 +220,11 @@ const unsigned short NUM_MUESTRAS = 199;
 
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned char tiempo[8];
+unsigned char tiempo[6];
 unsigned char pduSPI[15];
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];
-unsigned char tramaCompleta[2508];
+unsigned char tramaCompleta[2506];
 unsigned short numFIFO, numSetsFIFO;
 unsigned short contTimer1;
 
@@ -243,7 +243,7 @@ unsigned short banMuestrear, banLeer, banConf;
 long datox, datoy, datoz, auxiliar;
 unsigned char *puntero_8, direccion;
 
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, banEncendido;
+unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
 unsigned long horaSistema, fechaSistema, segundoDeAjuste;
 
 
@@ -285,7 +285,6 @@ void main() {
  banInicio = 0;
  banLeer = 0;
  banConf = 0;
- banEncendido = 0;
 
  i = 0;
  x = 0;
@@ -425,7 +424,7 @@ void Muestrear(){
 
 
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- for (x=0;x<8;x++){
+ for (x=0;x<6;x++){
  tramaCompleta[2500+x] = tiempo[x];
  }
 
@@ -546,7 +545,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
 
  INT1IF_bit = 0;
- tiempo[7] = 1;
+
  horaSistema++;
 
  if (horaSistema==86400){
@@ -647,23 +646,14 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
  }
- banEncendido = 1;
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- tiempo[6] = 1;
  InterrupcionP2();
  banSetReloj = 1;
  } else {
-
- if (banEncendido==0){
+ InterrupcionP2();
  banSetReloj = 0;
- } else {
- banSetReloj = 1;
- tiempo[6] = 0;
- }
- InterrupcionP2();
-
  }
  }
 

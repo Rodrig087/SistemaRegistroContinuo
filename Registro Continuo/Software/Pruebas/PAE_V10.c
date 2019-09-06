@@ -14,7 +14,7 @@
 #define P2 2
 #define P1 0
 #define NUM_MUESTRAS 199
-#define NUM_ELEMENTOS 2508
+#define NUM_ELEMENTOS 2506
 #define TIEMPO_SPI 10
 #define NUM_CICLOS 1
 
@@ -27,15 +27,15 @@ unsigned short banFile;
 unsigned short banNewFile;
 unsigned short numBytes;
 unsigned short contMuestras;
-unsigned char tiempoGPS[10];
+unsigned char tiempoGPS[8];
 unsigned char tramaDatos[NUM_ELEMENTOS];
 
 FILE *fp;
 char path[30];
 char ext[8];
 char nombreArchivo[16];
-//unsigned int timeNewFile[2] = {15, 46};												
-unsigned int timeNewFile[2] = {0, 0};											//Variable para configurar la hora a la que se desea generar un archivo nuevo
+//unsigned int timeNewFile[2] = {17, 1};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
+unsigned int timeNewFile[2] = {0, 0};	
 unsigned short banNewFile;
 
 unsigned short contCiclos;
@@ -143,8 +143,7 @@ void ObtenerTiempoGPS(){
 
 void MostrarTiempoGPS(){
 	printf("Hora GPS: ");	
-	for (i=0;i<10;i++){
-	//for (i=0;i<8;i++){
+	for (i=0;i<8;i++){
         buffer = bcm2835_spi_transfer(0x00);
         tiempoGPS[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
@@ -152,14 +151,12 @@ void MostrarTiempoGPS(){
     bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 							
-	printf("%0.2d:",tiempoGPS[4]);											   	//hh
-	printf("%0.2d:",tiempoGPS[5]);												//mm
-	printf("%0.2d ",tiempoGPS[6]);												//ss
-	printf("%0.2d/",tiempoGPS[1]);												//dd
-	printf("%0.2d/",tiempoGPS[2]);												//MM
-	printf("%0.2d ",tiempoGPS[3]);												//aa
-	printf("%0.2d-",tiempoGPS[7]);												//0 = Sin ajuste GPS, 1 = Con ajuste GPS
-	printf("%0.2d\n",tiempoGPS[8]);												//1 = GPS, 2 = RTC
+	printf("%0.2d:",tiempoGPS[4]);
+	printf("%0.2d:",tiempoGPS[5]);
+	printf("%0.2d ",tiempoGPS[6]);
+	printf("%0.2d/",tiempoGPS[1]);
+	printf("%0.2d/",tiempoGPS[2]);
+	printf("%0.2d\n",tiempoGPS[3]);
 		
 	IniciarMuestreo();
 	
@@ -171,8 +168,8 @@ void NuevoCiclo(){
 	bcm2835_spi_transfer(0xB0);                                                 //Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);                                      
 
-	for (i=0;i<NUM_ELEMENTOS;i++){
-        buffer = bcm2835_spi_transfer(0x00);									//Envia NUM_ELEMENTOS dummy bytes para recuperar los datos de la trama enviada desde el dsPIC
+	for (i=0;i<2506;i++){
+        buffer = bcm2835_spi_transfer(0x00);									//Envia 2506 dummy bytes para recuperar los datos de la trama enviada desde el dsPIC
         tramaDatos[i] = buffer;													//Guarda los datos en el vector tramaDatos 
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }

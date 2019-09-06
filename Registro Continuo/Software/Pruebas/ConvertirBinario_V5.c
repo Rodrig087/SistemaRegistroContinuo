@@ -71,7 +71,7 @@ int main(void) {
   axisValue = 0;
   aceleracion = 0.0;  
   contMuestras = 0;
-  tramaSize = 18+(NUM_MUESTRAS*10);			//16+(249*10) = 2506
+  tramaSize = 16+(NUM_MUESTRAS*10);			//16+(249*10) = 2506
      
   RecuperarVector();
  
@@ -177,8 +177,7 @@ void RecuperarVector() {
 	
 	while (contMuestras<(numCiclos*60)){
 		fread(tramaDatos, sizeof(char), tramaSize, lf);				 //Leo la cantidad establecida en la variable tramaSize del contenido del archivo lf y lo guardo en el vector tramaDatos 
-		//for (i=0;i<tramaSize-5;i++){
-		for (i=0;i<tramaSize-7;i++){								 //Recorro las x muestras del vector tramaDatos, omitiendo los 7 ultimos que corresponden a la fecha y hora del modulo gps
+		for (i=0;i<tramaSize-5;i++){								 //Recorro las 2005 muestras del vector tramaDatos, omitiendo los 5 ultimos que corresponden a la fecha y hora del modulo gps
 			if ((i%(10*factorDiezmado)==0)){						 //Indica el inicio de un nuevo set de muestras
 				banGuardar = 1;									 	 //Cambia el estado de la bandera para permitir guardar la muestra 
 				j = 0;
@@ -201,50 +200,36 @@ void RecuperarVector() {
 							fprintf(fileX, "%0.3d ", tramaDatos[0]); //Escribe el numero de muestra
 							fprintf(fileX, "%2.8f ", aceleracion);	 //Escribe en el archivo fileX los datos del eje x
 							
+							fprintf(fileX, "%0.2d:", tramaDatos[tramaSize-6]);
 							fprintf(fileX, "%0.2d:", tramaDatos[tramaSize-5]);
-							fprintf(fileX, "%0.2d:", tramaDatos[tramaSize-4]);
-							fprintf(fileX, "%0.2d ", tramaDatos[tramaSize-3]);
-							fprintf(fileX, "%0.2d/", tramaDatos[tramaSize-8]);
-							fprintf(fileX, "%0.2d/", tramaDatos[tramaSize-7]);
-							fprintf(fileX, "%0.2d ", tramaDatos[tramaSize-6]);
-							fprintf(fileX, "%0.1d-", tramaDatos[tramaSize-2]);
-							fprintf(fileX, "%0.1d\n", tramaDatos[tramaSize-1]);
+							fprintf(fileX, "%0.2d ", tramaDatos[tramaSize-4]);
+							fprintf(fileX, "%0.2d/", tramaDatos[tramaSize-3]);
+							fprintf(fileX, "%0.2d/", tramaDatos[tramaSize-2]);
+							fprintf(fileX, "%0.2d\n", tramaDatos[tramaSize-1]);
 							
 						}
 						if (contEje==1){
 							fprintf(fileY, "%0.3d ", tramaDatos[0]);
 							fprintf(fileY, "%2.8f ", aceleracion);	 //Escribe en el archivo fileY los datos del eje y
 							
+							fprintf(fileY, "%0.2d:", tramaDatos[tramaSize-6]);
 							fprintf(fileY, "%0.2d:", tramaDatos[tramaSize-5]);
-							fprintf(fileY, "%0.2d:", tramaDatos[tramaSize-4]);
-							fprintf(fileY, "%0.2d ", tramaDatos[tramaSize-3]);
-							fprintf(fileY, "%0.2d/", tramaDatos[tramaSize-8]);
-							fprintf(fileY, "%0.2d/", tramaDatos[tramaSize-7]);
-							fprintf(fileY, "%0.2d ", tramaDatos[tramaSize-6]);
-							fprintf(fileY, "%0.1d-", tramaDatos[tramaSize-2]);
-							fprintf(fileY, "%0.1d\n", tramaDatos[tramaSize-1]);
+							fprintf(fileY, "%0.2d ", tramaDatos[tramaSize-4]);
+							fprintf(fileY, "%0.2d/", tramaDatos[tramaSize-3]);
+							fprintf(fileY, "%0.2d/", tramaDatos[tramaSize-2]);
+							fprintf(fileY, "%0.2d\n", tramaDatos[tramaSize-1]);
 						
 						}
 						if (contEje==2){
 							fprintf(fileZ, "%0.3d ", tramaDatos[0]);
 							fprintf(fileZ, "%2.8f ", aceleracion);	 //Escribe en el archivo fileZ los datos del eje z					
 							
-							/* fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-3]);
+							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-3]);
 							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-2]);
 							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-1]);
 							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-6]);
 							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-5]);
-							fprintf(fileZ, "%0.2d\n", tramaDatos[tramaSize-4]); */
-							
-							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-5]);
-							fprintf(fileZ, "%0.2d:", tramaDatos[tramaSize-4]);
-							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-3]);
-							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-8]);
-							fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-7]);
-							fprintf(fileZ, "%0.2d ", tramaDatos[tramaSize-6]);
-							fprintf(fileZ, "%0.1d-", tramaDatos[tramaSize-2]);
-							fprintf(fileZ, "%0.1d\n", tramaDatos[tramaSize-1]);
-
+							fprintf(fileZ, "%0.2d\n", tramaDatos[tramaSize-4]);
 							
 							banGuardar = 0;							 //Despues de que termina de guardar la muestra del eje Z limpia la bandera banGuardar
 						}	
