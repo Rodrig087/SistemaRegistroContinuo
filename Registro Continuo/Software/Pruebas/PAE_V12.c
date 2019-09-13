@@ -1,5 +1,5 @@
 //Compilar:
-//gcc PAE_V10.c -o muestrearV10 -lbcm2835 -lwiringPi -lpthread
+//gcc PAE_V12.c -o acelerografo -lbcm2835 -lwiringPi -lpthread
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,8 +35,10 @@ FILE *fp;
 char path[30];
 char ext[8];
 char nombreArchivo[16];
-unsigned int timeNewFile[2] = {15, 10};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
-//unsigned int timeNewFile[2] = {0, 0};	
+char comando[40];
+char dateGPS[22];
+//unsigned int timeNewFile[2] = {17, 30};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
+unsigned int timeNewFile[2] = {0, 0};	
 unsigned short banNewFile;
 
 unsigned short contCiclos;
@@ -50,6 +52,7 @@ void GuardarVector(unsigned char* tramaD);
 void CrearArchivo();
 void IniciarMuestreo();
 void DetenerMuestreo();
+void ConfigurarGPS();
 void ObtenerTiempoGPS();
 void MostrarTiempoGPS();
 
@@ -67,14 +70,11 @@ int main(void) {
   contCiclos = 0;
   contador = 0;  
   
-  //sleep(90);
-
   ConfiguracionPrincipal();
-  sleep(5);
-  CrearArchivo();	
+  sleep(60);
+  CrearArchivo();
   ObtenerTiempoGPS();
-   
-  
+    
   while(1){	
   }
   
@@ -129,8 +129,8 @@ void IniciarMuestreo(){
 	bcm2835_spi_transfer(0xA0);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xA0);	
-	//banNewFile=0;							//Limpia esta bandera para crear un archivo nuevo cada vez que se inicia el muestreo
 }
+
 
 void DetenerMuestreo(){
 	printf("Deteniendo el muestreo...\n");
@@ -139,12 +139,22 @@ void DetenerMuestreo(){
 	bcm2835_spi_transfer(0xAF);	
 }
 
+
+void ConfigurarGPS(){
+	printf("Configurando el GPS...\n");
+	bcm2835_spi_transfer(0xC2);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xC2);		
+}
+
+
 void ObtenerTiempoGPS(){
 	printf("Obteniendo hora del GPS...\n");
 	bcm2835_spi_transfer(0xC0);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xC0);		
 }
+
 
 void MostrarTiempoGPS(){
 	printf("Hora GPS: ");	
@@ -156,16 +166,48 @@ void MostrarTiempoGPS(){
     bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 							
-	printf("%0.2d:",tiempoGPS[4]);
-	printf("%0.2d:",tiempoGPS[5]);
-	printf("%0.2d ",tiempoGPS[6]);
-	printf("%0.2d/",tiempoGPS[1]);
-	printf("%0.2d/",tiempoGPS[2]);
-	printf("%0.2d\n",tiempoGPS[3]);
-		
+	printf("%0.2d:",tiempoGPS[4]);		//hh
+	printf("%0.2d:",tiempoGPS[5]);		//mm
+	printf("%0.2d ",tiempoGPS[6]);		//ss
+	printf("%0.2d/",tiempoGPS[1]);		//dd
+	printf("%0.2d/",tiempoGPS[2]);		//MM
+	printf("%0.2d\n",tiempoGPS[3]);		//aa
+	
+	//Configura el reloj interno de la RPi con la hora recuperada del GPS:
+	strcpy(comando, "sudo date --set ");	//strcpy( <variable_destino>, <cadena_fuente> )
+	//'2019-09-13 17:45:00':
+	dateGPS[0] = 0x27;						//'
+	dateGPS[1] = '2';
+	dateGPS[2] = '0';
+	dateGPS[3] = (tiempoGPS[3]/10)+48;		//aa: (19/10)+48 = 49 = '1'
+	dateGPS[4] = (tiempoGPS[3]%10)+48;		//    (19%10)+48 = 57 = '9'
+	dateGPS[5] = '-';	
+	dateGPS[6] = (tiempoGPS[2]/10)+48;		//MM
+	dateGPS[7] = (tiempoGPS[2]%10)+48;
+	dateGPS[8] = '-';
+	dateGPS[9] = (tiempoGPS[1]/10)+48;		//dd
+	dateGPS[10] = (tiempoGPS[1]%10)+48;
+	dateGPS[11] = ' ';
+	dateGPS[12] = (tiempoGPS[4]/10)+48;		//hh
+	dateGPS[13] = (tiempoGPS[4]%10)+48;
+	dateGPS[14] = ':';
+	dateGPS[15] = (tiempoGPS[5]/10)+48;		//mm
+	dateGPS[16] = (tiempoGPS[5]%10)+48;
+	dateGPS[17] = ':';
+	dateGPS[18] = (tiempoGPS[6]/10)+48;		//ss
+	dateGPS[19] = (tiempoGPS[6]%10)+48;
+	dateGPS[20] = 0x27;
+	dateGPS[21] = '\0';
+	
+	strcat(comando, dateGPS);
+	
+	system(comando);
+	system("date");
+	
 	IniciarMuestreo();
 	
 }
+
 
 void NuevoCiclo(){
 	
@@ -197,8 +239,8 @@ void CrearArchivo(){
 	t=time(NULL);
 	tm=localtime(&t);
 	//Cambia el estado de la bandera faltando un minuto para que se cumpla la hora fijada para la creacion de un archivo nuevo:
-	//if ((tm->tm_hour==23)&&((tm->tm_min==59))){
-    if ((tm->tm_hour==timeNewFile[0])&&((tm->tm_min==timeNewFile[1]-1))){
+	if ((tm->tm_hour==23)&&((tm->tm_min==59))){
+    //if ((tm->tm_hour==timeNewFile[0])&&((tm->tm_min==timeNewFile[1]-1))){
 		banNewFile = 2;	
 	}
 	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario
@@ -215,15 +257,12 @@ void CrearArchivo(){
 	if (banNewFile==0){
 		//Establece la fecha y hora actual como nombre que tendra el archivo binario 
 		strftime(nombreArchivo, 20, "%Y%m%d%H%M", tm);
-		//printf ("Se creo el archivo: %s.dat\n", nombreArchivo);
 		
 		//Asigna espacio en la memoria para el nombre completo de la ruta
-		//char *path = malloc(strlen(nombreArchivo)+5+56);
 		char *path = malloc(strlen(nombreArchivo)+5+27);
 		
 		//Asigna el nombre de la ruta y la extencion a los array de caracteres
 		strcpy(ext, ".dat");
-		//strcpy(path, "/home/pi/Documents/RegistroContinuo/Software/Resultados/");
 		strcpy(path, "/media/PenDrive/Resultados/");
 		
 		//Realiza la concatenacion de array de caracteres

@@ -6,7 +6,7 @@ Value=0
 [BUILD_TYPE]
 Value=0
 [ACTIVE_TAB]
-Value=Acelerografo.c
+Value=TIEMPO_GPS.c
 [USE_EEPROM]
 Value=0
 [USE_HEAP]
@@ -38,8 +38,8 @@ Count=0
 Count=5
 Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
-Path2=C:\Users\Ivan\Desktop\InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200\Registro Continuo\Firmware\Acelerografo\
-Path3=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\
+Path2=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\
+Path3=C:\Users\Ivan\Desktop\InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200\Registro Continuo\Firmware\Acelerografo\
 Path4=C:\Users\Ivan\Desktop\Registro Continuo_VFuncional\Firmware\Acelerografo\
 [HEADER_PATH]
 Count=1

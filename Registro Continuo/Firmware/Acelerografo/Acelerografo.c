@@ -303,8 +303,16 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         }
      }
      
+     //Rutina para configurar el GPS
+     /*if (banSetGPS==0){
+        if (buffer==0xC2){
+           ConfigurarGPS();
+           banSetGPS = 1;
+        }
+     }*/
+     
      //Rutina para obtener la hora del GPS
-     if (banSetReloj==0){
+     if ((banSetReloj==0)){
         if (buffer==0xC0){
            banTIGPS = 0;                                                        //Limpia la bandera de inicio de trama  del GPS
            banTCGPS = 0;                                                        //Limpia la bandera de trama completa

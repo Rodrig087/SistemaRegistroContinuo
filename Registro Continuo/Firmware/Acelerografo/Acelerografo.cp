@@ -1,4 +1,4 @@
-#line 1 "C:/Users/Ivan/Desktop/InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 #line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
 #line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/instrumentacion presa/instrumentacionpch/registro continuo/firmware/acelerografo/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
@@ -206,7 +206,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
 
 
 }
-#line 18 "C:/Users/Ivan/Desktop/InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 18 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -494,9 +494,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
  }
  }
-
-
- if (banSetReloj==0){
+#line 315 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+ if ((banSetReloj==0)){
  if (buffer==0xC0){
  banTIGPS = 0;
  banTCGPS = 0;
