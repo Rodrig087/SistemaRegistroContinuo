@@ -53,6 +53,7 @@ unsigned char *puntero_8, direccion;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
 unsigned long horaSistema, fechaSistema, segundoDeAjuste;
+unsigned short intentosHoraGPS;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -106,6 +107,7 @@ void main() {
      numFIFO = 0;
      numSetsFIFO = 0;
      contTimer1 = 0;
+     intentosHoraGPS = 0;
 
      byteGPS = 0;
 
@@ -467,8 +469,14 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
            InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
+
         } else {
-           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
+           intentosHoraGPS++;                                                   //Incrementa el contador de intentos de obtencion de hora del GPS
+           //Realiza 3 intentos para obtener la hora del GPS:
+           if (intentosHoraGPS==3){
+              InterrupcionP2();                                                 //Genera el pulso P2 para producir la interrupcion en la RPi
+              intentosHoraGPS = 0;
+           }
            banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
         }
      }
