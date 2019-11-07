@@ -1,8 +1,0 @@
-main
-	ConfiguracionPrincipal
-		UART1_Init
-		SPI1_Init_Advanced
-interrupt
-	EnviarMensajeSPI
-	RecuperarRespuestaSPI
-		UART1_Write

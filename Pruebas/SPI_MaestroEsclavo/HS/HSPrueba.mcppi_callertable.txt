@@ -1,8 +1,0 @@
-main
-	ConfiguracionPrincipal
-		UART1_Init
-interrupt
-	EnviarMensajeRS485
-		CalcularCRC
-		UART1_Write
-		UART1_Tx_Idle
