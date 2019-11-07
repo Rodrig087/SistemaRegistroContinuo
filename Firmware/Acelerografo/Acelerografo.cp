@@ -245,7 +245,6 @@ unsigned char *puntero_8, direccion;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
 unsigned long horaSistema, fechaSistema, segundoDeAjuste;
-unsigned short intentosHoraGPS;
 
 
 
@@ -299,7 +298,6 @@ void main() {
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
- intentosHoraGPS = 0;
 
  byteGPS = 0;
 
@@ -496,7 +494,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
  }
  }
-#line 317 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
+#line 315 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/Instrumentacion Presa/InstrumentacionPCh/Registro Continuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banSetReloj==0)){
  if (buffer==0xC0){
  banTIGPS = 0;
@@ -652,14 +650,8 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  InterrupcionP2();
  banSetReloj = 1;
-
  } else {
- intentosHoraGPS++;
-
- if (intentosHoraGPS==3){
  InterrupcionP2();
- intentosHoraGPS = 0;
- }
  banSetReloj = 0;
  }
  }
