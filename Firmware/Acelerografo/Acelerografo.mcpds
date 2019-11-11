@@ -35,15 +35,14 @@ Count=0
 [OTHER_FILES]
 Count=0
 [SEARCH_PATH]
-Count=5
-Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\
+Count=3
+Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\Defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
-Path2=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\
-Path3=C:\Users\Ivan\Desktop\InstrumentacionPCh-613c58f4345173224e979bbfe2c47d9cbeb4e200\Registro Continuo\Firmware\Acelerografo\
-Path4=C:\Users\Ivan\Desktop\Registro Continuo_VFuncional\Firmware\Acelerografo\
+Path2=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 [HEADER_PATH]
-Count=1
+Count=2
 Path0=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\
+Path1=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 [HEADERS]
 Count=0
 [PLDS]

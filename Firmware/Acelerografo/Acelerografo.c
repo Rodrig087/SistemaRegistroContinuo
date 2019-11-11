@@ -380,8 +380,9 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion por desbordamiento del Timer1
      
-     numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
-     numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
+     //numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
+     //numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
+     numSetsFIFO = 25;
 
      //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
      //En cada interrupcion debe haber 25 sets de mediciones +-1
