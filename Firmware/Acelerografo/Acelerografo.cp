@@ -227,6 +227,7 @@ unsigned char datosFIFO[243];
 unsigned char tramaCompleta[2506];
 unsigned short numFIFO, numSetsFIFO;
 unsigned short contTimer1;
+unsigned short FIFO_Status;
 
 unsigned int i, x, y, i_gps, j;
 unsigned short buffer;
@@ -298,6 +299,7 @@ void main() {
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
+ FIFO_Status = 0;
 
  byteGPS = 0;
 
@@ -400,8 +402,10 @@ void Muestrear(){
  banCiclo = 2;
 
  tramaCompleta[0] = contCiclos;
+ FIFO_Status = (ADXL355_read_byte( 0x04 ))&0x04;
  numFIFO = ADXL355_read_byte( 0x05 );
  numSetsFIFO = (numFIFO)/3;
+
 
 
  for (x=0;x<numSetsFIFO;x++){
@@ -410,6 +414,8 @@ void Muestrear(){
  datosFIFO[y+(x*9)] = datosLeidos[y];
  }
  }
+
+ datosFIFO[2] = datosFIFO[2]|FIFO_Status;
 
 
  for (x=0;x<(numSetsFIFO*9);x++){
@@ -494,7 +500,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
  }
  }
-#line 315 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 321 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banSetReloj==0)){
  if (buffer==0xC0){
  banTIGPS = 0;
@@ -563,9 +569,10 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
  T1IF_bit = 0;
 
+ FIFO_Status = (ADXL355_read_byte( 0x04 ))&0x04;
+ numFIFO = ADXL355_read_byte( 0x05 );
+ numSetsFIFO = (numFIFO)/3;
 
-
- numSetsFIFO = 25;
 
 
 
@@ -575,6 +582,8 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  datosFIFO[y+(x*9)] = datosLeidos[y];
  }
  }
+
+ datosFIFO[2] = datosFIFO[2]|FIFO_Status;
 
 
  for (x=0;x<(numSetsFIFO*9);x++){

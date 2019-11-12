@@ -35,6 +35,7 @@ unsigned char datosFIFO[243];                                                   
 unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
 unsigned short numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
 unsigned short contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
+unsigned short FIFO_Status;
 
 unsigned int i, x, y, i_gps, j;
 unsigned short buffer;
@@ -106,6 +107,7 @@ void main() {
      numFIFO = 0;
      numSetsFIFO = 0;
      contTimer1 = 0;
+     FIFO_Status = 0;
 
      byteGPS = 0;
 
@@ -208,8 +210,10 @@ void Muestrear(){
          banCiclo = 2;                                                          //Limpia la bandera de ciclo completo
 
          tramaCompleta[0] = contCiclos;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+         FIFO_Status = (ADXL355_read_byte(Status))&0x04;                        //Obtiene el bit FIFO_OVR del registro Status
          numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
          numSetsFIFO = (numFIFO)/3;                                             //Lee el numero de sets disponibles en el FIFO
+         //numSetsFIFO = 25;
 
          //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
          for (x=0;x<numSetsFIFO;x++){
@@ -218,6 +222,8 @@ void Muestrear(){
                  datosFIFO[y+(x*9)] = datosLeidos[y];                           //LLena la trama datosFIFO
              }
          }
+
+         datosFIFO[2] = datosFIFO[2]|FIFO_Status;                               //Se agrega la informacion de FIFO_Status al tercer byte de la trama FIFO (XLSB bit 3)
 
          //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
          for (x=0;x<(numSetsFIFO*9);x++){
@@ -380,9 +386,10 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion por desbordamiento del Timer1
      
-     //numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
-     //numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
-     numSetsFIFO = 25;
+     FIFO_Status = (ADXL355_read_byte(Status))&0x04;                            //Obtiene el bit FIFO_OVR del registro Status
+     numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
+     numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
+     //numSetsFIFO = 25;
 
      //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
      //En cada interrupcion debe haber 25 sets de mediciones +-1
@@ -393,6 +400,8 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
          }
      }
      
+     datosFIFO[2] = datosFIFO[2]|FIFO_Status;                                   //Se agrega la informacion de FIFO_Status al tercer byte de la trama FIFO (XLSB bit 3)
+
      //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
      for (x=0;x<(numSetsFIFO*9);x++){      //0-224
          if ((x==0)||(x%9==0)){
@@ -403,7 +412,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
             tramaCompleta[contFIFO+contMuestras+x] = datosFIFO[x];
          }
      }
-     
+
      contFIFO = (contMuestras*9);                                               //Incrementa el contador de FIFOs
 
      contTimer1++;                                                              //Incrementa una unidad cada vez que entra a la interrupcion por Timer1

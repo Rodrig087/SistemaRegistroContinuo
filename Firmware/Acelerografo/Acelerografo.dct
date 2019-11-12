@@ -3729,6 +3729,7 @@ fexu_6
 fexu_6_bit
 fexu_7
 fexu_7_bit
+fifo_status
 float_fpack
 floattostr
 flt1r

@@ -41,4 +41,5 @@ urx_1
 	InterrupcionP2
 spi_1
 Timer1Int
+	ADXL355_read_byte
 	ADXL355_read_FIFO
