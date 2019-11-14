@@ -176,6 +176,9 @@ void ConfiguracionPrincipal(){
      RPOR1bits.RP37R = 0x09;                                                    //Configura el SCK2 en el pin RB5/RP37 *
      SPI2STAT.SPIEN = 1;                                                        //Habilita el SPI2 *
      SPI2_Init();                                                               //Inicializa el modulo SPI2
+     
+     //Configuracion del acelerometro
+     ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                           //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
 
      //Configuracion de la interrupcion externa INT1
      RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46
@@ -202,7 +205,8 @@ void Muestrear(){
 
      if (banCiclo==0){
 
-         ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                       //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+         //ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                       //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+         ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                     //Coloca el ADXL en modo medicion
          T1CON.TON = 1;                                                         //Enciende el Timer1
 
      } else if (banCiclo==1) {
@@ -255,9 +259,9 @@ void Muestrear(){
 
      contCiclos++;                                                              //Incrementa el contador de ciclos
 
-     if (ADXL355_read_byte(POWER_CTL)&0x01==1){
+     /*if (ADXL355_read_byte(POWER_CTL)&0x01==1){
         ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                      //Coloca el ADXL en modo medicion
-     }
+     }*/
 
 
 
@@ -279,6 +283,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      if (banMuestrear==0){
         if (buffer==0xA0){
            banMuestrear = 1;                                                    //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+           ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                     //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
            
            banCiclo = 0;
            contMuestras = 0;
@@ -298,6 +303,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         if (buffer==0xAF){
            banInicio = 0;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
            banMuestrear = 0;                                                    //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
+           ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                     //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
            //Desabilita la interrupcion INT1 si esta habilitada:
            if (INT1IE_bit==1){
               INT1IE_bit = 0;
@@ -308,15 +314,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            }
         }
      }
-     
-     //Rutina para configurar el GPS
-     /*if (banSetGPS==0){
-        if (buffer==0xC2){
-           ConfigurarGPS();
-           banSetGPS = 1;
-        }
-     }*/
-     
+
      //Rutina para obtener la hora del GPS
      if ((banSetReloj==0)){
         if (buffer==0xC0){
@@ -329,6 +327,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            }
         }
      }
+     
      //Rutina para enviar la hora GPS a la RPi
      if (banSetReloj==1){
         banSetReloj = 2;
@@ -345,7 +344,6 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
      
      //Rutina de lectura de los datos del acelerometro
-     //if (banLec==1){
      if ((banLec==1)&&(buffer==0xB0)){                                          //Verifica si la bandera de inicio de trama esta activa
         banLec = 2;                                                             //Activa la bandera de lectura
         i = 0;
@@ -359,6 +357,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         banLec = 0;                                                             //Limpia la bandera de lectura
         SPI1BUF = 0xFF;
      }
+     
 }
 
 

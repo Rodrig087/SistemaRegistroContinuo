@@ -370,6 +370,9 @@ void ConfiguracionPrincipal(){
  SPI2_Init();
 
 
+ ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
+
+
  RPINR0 = 0x2E00;
  INT1IE_bit = 0;
  INT1IF_bit = 0;
@@ -394,7 +397,8 @@ void Muestrear(){
 
  if (banCiclo==0){
 
- ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
+
+ ADXL355_write_byte( 0x2D ,  0x04 | 0x00 );
  T1CON.TON = 1;
 
  } else if (banCiclo==1) {
@@ -446,13 +450,7 @@ void Muestrear(){
  }
 
  contCiclos++;
-
- if (ADXL355_read_byte( 0x2D )&0x01==1){
- ADXL355_write_byte( 0x2D ,  0x04 | 0x00 );
- }
-
-
-
+#line 268 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 }
 
 
@@ -471,6 +469,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if (banMuestrear==0){
  if (buffer==0xA0){
  banMuestrear = 1;
+ ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
 
  banCiclo = 0;
  contMuestras = 0;
@@ -490,6 +489,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if (buffer==0xAF){
  banInicio = 0;
  banMuestrear = 0;
+ ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
 
  if (INT1IE_bit==1){
  INT1IE_bit = 0;
@@ -500,7 +500,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
  }
  }
-#line 321 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
  if ((banSetReloj==0)){
  if (buffer==0xC0){
  banTIGPS = 0;
@@ -512,6 +513,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
  }
  }
+
 
  if (banSetReloj==1){
  banSetReloj = 2;
@@ -528,7 +530,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
-
  if ((banLec==1)&&(buffer==0xB0)){
  banLec = 2;
  i = 0;
@@ -542,6 +543,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  banLec = 0;
  SPI1BUF = 0xFF;
  }
+
 }
 
 
