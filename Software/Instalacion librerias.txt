@@ -1,0 +1,24 @@
+Instalacion libreria bcm2835:
+
+1. Primero es necesario igualar el reloj del sistema. Debido a que se desintalo el servidor NTP es necesario igualar el reloj a mano con el siguiente comando:
+	>> sudo date -s "Mon Feb  4 15:48:00 UTC 2019"
+
+2. Despues de hacer esto se puede instalar la libreria siguiendo los siguiente pasos:
+
+	>> wget http://www.airspayce.com/mikem/bcm2835/bcm2835-1.58.tar.gz
+	>> tar zxvf bcm2835-1.58.tar.gz
+	>> cd bcm2835-1.58
+	>> ./configure
+	>> make
+	>> sudo make check
+	>> sudo make install
+
+
+
+Instalacion WirinPi:
+
+sudo apt-get install wiringpi
+
+
+
+

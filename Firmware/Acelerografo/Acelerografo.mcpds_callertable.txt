@@ -9,15 +9,14 @@ main
 			_Divide_32x32
 		SPI1_Init_Advanced
 		SPI2_Init
-		ADXL355_write_byte
-			SPI2_Write
-				SPI2_Read
 	ConfigurarGPS
 		UART1_Write_Text
 			UART1_Write
 		UART1_Init
 	ADXL355_init
 		ADXL355_write_byte
+			SPI2_Write
+				SPI2_Read
 int_1
 	Muestrear
 		ADXL355_write_byte
@@ -41,7 +40,6 @@ urx_1
 	AjustarTiempoSistema
 	InterrupcionP2
 spi_1
-	ADXL355_write_byte
 Timer1Int
 	ADXL355_read_byte
 	ADXL355_read_FIFO
