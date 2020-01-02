@@ -28,6 +28,7 @@ unsigned short banNewFile;
 unsigned short numBytes;
 unsigned short contMuestras;
 unsigned char tiempoGPS[8];
+unsigned char tiempoLocal[8];
 unsigned char tramaDatos[NUM_ELEMENTOS];
 
 FILE *fp;
@@ -54,6 +55,7 @@ void DetenerMuestreo();
 void ConfigurarGPS();
 void ObtenerTiempoGPS();
 void MostrarTiempoGPS();
+void EnviarTiempoLocal();
 
 int main(void) {
 
@@ -70,8 +72,9 @@ int main(void) {
   contador = 0;  
   
   ConfiguracionPrincipal();
-  sleep(60);
-  ObtenerTiempoGPS();
+  sleep(5);
+  //ObtenerTiempoGPS();
+  EnviarTiempoLocal();
   CrearArchivo();
     
   while(1){	
@@ -204,6 +207,49 @@ void MostrarTiempoGPS(){
 	system("date");
 	
 	IniciarMuestreo();
+	
+}
+
+void EnviarTiempoLocal(){
+	
+	//Obtiene la hora y la fecha del sistema:
+	time_t t;
+	struct tm *tm;
+	t=time(NULL);
+	tm=localtime(&t);
+		
+	tiempoLocal[0] = tm->tm_mday;												//Dia del mes (0-31)
+	tiempoLocal[1] = tm->tm_mon+1;												//Mes desde Enero (0-11)
+	tiempoLocal[2] = tm->tm_year-100;											//Anio (contado desde 1900)
+	tiempoLocal[3] = tm->tm_hour;												//Hora
+	tiempoLocal[4] = tm->tm_min;												//Minuto
+	tiempoLocal[5] = tm->tm_sec;												//Segundo 
+	
+	/* tiempoLocal[0] = 20;												
+	tiempoLocal[1] = 12;												
+	tiempoLocal[2] = 16;												
+	tiempoLocal[3] = 10;												
+	tiempoLocal[4] = 15;												
+	tiempoLocal[5] = 20; */	 
+
+	for (i=0;i<6;i++){
+		printf("%0.2d ",tiempoLocal[i]);	
+	}
+	printf("\n");	
+	
+	bcm2835_spi_transfer(0xC3);                                                 //Envia el delimitador de inicio de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI); 
+	
+	bcm2835_spi_transfer(0x00);                                                 //REVISAR: Con esto funciona pero no tiene sentido
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
+	for (i=0;i<6;i++){
+        buffer = bcm2835_spi_transfer(tiempoLocal[i]);							//Envia los 6 datos de la trama tiempoLocal al dsPIC
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+    }
+	
+	bcm2835_spi_transfer(0xC4);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
 	
 }
 

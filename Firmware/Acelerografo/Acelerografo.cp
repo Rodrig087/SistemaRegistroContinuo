@@ -212,6 +212,8 @@ sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
 sbit RP2_Direction at TRISB4_bit;
 
+
+
 const short HDR = 0x3A;
 const short END1 = 0x0D;
 const short END2 = 0x0A;
@@ -275,6 +277,7 @@ void main() {
 
  banTI = 0;
  banLec = 0;
+ banEsc = 0;
  banCiclo = 0;
  banSetReloj = 0;
  banSetGPS = 0;
@@ -305,6 +308,7 @@ void main() {
 
  RP1 = 0;
  RP2 = 0;
+
 
  SPI1BUF = 0x00;
 
@@ -339,9 +343,10 @@ void ConfiguracionPrincipal(){
  TRISA3_bit = 0;
  TRISA4_bit = 0;
  TRISB4_bit = 0;
+ TRISB12_bit = 0;
+
  TRISB10_bit = 1;
  TRISB11_bit = 1;
- TRISB12_bit = 1;
  TRISB13_bit = 1;
 
  INTCON2.GIE = 1;
@@ -450,7 +455,7 @@ void Muestrear(){
  }
 
  contCiclos++;
-#line 268 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 273 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 }
 
 
@@ -480,6 +485,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  contTimer1 = 0;
 
  banInicio = 1;
+ if (INT1IE_bit==0){
+ INT1IE_bit = 1;
+ }
 
  }
  }
@@ -512,6 +520,22 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  U1RXIE_bit = 1;
  }
  }
+ }
+
+
+
+ if ((banSetReloj==0)&&(buffer==0xC3)){
+ banEsc = 1;
+ j = 0;
+ }
+ if ((banEsc==1)&&(buffer!=0xC3)&&(buffer!=0xC4)){
+ tiempo[j] = buffer;
+ j++;
+ }
+ if ((banEsc==1)&&(buffer==0xC4)){
+ banEsc = 0;
+ banSetReloj = 1;
+ InterrupcionP2();
  }
 
 
@@ -552,6 +576,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 void int_1() org IVT_ADDR_INT1INTERRUPT {
 
  INT1IF_bit = 0;
+
 
  horaSistema++;
 

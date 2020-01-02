@@ -19,6 +19,8 @@ sbit RP1 at LATA4_bit;                                                          
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;                                                          //Definicion del pin P2
 sbit RP2_Direction at TRISB4_bit;
+//sbit TEST at LATB12_bit;                                                          //Definicion del pin P2
+//sbit TEST_Direction at TRISB12_bit;
 
 const short HDR = 0x3A;                                                         //Constante de delimitador de inicio de trama
 const short END1 = 0x0D;                                                        //Constante de delimitador 1 de final de trama
@@ -83,6 +85,7 @@ void main() {
      
      banTI = 0;
      banLec = 0;
+     banEsc = 0;
      banCiclo = 0;
      banSetReloj = 0;
      banSetGPS = 0;
@@ -113,6 +116,7 @@ void main() {
 
      RP1 = 0;
      RP2 = 0;
+     //TEST = 1;
 
      SPI1BUF = 0x00;
 
@@ -147,9 +151,10 @@ void ConfiguracionPrincipal(){
      TRISA3_bit = 0;                                                            //Configura el pin A3 como salida  *
      TRISA4_bit = 0;                                                            //Configura el pin A4 como salida  *
      TRISB4_bit = 0;                                                            //Configura el pin B4 como salida  *
+     TRISB12_bit = 0;                                                           //Configura el pin B12 como salida *
+     
      TRISB10_bit = 1;                                                           //Configura el pin B10 como entrada *
      TRISB11_bit = 1;                                                           //Configura el pin B11 como entrada *
-     TRISB12_bit = 1;                                                           //Configura el pin B12 como entrada *
      TRISB13_bit = 1;                                                           //Configura el pin B13 como entrada *
 
      INTCON2.GIE = 1;                                                           //Habilita las interrupciones globales *
@@ -294,6 +299,9 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            contTimer1 = 0;
            
            banInicio = 1;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+           if (INT1IE_bit==0){
+              INT1IE_bit = 1;
+           }
 
         }
      }
@@ -328,7 +336,23 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         }
      }
      
-     //Rutina para enviar la hora GPS a la RPi
+     
+     //Rutina para obtener la hora de la RPi
+     if ((banSetReloj==0)&&(buffer==0xC3)){
+         banEsc = 1;
+         j = 0;
+     }
+     if ((banEsc==1)&&(buffer!=0xC3)&&(buffer!=0xC4)){
+        tiempo[j] = buffer;
+        j++;
+     }
+     if ((banEsc==1)&&(buffer==0xC4)){
+        banEsc = 0;
+        banSetReloj = 1;
+        InterrupcionP2();
+     }
+     
+     //Rutina para enviar la hora local a la RPi
      if (banSetReloj==1){
         banSetReloj = 2;
         j = 0;
@@ -367,6 +391,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
      
+     //TEST = ~TEST;
      horaSistema++;                                                             //Incrementa el reloj del sistema
 
      if (horaSistema==86400){                                                   //(24*3600)+(0*60)+(0) = 86400
