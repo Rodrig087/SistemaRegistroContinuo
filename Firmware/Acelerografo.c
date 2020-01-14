@@ -19,19 +19,27 @@ sbit RP1 at LATA4_bit;                                                          
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;                                                          //Definicion del pin P2
 sbit RP2_Direction at TRISB4_bit;
-sbit TEST at LATB12_bit;                                                        //Definicion del pin P2
+sbit TEST at LATB12_bit;                                                          //Definicion del pin P2
 sbit TEST_Direction at TRISB12_bit;
+
+const short HDR = 0x3A;                                                         //Constante de delimitador de inicio de trama
+const short END1 = 0x0D;                                                        //Constante de delimitador 1 de final de trama
+const short END2 = 0x0A;                                                        //Constante de delimitador 2 de final de trama
+const unsigned short NUM_MUESTRAS = 199;                                        //Constantes para almacenar el numero de muestras que se van a enviar en la interrupcion P2
+//const unsigned int T2 = 222;
 
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned short tiempo[6];                                                       //Vector de datos de tiempo del sistema
-unsigned short tiempoRPI[6];                                                    //Vector para recuperar el tiempo enviado desde la RPi
+unsigned short tiempo[6];                                                        //Vector de datos de tiempo del sistema
+unsigned short tiempoRPI[6];                                                     //Vector para recuperar el tiempo enviado desde la RPi
+unsigned char pduSPI[15];                                                       //Vector de trama de datos del puerto UART2
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];                                                   //Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
-unsigned char tramaSalida[2506];
+//unsigned char datosSalida[2506];
 unsigned short numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
 unsigned short contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
+unsigned short FIFO_Status;
 
 unsigned int i, x, y, i_gps, j;
 unsigned short buffer;
@@ -42,11 +50,14 @@ short tasaMuestreo;
 short numTMR1;
 
 unsigned short banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
-unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
+unsigned short banResp, banSPI, banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
 
+long datox, datoy, datoz, auxiliar;
+unsigned char *puntero_8, direccion;
+
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
-unsigned long horaSistema, fechaSistema;
+unsigned long horaSistema, fechaSistema, segundoDeAjuste;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -103,6 +114,7 @@ void main() {
      numFIFO = 0;
      numSetsFIFO = 0;
      contTimer1 = 0;
+     FIFO_Status = 0;
 
      byteGPS = 0;
 
@@ -140,9 +152,11 @@ void ConfiguracionPrincipal(){
      TRISA4_bit = 0;                                                            //Configura el pin A4 como salida  *
      TRISB4_bit = 0;                                                            //Configura el pin B4 como salida  *
      TRISB12_bit = 0;                                                           //Configura el pin B12 como salida *
+     
      TRISB10_bit = 1;                                                           //Configura el pin B10 como entrada *
      TRISB11_bit = 1;                                                           //Configura el pin B11 como entrada *
      TRISB13_bit = 1;                                                           //Configura el pin B13 como entrada *
+
      INTCON2.GIE = 1;                                                           //Habilita las interrupciones globales *
      
      //Configuracion del puerto UART1
@@ -150,7 +164,7 @@ void ConfiguracionPrincipal(){
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
      UART1_Init(9600);                                                          //Inicializa el UART1 con una velocidad de 9600 baudios
      U1RXIE_bit = 0;                                                            //Desabilita la interrupcion por UART1 RX *
-     U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
+     //U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
      U1STAbits.URXISEL = 0x00;
 
@@ -196,6 +210,7 @@ void Muestrear(){
 
      if (banCiclo==0){
 
+         //ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                       //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
          ADXL355_write_byte(POWER_CTL, DRDY_OFF|MEASURING);                     //Coloca el ADXL en modo medicion
          T1CON.TON = 1;                                                         //Enciende el Timer1
 
@@ -204,6 +219,7 @@ void Muestrear(){
          banCiclo = 2;                                                          //Limpia la bandera de ciclo completo
 
          tramaCompleta[0] = contCiclos;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+         FIFO_Status = (ADXL355_read_byte(Status))&0x04;                        //Obtiene el bit FIFO_OVR del registro Status
          numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
          numSetsFIFO = (numFIFO)/3;                                             //Lee el numero de sets disponibles en el FIFO
 
@@ -214,6 +230,8 @@ void Muestrear(){
                  datosFIFO[y+(x*9)] = datosLeidos[y];                           //LLena la trama datosFIFO
              }
          }
+
+         datosFIFO[2] = datosFIFO[2]|FIFO_Status;                               //Se agrega la informacion de FIFO_Status al tercer byte de la trama FIFO (XLSB bit 3)
 
          //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
          for (x=0;x<(numSetsFIFO*9);x++){
@@ -404,10 +422,12 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion por desbordamiento del Timer1
      
+     FIFO_Status = (ADXL355_read_byte(Status))&0x04;                            //Obtiene el bit FIFO_OVR del registro Status
      numFIFO = ADXL355_read_byte(FIFO_ENTRIES); //75                            //Lee el numero de muestras disponibles en el FIFO
      numSetsFIFO = (numFIFO)/3;                 //25                            //Lee el numero de sets disponibles en el FIFO
 
      //Este bucle recupera tantos sets de mediciones del buffer FIFO como indique la variable anterior
+     //En cada interrupcion debe haber 25 sets de mediciones +-1
      for (x=0;x<numSetsFIFO;x++){
          ADXL355_read_FIFO(datosLeidos);                                        //Lee una sola posicion del FIFO
          for (y=0;y<9;y++){
@@ -415,6 +435,8 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
          }
      }
      
+     datosFIFO[2] = datosFIFO[2]|FIFO_Status;                                   //Se agrega la informacion de FIFO_Status al tercer byte de la trama FIFO (XLSB bit 3)
+
      //Este bucle rellena la trama completa intercalando el numero de muestra correspondientes
      for (x=0;x<(numSetsFIFO*9);x++){      //0-224
          if ((x==0)||(x%9==0)){

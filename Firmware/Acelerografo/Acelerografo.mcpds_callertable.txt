@@ -42,6 +42,11 @@ urx_1
 	InterrupcionP2
 spi_1
 	ADXL355_write_byte
+	RecuperarHoraRPI
+		_Multiply_32x32
+	RecuperarFechaRPI
+		_Multiply_32x32
+	AjustarTiempoSistema
 	InterrupcionP2
 Timer1Int
 	ADXL355_read_byte

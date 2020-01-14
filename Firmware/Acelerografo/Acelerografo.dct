@@ -1271,7 +1271,6 @@ auxcon2
 auxcon2bits
 auxcon3
 auxcon3bits
-auxiliar
 axisaddresses
 b
 b0
@@ -1297,10 +1296,8 @@ baninicio
 banlec
 banleer
 banmuestrear
-banresp
 bansetgps
 bansetreloj
-banspi
 bantc
 bantcgps
 bantf
@@ -2715,9 +2712,6 @@ dae_bit
 datosfifo
 datosgps
 datosleidos
-datox
-datoy
-datoz
 dc
 dc
 dc_bit
@@ -2880,7 +2874,6 @@ dir__dma1con_bit
 dir__dma2con_bit
 dir__dma3con_bit
 dir_bit
-direccion
 disi
 disi
 disi_bit
@@ -3605,8 +3598,6 @@ edt_bit
 eipu
 eipu
 eipu_bit
-end1
-end2
 enflt
 enflt
 enflt
@@ -3729,7 +3720,6 @@ fexu_6
 fexu_6_bit
 fexu_7
 fexu_7_bit
-fifo_status
 float_fpack
 floattostr
 flt1r
@@ -4001,7 +3991,6 @@ half_dma0con_bit
 half_dma1con_bit
 half_dma2con_bit
 half_dma3con_bit
-hdr
 hlms
 hlms
 hlms
@@ -6163,7 +6152,6 @@ nullw_dma0con_bit
 nullw_dma1con_bit
 nullw_dma2con_bit
 nullw_dma3con_bit
-num_muestras
 numfifo
 numsetsfifo
 numtmr1
@@ -7468,7 +7456,6 @@ pdsel0
 pdsel0
 pdsel1
 pdsel1
-pduspi
 pen
 pen
 pen
@@ -8592,7 +8579,6 @@ ptper_9_bit
 ptsidl
 ptsidl
 ptsidl_bit
-puntero_8
 pwcol0
 pwcol0
 pwcol0_bit
@@ -9056,7 +9042,9 @@ rcount_8_bit
 rcount_9
 rcount_9_bit
 recuperarfechagps
+recuperarfecharpi
 recuperarhoragps
+recuperarhorarpi
 refocon
 refoconbits
 refomd
@@ -9454,7 +9442,6 @@ sdi2r3
 sdi2r4
 sdi2r5
 sdi2r6
-segundodeajuste
 seien
 seien
 seien_bit
@@ -11122,6 +11109,8 @@ tcs_t2con_bit
 tcs_t3con_bit
 tcs_t4con_bit
 tcs_t5con_bit
+test
+test_direction
 tgate
 tgate
 tgate
@@ -11138,6 +11127,7 @@ tgen
 tgen
 tgen_bit
 tiempo
+tiemporpi
 timer1int
 tmr1
 tmr1_0
@@ -11386,6 +11376,7 @@ ton_t5con_bit
 toupper
 tramacompleta
 tramagps
+tramasalida
 trapr
 trapr
 trapr_bit

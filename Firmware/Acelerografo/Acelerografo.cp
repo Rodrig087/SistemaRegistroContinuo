@@ -180,6 +180,34 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
 
 
 
+unsigned long RecuperarFechaRPI(unsigned short *tramaTiempoRpi){
+
+ unsigned long fechaRPi;
+
+ fechaRPi = ((long)tramaTiempoRpi[0]*10000)+((long)tramaTiempoRpi[1]*100)+((long)tramaTiempoRpi[2]);
+
+
+ return fechaRPi;
+
+}
+
+
+
+
+unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
+
+ unsigned long horaRPi;
+
+ horaRPi = ((long)tramaTiempoRpi[3]*3600)+((long)tramaTiempoRpi[4]*60)+((long)tramaTiempoRpi[5]);
+
+
+ return horaRPi;
+
+}
+
+
+
+
 void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema){
 
  unsigned char hora;
@@ -211,25 +239,19 @@ sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
 sbit RP2_Direction at TRISB4_bit;
-
-
-
-const short HDR = 0x3A;
-const short END1 = 0x0D;
-const short END2 = 0x0A;
-const unsigned short NUM_MUESTRAS = 199;
-
+sbit TEST at LATB12_bit;
+sbit TEST_Direction at TRISB12_bit;
 
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned char tiempo[6];
-unsigned char pduSPI[15];
+unsigned short tiempo[6];
+unsigned short tiempoRPI[6];
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];
 unsigned char tramaCompleta[2506];
+unsigned char tramaSalida[2506];
 unsigned short numFIFO, numSetsFIFO;
 unsigned short contTimer1;
-unsigned short FIFO_Status;
 
 unsigned int i, x, y, i_gps, j;
 unsigned short buffer;
@@ -240,14 +262,11 @@ short tasaMuestreo;
 short numTMR1;
 
 unsigned short banTC, banTI, banTF;
-unsigned short banResp, banSPI, banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
+unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
 
-long datox, datoy, datoz, auxiliar;
-unsigned char *puntero_8, direccion;
-
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
-unsigned long horaSistema, fechaSistema, segundoDeAjuste;
+unsigned long horaSistema, fechaSistema;
 
 
 
@@ -259,6 +278,8 @@ void Muestrear();
 void ConfigurarGPS();
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
+unsigned long RecuperarFechaRPI(unsigned short *tramaTiempoRpi);
+unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi);
 void AjustarTiempoSistema(unsigned long hGPS, unsigned long fGPS, unsigned char *tramaTiempoSistema);
 void InterrupcionP2();
 
@@ -302,21 +323,16 @@ void main() {
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
- FIFO_Status = 0;
 
  byteGPS = 0;
 
  RP1 = 0;
  RP2 = 0;
-
+ TEST = 1;
 
  SPI1BUF = 0x00;
 
-
-
  while(1){
-
- Delay_ms(500);
 
  }
 
@@ -344,11 +360,9 @@ void ConfiguracionPrincipal(){
  TRISA4_bit = 0;
  TRISB4_bit = 0;
  TRISB12_bit = 0;
-
  TRISB10_bit = 1;
  TRISB11_bit = 1;
  TRISB13_bit = 1;
-
  INTCON2.GIE = 1;
 
 
@@ -356,7 +370,7 @@ void ConfiguracionPrincipal(){
  RPOR0bits.RP35R = 0x01;
  UART1_Init(9600);
  U1RXIE_bit = 0;
-
+ U1RXIF_bit = 0;
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
 
@@ -402,7 +416,6 @@ void Muestrear(){
 
  if (banCiclo==0){
 
-
  ADXL355_write_byte( 0x2D ,  0x04 | 0x00 );
  T1CON.TON = 1;
 
@@ -411,10 +424,8 @@ void Muestrear(){
  banCiclo = 2;
 
  tramaCompleta[0] = contCiclos;
- FIFO_Status = (ADXL355_read_byte( 0x04 ))&0x04;
  numFIFO = ADXL355_read_byte( 0x05 );
  numSetsFIFO = (numFIFO)/3;
-
 
 
  for (x=0;x<numSetsFIFO;x++){
@@ -423,8 +434,6 @@ void Muestrear(){
  datosFIFO[y+(x*9)] = datosLeidos[y];
  }
  }
-
- datosFIFO[2] = datosFIFO[2]|FIFO_Status;
 
 
  for (x=0;x<(numSetsFIFO*9);x++){
@@ -455,8 +464,27 @@ void Muestrear(){
  }
 
  contCiclos++;
-#line 273 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
 }
+
+
+
+
+ void InterrupcionP2(){
+
+ if (INT1IE_bit==0){
+ INT1IE_bit = 1;
+ }
+
+ if (U1RXIE_bit==1){
+ U1RXIE_bit = 0;
+ }
+
+ RP2 = 1;
+ Delay_us(20);
+ RP2 = 0;
+}
+
 
 
 
@@ -474,7 +502,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if (banMuestrear==0){
  if (buffer==0xA0){
  banMuestrear = 1;
- ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
 
  banCiclo = 0;
  contMuestras = 0;
@@ -483,12 +510,10 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
-
  banInicio = 1;
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-
  }
  }
 
@@ -529,10 +554,13 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  j = 0;
  }
  if ((banEsc==1)&&(buffer!=0xC3)&&(buffer!=0xC4)){
- tiempo[j] = buffer;
+ tiempoRPI[j] = buffer;
  j++;
  }
  if ((banEsc==1)&&(buffer==0xC4)){
+ horaSistema = RecuperarHoraRPI(tiempoRPI);
+ fechaSistema = RecuperarFechaRPI(tiempoRPI);
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  banEsc = 0;
  banSetReloj = 1;
  InterrupcionP2();
@@ -577,7 +605,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
 
  INT1IF_bit = 0;
 
-
+ TEST = ~TEST;
  horaSistema++;
 
  if (horaSistema==86400){
@@ -596,10 +624,8 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
  T1IF_bit = 0;
 
- FIFO_Status = (ADXL355_read_byte( 0x04 ))&0x04;
  numFIFO = ADXL355_read_byte( 0x05 );
  numSetsFIFO = (numFIFO)/3;
-
 
 
 
@@ -609,8 +635,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  datosFIFO[y+(x*9)] = datosLeidos[y];
  }
  }
-
- datosFIFO[2] = datosFIFO[2]|FIFO_Status;
 
 
  for (x=0;x<(numSetsFIFO*9);x++){
@@ -693,16 +717,4 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
 
-}
-
-
-void InterrupcionP2(){
-
- if (INT1IE_bit==0){
- INT1IE_bit = 1;
- }
- U1RXIE_bit = 0;
- RP2 = 1;
- Delay_us(20);
- RP2 = 0;
 }
