@@ -1,5 +1,5 @@
 //Compilar:
-//gcc RegistroContinuo_V1.2.c -o acelerografo -lbcm2835 -lwiringPi 
+//gcc RegistroContinuo_V1.3.c -o acelerografo -lbcm2835 -lwiringPi 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -34,6 +34,7 @@ unsigned char tiempoLocal[8];
 unsigned char tramaDatos[NUM_ELEMENTOS];
 
 FILE *fp;
+FILE *ftmp;
 char path[30];
 char ext[8];
 char nombreArchivo[16];
@@ -288,6 +289,7 @@ void CrearArchivo(){
 	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario
 	if ((banNewFile==2)&&(tm->tm_hour==timeNewFile[0])&&(tm->tm_min==timeNewFile[1])){
 		fclose (fp);
+		fclose (ftmp);
 		DetenerMuestreo();
 		//ObtenerTiempoGPS();
 		EnviarTiempoLocal();
@@ -315,7 +317,10 @@ void CrearArchivo(){
 		strcat(path, ext);
 		
 		//Abre o crea el archivo binario
-		fp = fopen (path, "ab+");	
+		fp = fopen (path, "ab+");
+
+		//Crea el archivo binario
+		ftmp = fopen ("./TMP/Temporal.tmp", "wb");
 		
 		//Cambia el valor de la bandera de nuevo archivo para que ignore esta funcion en la siguientes muestras y libera la memoria reservada para el nombre de la ruta 
 		banNewFile = 1;	
@@ -330,12 +335,19 @@ void CrearArchivo(){
 void GuardarVector(unsigned char* tramaD){
 	
 	unsigned int outFwrite;
+	unsigned int tmpFwrite;
 	
 	if (fp!=NULL){
 		do{
-		outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);	
+		//Guarda la trama en el archivo binario:
+		outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);
+		//Guarda la trama en el archivo emporal:
+		ftmp = fopen ("./TMP/Temporal.tmp", "wb");
+		tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, ftmp);
+		fclose (ftmp);		
 		} while (outFwrite!=NUM_ELEMENTOS);
 		fflush(fp);
+		fflush(ftmp);
 	}
 	
 }
