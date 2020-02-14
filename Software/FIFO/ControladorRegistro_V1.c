@@ -1,5 +1,5 @@
 //Compilar:
-//gcc ComprobarRegistro_V2.2.c -o /home/pi/Ejecutables/comprobarregistro 
+//gcc ControladorRegistro_V1.c -o /home/pi/Ejecutables/controlregistro 
 
 
 #include <stdio.h>
@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 
 //Declaracion de constantes
 #define P2 0
@@ -69,7 +70,7 @@ int main(void) {
   segInicio = 0;
   segActual = 0;
   segTranscurridos = 0;
-       
+         
   RecuperarVector();
  
   return 0;
@@ -82,6 +83,8 @@ void RecuperarVector() {
 	//Abre el archivo temporal en modo lectura
 	tmpf = fopen ("/home/pi/TMP/namefile.tmp", "rb"); 
 	fread(nombreArchivo, sizeof(char), 12, tmpf);									//Recupera el nombre del archivo en forma de 12 caracteres
+	
+	
 		
 	//Asigna espacio en la memoria para el nombre completo de la ruta:
 	char *path = malloc(strlen(nombreArchivo)+5+27);		
@@ -109,65 +112,26 @@ void RecuperarVector() {
 	//Calcula el tiempo transcurrido desde que inicio el muestreo:
 	segTranscurridos = segActual - segInicio;
 				
+	//Se salta el numero de segundos que indique la variable segTranscurridos
 	for (x=0;x<(segTranscurridos);x++){
-		fread(tramaDatos, sizeof(char), tramaSize, lf);								//Se salta el numero de segundos que indique la variable tiempoInicial
+		fread(tramaDatos, sizeof(char), tramaSize, lf);								
 	}
 	
-	//Imprime la hora y fecha recuperada de la trama de datos
-	printf("| ");
-	printf("%0.2d:", tramaDatos[tramaSize-3]);			//hh
-	printf("%0.2d:", tramaDatos[tramaSize-2]);			//mm
-	printf("%0.2d ", tramaDatos[tramaSize-1]);			//ss
-	printf("%0.2d/", tramaDatos[tramaSize-6]);			//aa
-	printf("%0.2d/", tramaDatos[tramaSize-5]);			//mm
-	printf("%0.2d ", tramaDatos[tramaSize-4]);			//dd
-	printf("| ");
-	
-	for (x=0;x<3;x++){
-		xData[x] = tramaDatos[x+1];	
-		yData[x] = tramaDatos[x+4];	
-		zData[x] = tramaDatos[x+7];	
+	//Verifica si el minuto del tiempo local es diferente del minuto del tiempo de la trama recuperada:
+	if ((tm->tm_min)==(tramaDatos[tramaSize-2])){
+		printf("Trama OK\n");
+	} else {
+		//Reinicia el software de registro continuo:
+		system("registrocontinuo stop");
+		sleep(1);
+		system("registrocontinuo start");											
 	}
-	
-	//Calculo aceleracion eje x:
-	xValue = ((xData[0]<<12)&0xFF000)+((xData[1]<<4)&0xFF0)+((xData[2]>>4)&0xF);
-	// Apply two complement
-	if (xValue >= 0x80000) {
-		xValue = xValue & 0x7FFFF;		 //Se descarta el bit 20 que indica el signo (1=negativo)
-		xValue = -1*(((~xValue)+1)& 0x7FFFF);
-	}
-	xAceleracion = xValue * (9.8/pow(2,18));
-	
-	//Calculo aceleracion eje y:
-	yValue = ((yData[0]<<12)&0xFF000)+((yData[1]<<4)&0xFF0)+((yData[2]>>4)&0xF);
-	// Apply two complement
-	if (yValue >= 0x80000) {
-		yValue = yValue & 0x7FFFF;		 //Se descarta el bit 20 que indica el signo (1=negativo)
-		yValue = -1*(((~yValue)+1)& 0x7FFFF);
-	}
-	yAceleracion = yValue * (9.8/pow(2,18));
-	
-	//Calculo aceleracion eje z:
-	zValue = ((zData[0]<<12)&0xFF000)+((zData[1]<<4)&0xFF0)+((zData[2]>>4)&0xF);
-	// Apply two complement
-	if (zValue >= 0x80000) {
-		zValue = zValue & 0x7FFFF;		 //Se descarta el bit 20 que indica el signo (1=negativo)
-		zValue = -1*(((~zValue)+1)& 0x7FFFF);
-	}
-	zAceleracion = zValue * (9.8/pow(2,18));	
-
-	printf("X: ");
-	printf("%2.8f ", xAceleracion);
-	printf("Y: ");
-	printf("%2.8f ", yAceleracion);
-	printf("Z: ");
-	printf("%2.8f ", zAceleracion); 
-	printf("|\n"); 
 	
 	fclose (tmpf);
 	fclose (lf);
 	
 }
 
+//if (((tm->tm_hour)!=(tramaDatos[tramaSize-3]))&&((tm->tm_min)!=(tramaDatos[tramaSize-2]))){
 
 

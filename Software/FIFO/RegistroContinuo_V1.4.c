@@ -1,5 +1,5 @@
 //Compilar:
-//gcc RegistroContinuo_V1.3.c -o acelerografo -lbcm2835 -lwiringPi 
+//gcc RegistroContinuo_V1.4.c -o acelerografo -lbcm2835 -lwiringPi 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -320,7 +320,7 @@ void CrearArchivo(){
 		fp = fopen (path, "ab+");
 
 		//Crea el archivo temporal
-		ftmp = fopen ("./TMP/namefile.tmp", "wb");
+		ftmp = fopen ("/home/pi/TMP/namefile.tmp", "wb");
 		fwrite(nombreArchivo, sizeof(char), 12, ftmp);
 		fclose (ftmp);
 		
