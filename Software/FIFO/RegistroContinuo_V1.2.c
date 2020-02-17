@@ -1,5 +1,5 @@
 //Compilar:
-//gcc RegistroContinuo_V1.2.c -o acelerografo -lbcm2835 -lwiringPi 
+//gcc RegistroContinuo_V1.2.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi  
 
 #include <stdio.h>
 #include <stdlib.h>

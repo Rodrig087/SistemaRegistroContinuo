@@ -628,7 +628,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  numSetsFIFO = (numFIFO)/3;
 
 
-
  for (x=0;x<numSetsFIFO;x++){
  ADXL355_read_FIFO(datosLeidos);
  for (y=0;y<9;y++){

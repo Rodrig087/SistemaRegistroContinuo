@@ -1,5 +1,5 @@
 //Compilar:
-//gcc RegistroContinuo_V1.4.c -o acelerografo -lbcm2835 -lwiringPi 
+//gcc RegistroContinuo_V1.4.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -40,7 +40,7 @@ char ext[8];
 char nombreArchivo[16];
 char comando[40];
 char dateGPS[22];
-//unsigned int timeNewFile[2] = {17, 5};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
+//unsigned int timeNewFile[2] = {22, 15};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
 unsigned int timeNewFile[2] = {0, 0};	
 unsigned short banNewFile;
 
@@ -289,9 +289,7 @@ void CrearArchivo(){
 	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario
 	if ((banNewFile==2)&&(tm->tm_hour==timeNewFile[0])&&(tm->tm_min==timeNewFile[1])){
 		fclose (fp);
-		fclose (ftmp);
 		DetenerMuestreo();
-		//ObtenerTiempoGPS();
 		EnviarTiempoLocal();
 		banNewFile = 0;
 	}
@@ -310,8 +308,7 @@ void CrearArchivo(){
 		//Asigna el nombre de la ruta y la extencion a los array de caracteres
 		strcpy(ext, ".dat");
 		strcpy(path, "/media/PenDrive/Resultados/");
-		//strcpy(path, "./Resultados/");
-		
+				
 		//Realiza la concatenacion de array de caracteres
 		strcat(path, nombreArchivo);
 		strcat(path, ext);
@@ -327,7 +324,7 @@ void CrearArchivo(){
 		//Cambia el valor de la bandera de nuevo archivo para que ignore esta funcion en la siguientes muestras y libera la memoria reservada para el nombre de la ruta 
 		banNewFile = 1;	
 		free(path);	
-		printf("   Archivo abierto\n");	
+		printf("Archivo abierto\n");	
 	}
 		 
 }

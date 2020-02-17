@@ -7,6 +7,7 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <unistd.h>
 
 //Declaracion de constantes
 #define P2 0
@@ -113,7 +114,16 @@ void RecuperarVector() {
 		fread(tramaDatos, sizeof(char), tramaSize, lf);								//Se salta el numero de segundos que indique la variable tiempoInicial
 	}
 	
+	printf("Archivo actual:\n");
+	printf(nombreArchivo);
+	printf("\n");
+	
+	printf("\nHora del sistema:\n");
+	system("date");
+	printf("\n");
+	
 	//Imprime la hora y fecha recuperada de la trama de datos
+	printf("Datos de la trama:\n");
 	printf("| ");
 	printf("%0.2d:", tramaDatos[tramaSize-3]);			//hh
 	printf("%0.2d:", tramaDatos[tramaSize-2]);			//mm
@@ -155,7 +165,7 @@ void RecuperarVector() {
 		zValue = -1*(((~zValue)+1)& 0x7FFFF);
 	}
 	zAceleracion = zValue * (9.8/pow(2,18));	
-
+			
 	printf("X: ");
 	printf("%2.8f ", xAceleracion);
 	printf("Y: ");
