@@ -85,10 +85,10 @@ void RecuperarVector() {
 	fread(nombreArchivo, sizeof(char), 12, tmpf);									//Recupera el nombre del archivo en forma de 12 caracteres
 		
 	//Asigna espacio en la memoria para el nombre completo de la ruta:
-	char *path = malloc(strlen(nombreArchivo)+5+27);		
+	char *path = malloc(strlen(nombreArchivo)+5+20);		
 	//Asigna el nombre de la ruta y la extencion a los array de caracteres:
 	strcpy(ext, ".dat");
-	strcpy(path, "/media/PenDrive/Resultados/");
+	strcpy(path, "/home/pi/Resultados/");
 	//Realiza la concatenacion de array de caracteres:
 	strcat(path, nombreArchivo);
 	strcat(path, ext);		

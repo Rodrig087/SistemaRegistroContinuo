@@ -1,0 +1,4 @@
+- Administracion: 
+		cd /usr/local/bin
+- Arranque: 
+	        cd /etc/rc.local

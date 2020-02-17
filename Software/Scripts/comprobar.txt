@@ -1,0 +1,5 @@
+#!/bin/bash
+
+echo " "
+/home/pi/Ejecutables/comprobarregistro
+echo " "
