@@ -234,7 +234,145 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
 
 
 }
-#line 18 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/tiempo_rtc.c"
+#line 36 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/tiempo_rtc.c"
+sbit CS_DS3234 at LATA2_bit;
+
+
+
+void DS3234_init();
+void DS3234_write_byte(unsigned char address, unsigned char value);
+void DS3234_read_byte(unsigned char address, unsigned char value);
+void DS3234_setDate(unsigned long longHora, unsigned long longFecha);
+unsigned long RecuperarFechaRTC();
+unsigned long RecuperarHoraRTC();
+
+
+
+
+
+void DS3234_write_byte(unsigned char address, unsigned char value){
+ CS_DS3234 = 0;
+ SPI2_Write(address);
+ SPI2_Write(value);
+ CS_DS3234 = 1;
+}
+
+
+unsigned char DS3234_read_byte(unsigned char address){
+ unsigned char value = 0x00;
+ CS_DS3234 = 0;
+ SPI2_Write(address);
+ value = SPI2_Read(0);
+ CS_DS3234 = 1;
+ return value;
+}
+
+
+void DS3234_init(){
+ SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
+
+ DS3234_write_byte( 0x8E ,0x60);
+ DS3234_write_byte( 0x8F ,0x08);
+ SPI2_Init();
+}
+
+
+void DS3234_setDate(unsigned long longHora, unsigned long longFecha){
+ unsigned short valueSet;
+ unsigned short hora;
+ unsigned short minuto;
+ unsigned short segundo;
+ unsigned short dia;
+ unsigned short mes;
+ unsigned short anio;
+
+ SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
+
+ hora = (short)(longHora / 3600);
+ minuto = (short)((longHora%3600) / 60);
+ segundo = (short)((longHora%3600) % 60);
+
+ dia = (short)(longFecha / 10000);
+ mes = (short)((longFecha%10000) / 100);
+ anio = (short)((longFecha%10000) % 100);
+
+ segundo = Dec2Bcd(segundo);
+ minuto = Dec2Bcd(minuto);
+ hora = Dec2Bcd(hora);
+ dia = Dec2Bcd(dia);
+ mes = Dec2Bcd(mes);
+ anio = Dec2Bcd(anio);
+
+ DS3234_write_byte( 0x80 , segundo);
+ DS3234_write_byte( 0x81 , minuto);
+ DS3234_write_byte( 0x82 , hora);
+ DS3234_write_byte( 0x84 , dia);
+ DS3234_write_byte( 0x85 , mes);
+ DS3234_write_byte( 0x86 , anio);
+
+ SPI2_Init();
+
+ return;
+}
+
+
+unsigned long RecuperarHoraRTC(){
+ unsigned short valueRead;
+ unsigned long hora;
+ unsigned long minuto;
+ unsigned long segundo;
+ unsigned long horaRTC;
+
+ SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
+
+ valueRead = DS3234_read_byte( 0x00 );
+ valueRead = Bcd2Dec(valueRead);
+ segundo = (long)valueRead;
+ valueRead = DS3234_read_byte( 0x01 );
+ valueRead = Bcd2Dec(valueRead);
+ minuto = (long)valueRead;
+
+ valueRead = DS3234_read_byte( 0x02 );
+ valueRead = Bcd2Dec(valueRead);
+ hora = (long)valueRead;
+
+ horaRTC = (hora*3600)+(minuto*60)+(segundo);
+
+
+ SPI2_Init();
+
+ return horaRTC;
+}
+
+
+unsigned long RecuperarFechaRTC(){
+ unsigned short valueRead;
+ unsigned long dia;
+ unsigned long mes;
+ unsigned long anio;
+ unsigned long fechaRTC;
+
+ SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
+
+ valueRead = DS3234_read_byte( 0x04 );
+ valueRead = Bcd2Dec(valueRead);
+ dia = (long)valueRead;
+
+ valueRead = DS3234_read_byte( 0x05 );
+ valueRead = Bcd2Dec(valueRead);
+ mes = (long)valueRead;
+ valueRead = DS3234_read_byte( 0x06 );
+ valueRead = Bcd2Dec(valueRead);
+ anio = (long)valueRead;
+
+ fechaRTC = (dia*10000)+(mes*100)+(anio);
+
+ SPI2_Init();
+
+ return fechaRTC;
+}
+#line 19 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -291,6 +429,8 @@ void main() {
 
  ConfiguracionPrincipal();
  ConfigurarGPS();
+ Delay_ms(1000);
+
 
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -356,13 +496,18 @@ void ConfiguracionPrincipal(){
 
  ANSELA = 0;
  ANSELB = 0;
+ TRISA2_bit = 0;
  TRISA3_bit = 0;
  TRISA4_bit = 0;
  TRISB4_bit = 0;
  TRISB12_bit = 0;
+
  TRISB10_bit = 1;
  TRISB11_bit = 1;
  TRISB13_bit = 1;
+ TRISB14_bit = 1;
+ TRISB15_bit = 1;
+
  INTCON2.GIE = 1;
 
 
@@ -387,12 +532,15 @@ void ConfiguracionPrincipal(){
  RPOR1bits.RP37R = 0x09;
  SPI2STAT.SPIEN = 1;
  SPI2_Init();
+ CS_DS3234 = 1;
+ CS_ADXL355 = 1;
 
 
  ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
 
 
- RPINR0 = 0x2E00;
+
+ RPINR0 = 0x2F00;
  INT1IE_bit = 0;
  INT1IF_bit = 0;
  IPC5bits.INT1IP = 0x01;
@@ -476,10 +624,6 @@ void Muestrear(){
  INT1IE_bit = 1;
  }
 
- if (U1RXIE_bit==1){
- U1RXIE_bit = 0;
- }
-
  RP2 = 1;
  Delay_us(20);
  RP2 = 0;
@@ -535,6 +679,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
+
  if ((banSetReloj==0)){
  if (buffer==0xC0){
  banTIGPS = 0;
@@ -548,6 +693,15 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
+ if ((banSetReloj==0)&&(buffer==0xA8)){
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ banEsc = 0;
+ banSetReloj = 1;
+ InterrupcionP2();
+ }
+
 
  if ((banSetReloj==0)&&(buffer==0xC3)){
  banEsc = 1;
@@ -558,8 +712,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  j++;
  }
  if ((banEsc==1)&&(buffer==0xC4)){
- horaSistema = RecuperarHoraRPI(tiempoRPI);
- fechaSistema = RecuperarFechaRPI(tiempoRPI);
+
+
+ DS3234_init();
+
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  banEsc = 0;
  banSetReloj = 1;
@@ -580,6 +738,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  banSetReloj = 0;
  SPI1BUF = 0xFF;
  }
+
 
 
  if ((banLec==1)&&(buffer==0xB0)){
@@ -654,66 +813,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  T1CON.TON = 0;
  banCiclo = 1;
  contTimer1 = 0;
- }
-
-}
-
-
-
-
-void urx_1() org IVT_ADDR_U1RXINTERRUPT {
-
- U1RXIF_bit = 0;
-
- byteGPS = U1RXREG;
- OERR_bit = 0;
-
- if (banTIGPS==0){
- if ((byteGPS==0x24)&&(i_gps==0)){
- banTIGPS = 1;
- }
- }
-
- if (banTIGPS==1){
- if (byteGPS!=0x2A){
- tramaGPS[i_gps] = byteGPS;
- banTFGPS = 0;
- if (i_gps<70){
- i_gps++;
- }
- if ((i_gps>1)&&(tramaGPS[1]!=0x47)){
- i_gps = 0;
- banTIGPS = 0;
- banTCGPS = 0;
- }
- } else {
- tramaGPS[i_gps] = byteGPS;
- banTIGPS = 2;
- banTCGPS = 1;
- }
- }
-
- if (banTCGPS==1){
- if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 && tramaGPS[18]==0x41 ){
- for (x=0;x<6;x++){
- datosGPS[x] = tramaGPS[7+x];
- }
- for (x=50;x<60;x++){
- if (tramaGPS[x]==0x2C){
- for (y=0;y<6;y++){
- datosGPS[6+y] = tramaGPS[x+y+1];
- }
- }
- }
- horaSistema = RecuperarHoraGPS(datosGPS);
- fechaSistema = RecuperarFechaGPS(datosGPS);
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- InterrupcionP2();
- banSetReloj = 1;
- } else {
- InterrupcionP2();
- banSetReloj = 0;
- }
  }
 
 }

@@ -13,7 +13,7 @@
 //Declaracion de constantes
 #define P2 2
 #define P1 0
-#define MCLR 28
+#define MCLR 28																	//Pin 38 GPIO						
 #define NUM_MUESTRAS 199
 #define NUM_ELEMENTOS 2506
 #define TIEMPO_SPI 10
@@ -40,7 +40,7 @@ char ext[8];
 char nombreArchivo[16];
 char comando[40];
 char dateGPS[22];
-unsigned int timeNewFile[2] = {22, 15};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
+unsigned int timeNewFile[2] = {0, 0};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
 unsigned short banNewFile;
 
 unsigned short contCiclos;
@@ -49,15 +49,16 @@ pthread_t h1;
 
 //Declaracion de funciones
 int ConfiguracionPrincipal();
-void NuevoCiclo();
+void NuevoCiclo();																//C:0xA3	F:0xF3
 void GuardarVector(unsigned char* tramaD);
 void CrearArchivo();
-void IniciarMuestreo();
-void DetenerMuestreo();
+void IniciarMuestreo();															//C:0xA1	F:0xF1
+void DetenerMuestreo();															//C:0xA2	F:0xF2
 void ConfigurarGPS();
-void ObtenerTiempoGPS();
-void MostrarTiempoGPS();
-void EnviarTiempoLocal();
+void ObtenerTiempoGPS();														//C:0xA5	F:0xF5
+void ObtenerTiempoPIC();														//C:0xA6	F:0xF6
+void EnviarTiempoLocal();														//C:0xA4	F:0xF4
+void ObtenerTiempoRTC();										 				//C:0xA8	F:0xF8
 
 int main(void) {
 
@@ -74,12 +75,10 @@ int main(void) {
   contador = 0;  
   
   ConfiguracionPrincipal(); 
-  digitalWrite (MCLR,  LOW); 
-  delay (100) ;
-  digitalWrite (MCLR, HIGH);
   sleep(5);
-  //ObtenerTiempoGPS();
+  
   EnviarTiempoLocal();
+  //ObtenerTiempoRTC();
   CrearArchivo();
     
   while(1){	
@@ -112,12 +111,12 @@ int ConfiguracionPrincipal(){
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2		
+	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_128);					//Clock divider RPi 3		
     bcm2835_spi_set_speed_hz(FreqSPI);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
 	
-	DetenerMuestreo();
+	//DetenerMuestreo();
 	
 	//Configuracion libreria WiringPi:
     wiringPiSetup();
@@ -125,7 +124,13 @@ int ConfiguracionPrincipal(){
     pinMode(P2, INPUT);
 	pinMode(MCLR, OUTPUT);
 	wiringPiISR (P1, INT_EDGE_RISING, NuevoCiclo);
-	wiringPiISR (P2, INT_EDGE_RISING, MostrarTiempoGPS);
+	wiringPiISR (P2, INT_EDGE_RISING, ObtenerTiempoPIC);
+	
+	//Genera un pulso para resetear el dsPIC:
+	digitalWrite (MCLR, HIGH);
+	delay (100) ;
+	digitalWrite (MCLR,  LOW); 
+	delay (100) ;
 	digitalWrite (MCLR, HIGH);
 	
 	printf("Configuracion completa\n");
@@ -164,9 +169,16 @@ void ObtenerTiempoGPS(){
 	bcm2835_spi_transfer(0xC0);		
 }
 
+void ObtenerTiempoRTC(){
+	printf("Obteniendo hora del RTC...\n");
+	bcm2835_spi_transfer(0xA8);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xF8);		
+}
 
-void MostrarTiempoGPS(){
-	printf("Hora GPS: ");	
+
+void ObtenerTiempoPIC(){
+	printf("Hora dsPIC: ");	
 	for (i=0;i<6;i++){
         buffer = bcm2835_spi_transfer(0x00);
         tiempoGPS[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
@@ -273,7 +285,7 @@ void NuevoCiclo(){
 
 void CrearArchivo(){
 	
-	//printf("   Entro\n");	
+	//printf("Crear archivo\n");	
 	
 	//Obtiene la hora y la fecha del sistema:
 	time_t t;
@@ -281,8 +293,8 @@ void CrearArchivo(){
 	t=time(NULL);
 	tm=localtime(&t);
 	//Cambia el estado de la bandera faltando un minuto para que se cumpla la hora fijada para la creacion de un archivo nuevo:
-	//if ((tm->tm_hour==23)&&((tm->tm_min==59))){
-    if ((tm->tm_hour==timeNewFile[0])&&((tm->tm_min==timeNewFile[1]-1)||(tm->tm_min==59))){
+	if ((tm->tm_hour==23)&&((tm->tm_min==59))){
+    //if ((tm->tm_hour==timeNewFile[0])&&((tm->tm_min==timeNewFile[1]-1)||(tm->tm_min==59))){
 		banNewFile = 2;	
 	}
 	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario

@@ -8,6 +8,7 @@ Configuracion: dsPIC33EP256MC202, XT=80MHz
 
 #include <ADXL355_SPI.c>
 #include <TIEMPO_GPS.c>
+#include <TIEMPO_RTC.c>
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -71,6 +72,8 @@ void main() {
 
      ConfiguracionPrincipal();
      ConfigurarGPS();
+     Delay_ms(1000);
+     //DS3234_init();
      
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
@@ -136,13 +139,18 @@ void ConfiguracionPrincipal(){
      //Configuracion de puertos
      ANSELA = 0;                                                                //Configura PORTA como digital     *
      ANSELB = 0;                                                                //Configura PORTB como digital     *
+     TRISA2_bit = 0;                                                            //Configura el pin A2 como salida  *
      TRISA3_bit = 0;                                                            //Configura el pin A3 como salida  *
      TRISA4_bit = 0;                                                            //Configura el pin A4 como salida  *
      TRISB4_bit = 0;                                                            //Configura el pin B4 como salida  *
      TRISB12_bit = 0;                                                           //Configura el pin B12 como salida *
+     
      TRISB10_bit = 1;                                                           //Configura el pin B10 como entrada *
      TRISB11_bit = 1;                                                           //Configura el pin B11 como entrada *
      TRISB13_bit = 1;                                                           //Configura el pin B13 como entrada *
+     TRISB14_bit = 1;
+     TRISB15_bit = 1;                                                           //Configura el pin B15 como entrada *
+     
      INTCON2.GIE = 1;                                                           //Habilita las interrupciones globales *
      
      //Configuracion del puerto UART1
@@ -167,12 +175,15 @@ void ConfiguracionPrincipal(){
      RPOR1bits.RP37R = 0x09;                                                    //Configura el SCK2 en el pin RB5/RP37 *
      SPI2STAT.SPIEN = 1;                                                        //Habilita el SPI2 *
      SPI2_Init();                                                               //Inicializa el modulo SPI2
+     CS_DS3234 = 1;                                                             //Pone en alto el CS del RTC
+     CS_ADXL355 = 1;                                                            //Pone en alto el CS del acelerometro
      
      //Configuracion del acelerometro
      ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                           //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
 
      //Configuracion de la interrupcion externa INT1
-     RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46
+     //RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46 (PPS)
+     RPINR0 = 0x2F00;                                                           //Asigna INT1 al RB15/RPI47 (SQW)
      INT1IE_bit = 0;                                                            //Habilita la interrupcion externa INT1
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
      IPC5bits.INT1IP = 0x01;                                                    //Prioridad en la interrupocion externa 1
@@ -255,10 +266,6 @@ void Muestrear(){
      if (INT1IE_bit==0){
         INT1IE_bit = 1;
      }
-     //Apaga la interrupcion por UARTRx
-     if (U1RXIE_bit==1){
-        U1RXIE_bit = 0;
-     }
      //Genera el pulso P2 para producir la interrupcion externa en la RPi
      RP2 = 1;
      Delay_us(20);
@@ -314,6 +321,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         }
      }
 
+     //**************************************************************************************************************************************************
      //Rutina para obtener la hora del GPS
      if ((banSetReloj==0)){
         if (buffer==0xC0){
@@ -327,9 +335,18 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         }
      }
      
+     //Rutina para obtener la hora del RTC
+     if ((banSetReloj==0)&&(buffer==0xA8)){
+        horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
+        fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
+        AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+        banEsc = 0;
+        banSetReloj = 1;
+        InterrupcionP2();
+     }
      
      //Rutina para obtener la hora de la RPi
-     if ((banSetReloj==0)&&(buffer==0xC3)){
+     if ((banSetReloj==0)&&(buffer==0xC3)){                                     //**Segun esto solo puedo igualar el reloj una sola vez al encender o reiniciar el dsPIC
          banEsc = 1;
          j = 0;
      }
@@ -338,8 +355,12 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         j++;
      }
      if ((banEsc==1)&&(buffer==0xC4)){
-        horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
-        fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
+        //horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
+        //fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
+        DS3234_init();                                                          //inicializa el RTC
+        //DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC con la hora recuperada de la RPi
+        horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
+        fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
         banEsc = 0;
         banSetReloj = 1;
@@ -360,6 +381,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         banSetReloj = 0;                                                        //Limpia la bandera de lectura
         SPI1BUF = 0xFF;
      }
+     //**************************************************************************************************************************************************
      
      //Rutina de lectura de los datos del acelerometro
      if ((banLec==1)&&(buffer==0xB0)){                                          //Verifica si la bandera de inicio de trama esta activa
@@ -440,62 +462,3 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//Interrupcion UART1
-void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
-
-     U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART
-
-     byteGPS = U1RXREG;                                                         //Lee el byte de la trama enviada por el GPS
-     OERR_bit = 0;                                                              //Limpia este bit para limpiar el FIFO UART
-     
-     if (banTIGPS==0){
-        if ((byteGPS==0x24)&&(i_gps==0)){                                       //Verifica si el primer byte recibido es el simbolo "$" que indica el inicio de una trama GPS
-           banTIGPS = 1;                                                        //Activa la bandera de inicio de trama
-        }
-     }
-
-     if (banTIGPS==1){
-        if (byteGPS!=0x2A){                                                     //0x2A = "*"
-           tramaGPS[i_gps] = byteGPS;                                           //LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS
-           banTFGPS = 0;                                                        //Limpia la bandera de final de trama
-           if (i_gps<70){
-              i_gps++;                                                          //Incrementa el valor del subindice mientras sea menor a 70
-           }
-           if ((i_gps>1)&&(tramaGPS[1]!=0x47)){                                 //Verifica si el segundo elemento guardado es diferente de G
-              i_gps = 0;                                                        //Limpia el subindice para almacenar la trama desde el principio
-              banTIGPS = 0;                                                     //Limpia la bandera de inicio de trama
-              banTCGPS = 0;                                                     //Limpia la bandera de trama completa
-           }
-        } else {
-           tramaGPS[i_gps] = byteGPS;
-           banTIGPS = 2;                                                        //Cambia el estado de la bandera de inicio de trama para no permitir que se almacene mas datos en la trama
-           banTCGPS = 1;                                                        //Activa la bandera de trama completa
-        }
-     }
-
-     if (banTCGPS==1){
-        if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 && tramaGPS[18]==0x41 ){      //"GPRMC" y "A"
-           for (x=0;x<6;x++){
-               datosGPS[x] = tramaGPS[7+x];                                     //Guarda los datos de hhmmss
-           }
-           for (x=50;x<60;x++){
-               if (tramaGPS[x]==0x2C){                                          //Busca el simbolo "," a partir de la posicion 50
-                   for (y=0;y<6;y++){
-                       datosGPS[6+y] = tramaGPS[x+y+1];                         //Guarda los datos de DDMMAA en la trama datosGPS
-                   }
-               }
-           }
-           horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
-           fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
-           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
-           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
-           banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
-        } else {
-           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
-           banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
-        }
-     }
-
-}
-
-

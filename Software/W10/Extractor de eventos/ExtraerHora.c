@@ -51,7 +51,7 @@ char ejeX[2];
 char ejeY[2];
 char ejeZ[2];
 
-unsigned int fechaEvento;
+unsigned int duracionEvento;
 unsigned int horaEvento;
 unsigned int tiempoInicio;
 unsigned int tiempoEvento;
@@ -105,8 +105,10 @@ void RecuperarVector() {
 	//Pide como parametros el nombre del archivo binario (sin extencion) y la hora del evento (UTC):
 	printf("Ingrese el nombre del archivo:\n");
 	scanf("%s", nombreArchivo);
-	printf("Ingrese la hora del evento (hhmmss):\n");
+	printf("Ingrese la hora del evento (segundo del dia):\n");
 	scanf("%d", &horaEvento);
+	printf("Ingrese la duracion (segundos):\n");
+	scanf("%d", &duracionEvento);
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,12 +131,13 @@ void RecuperarVector() {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	fread(tramaDatos, sizeof(char), tramaSize, lf);	
 	tiempoInicio = (tramaDatos[tramaSize-3]*3600)+(tramaDatos[tramaSize-2]*60)+(tramaDatos[tramaSize-1]);
-	tiempoEvento = ((horaEvento/10000)*3600)+(((horaEvento%10000)/100)*60)+(horaEvento%100);
-	tiempoTranscurrido = tiempoEvento - tiempoInicio - 120;
+	//tiempoEvento = ((horaEvento/10000)*3600)+(((horaEvento%10000)/100)*60)+(horaEvento%100);
+	tiempoEvento = horaEvento;
+	tiempoTranscurrido = tiempoEvento - tiempoInicio;
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	//Comrpueba el estado de la trama de datos para continuar con el proceso
+	//Comprueba el estado de la trama de datos para continuar con el proceso
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	//Se salta el numero de segundos que indique la variable tiempoTranscurrido:
 	for (x=0;x<(tiempoTranscurrido);x++){
@@ -143,7 +146,7 @@ void RecuperarVector() {
 	//Calcula el tiempo en segundos de la trama recuperada:
 	tiempoEventoTrama = ((int)tramaDatos[tramaSize-3]*3600)+((int)tramaDatos[tramaSize-2]*60)+((int)tramaDatos[tramaSize-1]);	
 	//Verifica si el minuto del tiempo local es diferente del minuto del tiempo de la trama recuperada:
-	if ((tiempoEventoTrama)==(tiempoEvento-120)){
+	if ((tiempoEventoTrama)==(tiempoEvento)){
 		printf("\nTrama OK\n");
 		banExtraer = 1;
 	} else {
@@ -177,14 +180,14 @@ void RecuperarVector() {
 		
 		
 		//Asigna espacio en la memoria para el nombre completo de la ruta:
-		char *rutaSalidaX = (char*)malloc(strlen(nombreArchivo)+5+10+3+3+5);
-		char *rutaSalidaY = (char*)malloc(strlen(nombreArchivo)+5+10+3+3+5);
-		char *rutaSalidaZ = (char*)malloc(strlen(nombreArchivo)+5+10+3+3+5);
+		char *rutaSalidaX = (char*)malloc(strlen(nombreArchivo)+5+14+3+3+5);
+		char *rutaSalidaY = (char*)malloc(strlen(nombreArchivo)+5+14+3+3+5);
+		char *rutaSalidaZ = (char*)malloc(strlen(nombreArchivo)+5+14+3+3+5);
 	
 		//Asignacion del nombre de la ruta y la extencion a los array de caracteres:
-		strcpy(rutaSalidaX, "./Eventos/");
-		strcpy(rutaSalidaY, "./Eventos/");
-		strcpy(rutaSalidaZ, "./Eventos/");
+		strcpy(rutaSalidaX, "./Hora Evento/");
+		strcpy(rutaSalidaY, "./Hora Evento/");
+		strcpy(rutaSalidaZ, "./Hora Evento/");
 		strcpy(nombreRed, "RSA");
 		strcpy(nombreEstacion, "CHA");
 		strcpy(ejeX, "X");
@@ -229,7 +232,7 @@ void RecuperarVector() {
 		fprintf(fileX, "%0.2d/", tramaDatos[tramaSize-6]);
 		fprintf(fileX, "%0.2d/", tramaDatos[tramaSize-5]);
 		fprintf(fileX, "%0.2d\n", tramaDatos[tramaSize-4]);
-		fprintf(fileX, "Duracion (seg): 300\n");
+		fprintf(fileX, "Duracion (seg): %d\n", (duracionEvento));
 		fprintf(fileX, "\n");
 		
 		fprintf(fileY, "Eje: Este\n");
@@ -241,7 +244,7 @@ void RecuperarVector() {
 		fprintf(fileY, "%0.2d/", tramaDatos[tramaSize-6]);
 		fprintf(fileY, "%0.2d/", tramaDatos[tramaSize-5]);
 		fprintf(fileY, "%0.2d\n", tramaDatos[tramaSize-4]);	
-		fprintf(fileY, "Duracion (seg): 300\n");		
+		fprintf(fileY, "Duracion (seg): %d\n", (duracionEvento));		
 		fprintf(fileY, "\n");
 		
 		fprintf(fileZ, "Eje: Z\n");
@@ -253,10 +256,10 @@ void RecuperarVector() {
 		fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-6]);
 		fprintf(fileZ, "%0.2d/", tramaDatos[tramaSize-5]);
 		fprintf(fileZ, "%0.2d\n", tramaDatos[tramaSize-4]);	
-		fprintf(fileZ, "Duracion (seg): 300\n");		
+		fprintf(fileZ, "Duracion (seg): %d\n", (duracionEvento));		
 		fprintf(fileZ, "\n");
 		
-		while (contMuestras<300){														//Se almacena el equivalente a 5 minutos de muestras (300 segundos)
+		while (contMuestras<duracionEvento){											//Se almacena el numero de muestras que indique la variable duracionEvento
 			fread(tramaDatos, sizeof(char), tramaSize, lf);				 				//Leo la cantidad establecida en la variable tramaSize del contenido del archivo lf y lo guardo en el vector tramaDatos 
 			for (i=0;i<tramaSize-5;i++){								 				//Recorro las 2005 muestras del vector tramaDatos, omitiendo los 5 ultimos que corresponden a la fecha y hora del modulo gps
 				if ((i%(10)==0)){						 								//Indica el inicio de un nuevo set de muestras

@@ -1,0 +1,8 @@
+#!/bin/bash
+
+echo " "
+sudo killall -q acelerografo
+sudo /home/pi/Ejecutables/setlocaltime
+echo " "
+
+exit 0

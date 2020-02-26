@@ -1,9 +1,9 @@
 0	1	mikroCdsPIC.exe -MSF -DBG -pP33EP256MC202 -DL -SSA -O11111114 -fo80 -N"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\Acelerografo.mcpds" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\" -SP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\" -IP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\Instrumentacion Presa\InstrumentacionPCh\Registro Continuo\Firmware\Acelerografo\" -IP"C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\" "Acelerografo.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_CType.mcl" "__Lib_CString.mcl" "__Lib_CStdlib.mcl" "__Lib_Conversions.mcl" "__Lib_SPI_12.mcl" "__Lib_UART_12_p24_p33.mcl"	 
 diagnostics: 0	121	Loading...	 
 diagnostics: 0	122	Compilation Started	adxl355_spi.c
-diagnostics: 499	123	Compiled Successfully	Acelerografo.c
-diagnostics: 0	127	All files Compiled in 172 ms	 
+diagnostics: 461	123	Compiled Successfully	Acelerografo.c
+diagnostics: 0	127	All files Compiled in 140 ms	 
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
-diagnostics: 0	128	Linked in 312 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 671 ms	 
-diagnostics: 0	103	Finished successfully: 17 feb. 2020, 10:58:42	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 219 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 531 ms	 
+diagnostics: 0	103	Finished successfully: 20 feb. 2020, 18:46:46	Acelerografo.mcpds

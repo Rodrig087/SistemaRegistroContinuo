@@ -2566,6 +2566,7 @@ cref_cm2con_bit
 cref_cm3con_bit
 cref_cm4con_bit
 cs_adxl355
+cs_ds3234
 cscna
 cscna
 cscna_bit
@@ -3250,6 +3251,10 @@ dpcu_6
 dpcu_6_bit
 dpcu_7
 dpcu_7_bit
+ds3234_init
+ds3234_read_byte
+ds3234_setdate
+ds3234_write_byte
 dsadr
 dsadr_0
 dsadr_0_bit
@@ -9043,8 +9048,10 @@ rcount_9
 rcount_9_bit
 recuperarfechagps
 recuperarfecharpi
+recuperarfechartc
 recuperarhoragps
 recuperarhorarpi
+recuperarhorartc
 refocon
 refoconbits
 refomd
@@ -12028,7 +12035,6 @@ uen1
 uldiv
 unused
 unused
-urx_1
 urxda
 urxda
 urxda

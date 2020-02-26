@@ -33,3 +33,5 @@ ls -l --block-size=K /media/PenDrive/Resultados
 echo " "
 echo "******************************************************************"
 echo " "
+
+exit 0
