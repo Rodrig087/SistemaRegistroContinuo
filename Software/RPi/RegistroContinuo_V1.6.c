@@ -1,5 +1,5 @@
 //Compilar:
-//gcc RegistroContinuo_V1.5.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi 
+//gcc RegistroContinuo_V1.6.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -41,6 +41,7 @@ char nombreArchivo[16];
 char comando[40];
 char dateGPS[22];
 unsigned int timeNewFile[2] = {0, 0};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
+unsigned short confGPS[2] = {0, 1};							                    //Parametros que se pasan para configurar el GPS (conf, NMA) cuando conf=1 realiza la configuracion del GPS y se realiza una sola vez la primera vez que es utilizado 
 unsigned short banNewFile;
 
 unsigned short contCiclos;
@@ -77,7 +78,7 @@ int main(void) {
   ConfiguracionPrincipal(); 
   sleep(5);
   
-  EnviarTiempoLocal();
+  //EnviarTiempoLocal();
   //ObtenerTiempoRTC();
   CrearArchivo();
     
@@ -135,14 +136,12 @@ int ConfiguracionPrincipal(){
 	
 }
 
-
 void IniciarMuestreo(){
 	printf("Iniciando el muestreo...\n");
 	bcm2835_spi_transfer(0xA0);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	bcm2835_spi_transfer(0xA0);	
 }
-
 
 void DetenerMuestreo(){
 	printf("Deteniendo el muestreo...\n");
@@ -151,20 +150,15 @@ void DetenerMuestreo(){
 	bcm2835_spi_transfer(0xAF);	
 }
 
-
-void ConfigurarGPS(){
-	printf("Configurando el GPS...\n");
-	bcm2835_spi_transfer(0xC2);
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xC2);		
-}
-
-
 void ObtenerTiempoGPS(){
 	printf("Obteniendo hora del GPS...\n");
-	bcm2835_spi_transfer(0xC0);
+	bcm2835_spi_transfer(0xA5);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xC0);		
+	for (x=0;x<2;x++){
+		bcm2835_spi_transfer(confGPS[x]);
+		bcm2835_delayMicroseconds(TIEMPO_SPI);		//Aqui me quede
+	}
+	bcm2835_spi_transfer(0xF5);	
 }
 
 void ObtenerTiempoRTC(){

@@ -24,10 +24,11 @@ Count=0
 Count=0
 ActiveImageIndex=-1
 [OPENED_FILES]
-Count=3
+Count=4
 File0=Acelerografo.c
 File1=ADXL355_SPI.c
 File2=TIEMPO_RTC.c
+File3=TIEMPO_GPS.c
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]

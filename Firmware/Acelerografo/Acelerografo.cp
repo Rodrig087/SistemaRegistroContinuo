@@ -98,19 +98,37 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
 
 
 
-void ConfigurarGPS(){
- UART1_Write_Text("$PMTK605*31\r\n");
+void ConfigurarGPS(short conf,short NMA){
+ if (conf==1){
+ UART1_Init(9600);
+
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
  UART1_Write_Text("$PMTK251,115200*1F\r\n");
  Delay_ms(1000);
  UART1_Init(115200);
+ }
+
  UART1_Write_Text("$PMTK313,1*2E\r\n");
- UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
  UART1_Write_Text("$PMTK319,1*24\r\n");
- UART1_Write_Text("$PMTK413*34\r\n");
+
  UART1_Write_Text("$PMTK513,1*28\r\n");
+
+ switch (NMA){
+ case 1:
+ UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+ break;
+ case 3:
+ UART1_Write_Text("$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+ break;
+ default:
+ UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+ break;
+ }
+
  Delay_ms(1000);
 }
+
+
 
 
 
@@ -428,8 +446,8 @@ void InterrupcionP2();
 void main() {
 
  ConfiguracionPrincipal();
- ConfigurarGPS();
- Delay_ms(1000);
+
+
 
 
  tasaMuestreo = 1;
@@ -513,7 +531,7 @@ void ConfiguracionPrincipal(){
 
  RPINR18bits.U1RXR = 0x22;
  RPOR0bits.RP35R = 0x01;
- UART1_Init(9600);
+ UART1_Init(115200);
  U1RXIE_bit = 0;
  U1RXIF_bit = 0;
  IPC2bits.U1RXIP = 0x04;
@@ -609,6 +627,8 @@ void Muestrear(){
  Delay_us(20);
  RP1 = 0;
 
+ TEST = 0;
+
  }
 
  contCiclos++;
@@ -643,10 +663,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  buffer = SPI1BUF;
 
 
- if (banMuestrear==0){
- if (buffer==0xA0){
+ if ((banMuestrear==0)&&(buffer==0xA0)){
  banMuestrear = 1;
-
  banCiclo = 0;
  contMuestras = 0;
  contCiclos = 0;
@@ -659,13 +677,29 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  INT1IE_bit = 1;
  }
  }
- }
 
 
- if (banMuestrear==1){
- if (buffer==0xAF){
+ if ((banMuestrear==1)&&(buffer==0xAF)){
  banInicio = 0;
  banMuestrear = 0;
+
+ banTI = 0;
+ banLec = 0;
+ banEsc = 0;
+ banSetReloj = 0;
+ banSetGPS = 0;
+ banTIGPS = 0;
+ banTFGPS = 0;
+ banTCGPS = 0;
+ banLeer = 0;
+ banConf = 0;
+ i = 0;
+ x = 0;
+ y = 0;
+ i_gps = 0;
+ contTimer1 = 0;
+ byteGPS = 0;
+
  ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
 
  if (INT1IE_bit==1){
@@ -676,7 +710,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  T1CON.TON = 0;
  }
  }
- }
 
 
 
@@ -685,6 +718,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  banTIGPS = 0;
  banTCGPS = 0;
  i_gps = 0;
+ ConfigurarGPS(0,1);
 
  if (U1RXIE_bit==0){
  U1RXIE_bit = 1;
@@ -712,10 +746,10 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  j++;
  }
  if ((banEsc==1)&&(buffer==0xC4)){
-
-
+ horaSistema = RecuperarHoraRPI(tiempoRPI);
+ fechaSistema = RecuperarFechaRPI(tiempoRPI);
  DS3234_init();
-
+ DS3234_setDate(horaSistema, fechaSistema);
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
@@ -813,6 +847,66 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  T1CON.TON = 0;
  banCiclo = 1;
  contTimer1 = 0;
+ }
+
+}
+
+
+
+void urx_1() org IVT_ADDR_U1RXINTERRUPT {
+
+ U1RXIF_bit = 0;
+
+ byteGPS = U1RXREG;
+ OERR_bit = 0;
+
+ if (banTIGPS==0){
+ if ((byteGPS==0x24)&&(i_gps==0)){
+ banTIGPS = 1;
+ }
+ }
+
+ if (banTIGPS==1){
+ if (byteGPS!=0x2A){
+ tramaGPS[i_gps] = byteGPS;
+ banTFGPS = 0;
+ if (i_gps<70){
+ i_gps++;
+ }
+ if ((i_gps>1)&&(tramaGPS[1]!=0x47)){
+ i_gps = 0;
+ banTIGPS = 0;
+ banTCGPS = 0;
+ }
+ } else {
+ tramaGPS[i_gps] = byteGPS;
+ banTIGPS = 2;
+ banTCGPS = 1;
+ }
+ }
+
+ if (banTCGPS==1){
+
+ if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 ){
+ for (x=0;x<6;x++){
+ datosGPS[x] = tramaGPS[7+x];
+ }
+ for (x=50;x<60;x++){
+ if (tramaGPS[x]==0x2C){
+ for (y=0;y<6;y++){
+ datosGPS[6+y] = tramaGPS[x+y+1];
+ }
+ }
+ }
+ horaSistema = RecuperarHoraGPS(datosGPS);
+ fechaSistema = RecuperarFechaGPS(datosGPS);
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ InterrupcionP2();
+ banSetReloj = 1;
+ } else {
+ InterrupcionP2();
+ banSetReloj = 0;
+ }
  }
 
 }

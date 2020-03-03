@@ -46,7 +46,7 @@ unsigned short banTC, banTI, banTF;                                             
 unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
 
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
+unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
 unsigned long horaSistema, fechaSistema;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -71,8 +71,8 @@ void InterrupcionP2();
 void main() {
 
      ConfiguracionPrincipal();
-     ConfigurarGPS();
-     Delay_ms(1000);
+     //ConfigurarGPS(1);
+     //Delay_ms(1000);
      //DS3234_init();
      
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
@@ -84,10 +84,12 @@ void main() {
      banEsc = 0;
      banCiclo = 0;
      banSetReloj = 0;
+     
      banSetGPS = 0;
      banTIGPS = 0;
      banTFGPS = 0;
      banTCGPS = 0;
+     stsGPS = 0;
 
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
      banInicio = 0;                                                             //Bandera de inicio de muestreo
@@ -156,7 +158,7 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto UART1
      RPINR18bits.U1RXR = 0x22;                                                  //Configura el pin RB2/RPI34 como Rx1 *
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
-     UART1_Init(9600);                                                          //Inicializa el UART1 con una velocidad de 9600 baudios
+     UART1_Init(115200);                                                        //Inicializa el UART1 con una velocidad de 115200 baudios
      U1RXIE_bit = 0;                                                            //Desabilita la interrupcion por UART1 RX *
      U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
@@ -251,7 +253,9 @@ void Muestrear(){
          RP1 = 1;                                                               //Genera el pulso P1 para producir la interrupcion en la RPi
          Delay_us(20);
          RP1 = 0;
-
+         
+         TEST = 0;
+         
      }
 
      contCiclos++;                                                              //Incrementa el contador de ciclos
@@ -286,56 +290,73 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
 
      //Rutina para inicio del muestreo
-     if (banMuestrear==0){
-        if (buffer==0xA0){
-           banMuestrear = 1;                                                    //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
-           //ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                     //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-           banCiclo = 0;
-           contMuestras = 0;
-           contCiclos = 0;
-           contFIFO = 0;
-           numFIFO = 0;
-           numSetsFIFO = 0;
-           contTimer1 = 0;
-           banInicio = 1;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-           if (INT1IE_bit==0){
-              INT1IE_bit = 1;
-           }
+     if ((banMuestrear==0)&&(buffer==0xA0)){
+        banMuestrear = 1;                                                       //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+        banCiclo = 0;
+        contMuestras = 0;
+        contCiclos = 0;
+        contFIFO = 0;
+        numFIFO = 0;
+        numSetsFIFO = 0;
+        contTimer1 = 0;
+        banInicio = 1;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+        if (INT1IE_bit==0){
+           INT1IE_bit = 1;
         }
      }
      
      //Rutina para detener el muestreo
-     if (banMuestrear==1){
-        if (buffer==0xAF){
-           banInicio = 0;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-           banMuestrear = 0;                                                    //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
-           ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                     //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-           //Desabilita la interrupcion INT1 si esta habilitada:
-           if (INT1IE_bit==1){
-              INT1IE_bit = 0;
-           }
-           //Desabilita la interrupcion TMR1 si esta habilitada:
-           if (T1CON.TON==1){
-              T1CON.TON = 0;
-           }
+     if ((banMuestrear==1)&&(buffer==0xAF)){
+        banInicio = 0;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+        banMuestrear = 0;                                                    //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
+           
+        banTI = 0;
+        banLec = 0;
+        banEsc = 0;
+        banSetReloj = 0;
+        banSetGPS = 0;
+        banTIGPS = 0;
+        banTFGPS = 0;
+        banTCGPS = 0;
+        banLeer = 0;
+        banConf = 0;
+        i = 0;
+        x = 0;
+        y = 0;
+        i_gps = 0;
+        contTimer1 = 0;
+        byteGPS = 0;
+           
+        ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                        //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+        //Desabilita la interrupcion INT1 si esta habilitada:
+        if (INT1IE_bit==1){
+           INT1IE_bit = 0;
+        }
+        //Desabilita la interrupcion TMR1 si esta habilitada:
+        if (T1CON.TON==1){
+           T1CON.TON = 0;
         }
      }
 
      //**************************************************************************************************************************************************
      //Rutina para obtener la hora del GPS
-     if ((banSetReloj==0)){
-        if (buffer==0xC0){
-           banTIGPS = 0;                                                        //Limpia la bandera de inicio de trama  del GPS
-           banTCGPS = 0;                                                        //Limpia la bandera de trama completa
-           i_gps = 0;                                                           //Limpia el subindice de la trama GPS
-           //Habilita interrupcion por UART1Rx si esta desabilitada:
-           if (U1RXIE_bit==0){
-              U1RXIE_bit = 1;
-           }
+     if ((banSetReloj==0)&&(buffer==0xA5)){
+        stsGPS = 1;
+        i = 0;                                                                  ///Aqui me quede
+     }
+     if ((stsGPS==1)&&(buffer=!0xA5)&&(buffer!=0xF5)){
+        ConfigurarGPS(0,1);                                                     //Configura el GPS (Configurar,NMA)
+        banTIGPS = 0;                                                           //Limpia la bandera de inicio de trama  del GPS
+        banTCGPS = 0;                                                           //Limpia la bandera de trama completa
+        i_gps = 0;                                                              //Limpia el subindice de la trama GPS
+        //Habilita interrupcion por UART1Rx si esta desabilitada:
+        if (U1RXIE_bit==0){
+           U1RXIE_bit = 1;
         }
      }
      
-     //Rutina para obtener la hora del RTC
+     
+     //Rutina para obtener la hora del RTC:
      if ((banSetReloj==0)&&(buffer==0xA8)){
         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
@@ -345,8 +366,8 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         InterrupcionP2();
      }
      
-     //Rutina para obtener la hora de la RPi
-     if ((banSetReloj==0)&&(buffer==0xC3)){                                     //**Segun esto solo puedo igualar el reloj una sola vez al encender o reiniciar el dsPIC
+     //Rutina para obtener la hora de la RPi:
+     if ((banSetReloj==0)&&(buffer==0xC3)){
          banEsc = 1;
          j = 0;
      }
@@ -355,10 +376,10 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         j++;
      }
      if ((banEsc==1)&&(buffer==0xC4)){
-        //horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
-        //fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
+        horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
+        fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
         DS3234_init();                                                          //inicializa el RTC
-        //DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC con la hora recuperada de la RPi
+        DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC con la hora recuperada de la RPi
         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
@@ -456,6 +477,66 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
         T1CON.TON = 0;                                                          //Apaga el Timer1
         banCiclo = 1;                                                           //Activa la bandera que indica que se completo un ciclo de medicion
         contTimer1 = 0;                                                         //Limpia el contador de interrupciones por Timer1
+     }
+
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Interrupcion UART1
+void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
+
+     U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART
+
+     byteGPS = U1RXREG;                                                         //Lee el byte de la trama enviada por el GPS
+     OERR_bit = 0;                                                              //Limpia este bit para limpiar el FIFO UART
+
+     if (banTIGPS==0){
+        if ((byteGPS==0x24)&&(i_gps==0)){                                       //Verifica si el primer byte recibido es el simbolo "$" que indica el inicio de una trama GPS
+           banTIGPS = 1;                                                        //Activa la bandera de inicio de trama
+        }
+     }
+
+     if (banTIGPS==1){
+        if (byteGPS!=0x2A){                                                     //0x2A = "*"
+           tramaGPS[i_gps] = byteGPS;                                           //LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS
+           banTFGPS = 0;                                                        //Limpia la bandera de final de trama
+           if (i_gps<70){
+              i_gps++;                                                          //Incrementa el valor del subindice mientras sea menor a 70
+           }
+           if ((i_gps>1)&&(tramaGPS[1]!=0x47)){                                 //Verifica si el segundo elemento guardado es diferente de G
+              i_gps = 0;                                                        //Limpia el subindice para almacenar la trama desde el principio
+              banTIGPS = 0;                                                     //Limpia la bandera de inicio de trama
+              banTCGPS = 0;                                                     //Limpia la bandera de trama completa
+           }
+        } else {
+           tramaGPS[i_gps] = byteGPS;
+           banTIGPS = 2;                                                        //Cambia el estado de la bandera de inicio de trama para no permitir que se almacene mas datos en la trama
+           banTCGPS = 1;                                                        //Activa la bandera de trama completa
+        }
+     }
+
+     if (banTCGPS==1){
+        //if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 && tramaGPS[18]==0x41 ){      //"GPRMC" y "A"
+        if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 ){      //"GPRMC"
+           for (x=0;x<6;x++){
+               datosGPS[x] = tramaGPS[7+x];                                     //Guarda los datos de hhmmss
+           }
+           for (x=50;x<60;x++){
+               if (tramaGPS[x]==0x2C){                                          //Busca el simbolo "," a partir de la posicion 50
+                   for (y=0;y<6;y++){
+                       datosGPS[6+y] = tramaGPS[x+y+1];                         //Guarda los datos de DDMMAA en la trama datosGPS
+                   }
+               }
+           }
+           horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
+           fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
+           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
+           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
+           banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
+        } else {
+           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
+           banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
+        }
      }
 
 }

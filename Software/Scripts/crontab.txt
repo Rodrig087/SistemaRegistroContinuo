@@ -1,0 +1,2 @@
+0 0 * * * /usr/local/bin/registrocontinuo stop
+1 0 * * * /usr/local/bin/registrocontinuo start

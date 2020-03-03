@@ -1,0 +1,15 @@
+Chanlud:
+#Configuracion ip estatica estacion Chanlud
+#interface eth0
+#static ip_address=192.170.110.35
+#static routers=192.170.110.135
+#static domain_name_servers=192.170.100.250
+
+
+Labrado:
+#Configuracion ip estatica estacion Labrado
+#interface eth0
+#static ip_address=192.170.109.136
+#static routers=192.170.109.135
+#static domain_name_servers=192.170.100.249
+
