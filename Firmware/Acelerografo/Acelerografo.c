@@ -4,6 +4,7 @@ Fecha de creacion: 14/03/2019
 Configuracion: dsPIC33EP256MC202, XT=80MHz
 ---------------------------------------------------------------------------------------------------------------------------*/
 
+
 ////////////////////////////////////////////////////         Librerias         /////////////////////////////////////////////////////////////
 
 #include <ADXL355_SPI.c>
@@ -47,6 +48,7 @@ unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
+short confGPS[2];
 unsigned long horaSistema, fechaSistema;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -128,7 +130,7 @@ void main() {
 
 //////////////////////////////////////////////////////////////// Funciones ////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//****************************************************************************************************************************************
 // Funcion para realizar la configuracion principal
 void ConfiguracionPrincipal(){
      
@@ -201,9 +203,9 @@ void ConfiguracionPrincipal(){
      Delay_ms(200);                                                             //Espera hasta que se estabilicen los cambios
 
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//****************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//****************************************************************************************************************************************
 //Funcion para relizar el muesteo
 void Muestrear(){
 
@@ -261,9 +263,9 @@ void Muestrear(){
      contCiclos++;                                                              //Incrementa el contador de ciclos
 
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//****************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//****************************************************************************************************************************************
 //Funcion para realizar la interrupcion en la RPi
  void InterrupcionP2(){
      //Habilita la interrupcion INT1 para incrementar la hora del sistema con cada pulso PPS
@@ -277,20 +279,18 @@ void Muestrear(){
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 
 ////////////////////////////////////////////////////////////// Interrupciones /////////////////////////////////////////////////////////////
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Interrupcion SPI1
 void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 
      SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI
      buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
 
-     //Rutina para inicio del muestreo
-     if ((banMuestrear==0)&&(buffer==0xA0)){
+     //************************************************************************************************************************************
+     //Rutina para inicio del muestreo (C:0xA1   F:0xF1):
+     if ((banMuestrear==0)&&(buffer==0xA1)){
         banMuestrear = 1;                                                       //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
         banCiclo = 0;
         contMuestras = 0;
@@ -305,10 +305,10 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         }
      }
      
-     //Rutina para detener el muestreo
-     if ((banMuestrear==1)&&(buffer==0xAF)){
-        banInicio = 0;                                                       //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-        banMuestrear = 0;                                                    //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
+     //Rutina para detener el muestreo (C:0xA2   F:0xF2):
+     if ((banMuestrear==1)&&(buffer==0xA2)){
+        banInicio = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+        banMuestrear = 0;                                                       //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
            
         banTI = 0;
         banLec = 0;
@@ -337,45 +337,34 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            T1CON.TON = 0;
         }
      }
+     
+     //Rutina de lectura de los datos del acelerometro (C:0xA3   F:0xF3):
+     if ((banLec==1)&&(buffer==0xA3)){                                          //Verifica si la bandera de inicio de trama esta activa
+        banLec = 2;                                                             //Activa la bandera de lectura
+        i = 0;
+        SPI1BUF = tramaCompleta[i];
+     }
+     if ((banLec==2)&&(buffer!=0xF3)){
+        SPI1BUF = tramaCompleta[i];
+        i++;
+     }
+     if ((banLec==2)&&(buffer==0xF3)){                                          //Si detecta el delimitador de final de trama:
+        banLec = 0;                                                             //Limpia la bandera de lectura                        ****AQUI Me QUEDE
+        SPI1BUF = 0xFF;
+     }
+     //************************************************************************************************************************************
 
-     //**************************************************************************************************************************************************
-     //Rutina para obtener la hora del GPS
-     if ((banSetReloj==0)&&(buffer==0xA5)){
-        stsGPS = 1;
-        i = 0;                                                                  ///Aqui me quede
-     }
-     if ((stsGPS==1)&&(buffer=!0xA5)&&(buffer!=0xF5)){
-        ConfigurarGPS(0,1);                                                     //Configura el GPS (Configurar,NMA)
-        banTIGPS = 0;                                                           //Limpia la bandera de inicio de trama  del GPS
-        banTCGPS = 0;                                                           //Limpia la bandera de trama completa
-        i_gps = 0;                                                              //Limpia el subindice de la trama GPS
-        //Habilita interrupcion por UART1Rx si esta desabilitada:
-        if (U1RXIE_bit==0){
-           U1RXIE_bit = 1;
-        }
-     }
-     
-     
-     //Rutina para obtener la hora del RTC:
-     if ((banSetReloj==0)&&(buffer==0xA8)){
-        horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
-        fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
-        AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-        banEsc = 0;
-        banSetReloj = 1;
-        InterrupcionP2();
-     }
-     
-     //Rutina para obtener la hora de la RPi:
-     if ((banSetReloj==0)&&(buffer==0xC3)){
+     //************************************************************************************************************************************
+     //Rutina para obtener la hora de la RPi (C:0xA4   F:0xF4):
+     if ((banSetReloj==0)&&(buffer==0xA4)){
          banEsc = 1;
          j = 0;
      }
-     if ((banEsc==1)&&(buffer!=0xC3)&&(buffer!=0xC4)){
+     if ((banEsc==1)&&(buffer!=0xA4)&&(buffer!=0xF4)){
         tiempoRPI[j] = buffer;
         j++;
      }
-     if ((banEsc==1)&&(buffer==0xC4)){
+     if ((banEsc==1)&&(buffer==0xF4)){
         horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
         fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
         DS3234_init();                                                          //inicializa el RTC
@@ -388,39 +377,54 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         InterrupcionP2();
      }
      
-     //Rutina para enviar la hora local a la RPi
-     if (banSetReloj==1){
+     //Rutina para enviar la hora local a la RPi (C:0xA5   F:0xF5):
+     if ((banSetReloj==1)&&(buffer==0xA5)){
         banSetReloj = 2;
         j = 0;
         SPI1BUF = tiempo[j];
      }
-     if ((banSetReloj==2)&&(buffer!=0xC1)){
+     if ((banSetReloj==2)&&(buffer!=0xF5)){
         SPI1BUF = tiempo[j];
         j++;
      }
-     if ((banSetReloj==2)&&(buffer==0xC1)){                                     //Si detecta el delimitador de final de trama:
+     if ((banSetReloj==2)&&(buffer==0xF5)){                                     //Si detecta el delimitador de final de trama:
         banSetReloj = 0;                                                        //Limpia la bandera de lectura
         SPI1BUF = 0xFF;
      }
-     //**************************************************************************************************************************************************
      
-     //Rutina de lectura de los datos del acelerometro
-     if ((banLec==1)&&(buffer==0xB0)){                                          //Verifica si la bandera de inicio de trama esta activa
-        banLec = 2;                                                             //Activa la bandera de lectura
+     //Rutina para obtener la hora del GPS (C:0xA6   F:0xF6):
+     if ((stsGPS==0)&&(banSetReloj==0)&&(buffer==0xA6)){
+        stsGPS = 1;
         i = 0;
-        SPI1BUF = tramaCompleta[i];
      }
-     if ((banLec==2)&&(buffer!=0xB1)){
-        SPI1BUF = tramaCompleta[i];
+     if ((stsGPS==1)&&(buffer=!0xA6)&&(buffer!=0xF6)){
+        confGPS[i] = buffer;
         i++;
      }
-     if ((banLec==2)&&(buffer==0xB1)){                                          //Si detecta el delimitador de final de trama:
-        banLec = 0;                                                             //Limpia la bandera de lectura
-        SPI1BUF = 0xFF;
+     if ((stsGPS==1)&&(buffer==0xF6)){
+        stsGPS = 0;
+        ConfigurarGPS(confGPS[0],confGPS[1]);                                   //Configura el GPS (Configurar,NMA)
+        banTIGPS = 0;                                                           //Limpia la bandera de inicio de trama  del GPS
+        banTCGPS = 0;                                                           //Limpia la bandera de trama completa
+        i_gps = 0;                                                              //Limpia el subindice de la trama GPS
+        //Habilita interrupcion por UART1Rx si esta desabilitada:
+        if (U1RXIE_bit==0){
+           U1RXIE_bit = 1;
+        }
      }
-     
-}
 
+     //Rutina para obtener la hora del RTC (C:0xA7   F:0xF7):
+     if ((banSetReloj==0)&&(buffer==0xA7)){
+        horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
+        fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
+        AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+        banEsc = 0;
+        banSetReloj = 1;
+        InterrupcionP2();
+     }
+     //************************************************************************************************************************************
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //Interrupcion INT1
@@ -533,13 +537,8 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
            InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
            banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora GPS
-        } else {
-           InterrupcionP2();                                                    //Genera el pulso P2 para producir la interrupcion en la RPi
-           banSetReloj = 0;                                                     //Limpia la bandera para permitir otra peticion de toma de datos del GPS
         }
      }
 
 }
-
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

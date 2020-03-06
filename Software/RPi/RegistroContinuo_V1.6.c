@@ -50,16 +50,15 @@ pthread_t h1;
 
 //Declaracion de funciones
 int ConfiguracionPrincipal();
-void NuevoCiclo();																//C:0xA3	F:0xF3
 void GuardarVector(unsigned char* tramaD);
 void CrearArchivo();
 void IniciarMuestreo();															//C:0xA1	F:0xF1
 void DetenerMuestreo();															//C:0xA2	F:0xF2
-void ConfigurarGPS();
-void ObtenerTiempoGPS();														//C:0xA5	F:0xF5
-void ObtenerTiempoPIC();														//C:0xA6	F:0xF6
+void NuevoCiclo();																//C:0xA3	F:0xF3
 void EnviarTiempoLocal();														//C:0xA4	F:0xF4
-void ObtenerTiempoRTC();										 				//C:0xA8	F:0xF8
+void ObtenerTiempoPIC();														//C:0xA5	F:0xF5
+void ObtenerTiempoGPS();														//C:0xA6	F:0xF6
+void ObtenerTiempoRTC();										 				//C:0xA7	F:0xF7
 
 int main(void) {
 

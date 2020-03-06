@@ -390,7 +390,7 @@ unsigned long RecuperarFechaRTC(){
 
  return fechaRTC;
 }
-#line 19 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 20 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -421,7 +421,8 @@ unsigned short banTC, banTI, banTF;
 unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
 
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS;
+unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
+short confGPS[2];
 unsigned long horaSistema, fechaSistema;
 
 
@@ -459,10 +460,12 @@ void main() {
  banEsc = 0;
  banCiclo = 0;
  banSetReloj = 0;
+
  banSetGPS = 0;
  banTIGPS = 0;
  banTFGPS = 0;
  banTCGPS = 0;
+ stsGPS = 0;
 
  banMuestrear = 0;
  banInicio = 0;
@@ -654,16 +657,14 @@ void Muestrear(){
 
 
 
-
-
-
 void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
  SPI1IF_bit = 0;
  buffer = SPI1BUF;
 
 
- if ((banMuestrear==0)&&(buffer==0xA0)){
+
+ if ((banMuestrear==0)&&(buffer==0xA1)){
  banMuestrear = 1;
  banCiclo = 0;
  contMuestras = 0;
@@ -679,7 +680,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
- if ((banMuestrear==1)&&(buffer==0xAF)){
+ if ((banMuestrear==1)&&(buffer==0xA2)){
  banInicio = 0;
  banMuestrear = 0;
 
@@ -712,40 +713,32 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
-
- if ((banSetReloj==0)){
- if (buffer==0xC0){
- banTIGPS = 0;
- banTCGPS = 0;
- i_gps = 0;
- ConfigurarGPS(0,1);
-
- if (U1RXIE_bit==0){
- U1RXIE_bit = 1;
+ if ((banLec==1)&&(buffer==0xA3)){
+ banLec = 2;
+ i = 0;
+ SPI1BUF = tramaCompleta[i];
  }
+ if ((banLec==2)&&(buffer!=0xF3)){
+ SPI1BUF = tramaCompleta[i];
+ i++;
  }
- }
-
-
- if ((banSetReloj==0)&&(buffer==0xA8)){
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- banEsc = 0;
- banSetReloj = 1;
- InterrupcionP2();
+ if ((banLec==2)&&(buffer==0xF3)){
+ banLec = 0;
+ SPI1BUF = 0xFF;
  }
 
 
- if ((banSetReloj==0)&&(buffer==0xC3)){
+
+
+ if ((banSetReloj==0)&&(buffer==0xA4)){
  banEsc = 1;
  j = 0;
  }
- if ((banEsc==1)&&(buffer!=0xC3)&&(buffer!=0xC4)){
+ if ((banEsc==1)&&(buffer!=0xA4)&&(buffer!=0xF4)){
  tiempoRPI[j] = buffer;
  j++;
  }
- if ((banEsc==1)&&(buffer==0xC4)){
+ if ((banEsc==1)&&(buffer==0xF4)){
  horaSistema = RecuperarHoraRPI(tiempoRPI);
  fechaSistema = RecuperarFechaRPI(tiempoRPI);
  DS3234_init();
@@ -759,34 +752,49 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
- if (banSetReloj==1){
+ if ((banSetReloj==1)&&(buffer==0xA5)){
  banSetReloj = 2;
  j = 0;
  SPI1BUF = tiempo[j];
  }
- if ((banSetReloj==2)&&(buffer!=0xC1)){
+ if ((banSetReloj==2)&&(buffer!=0xF5)){
  SPI1BUF = tiempo[j];
  j++;
  }
- if ((banSetReloj==2)&&(buffer==0xC1)){
+ if ((banSetReloj==2)&&(buffer==0xF5)){
  banSetReloj = 0;
  SPI1BUF = 0xFF;
  }
 
 
-
- if ((banLec==1)&&(buffer==0xB0)){
- banLec = 2;
+ if ((stsGPS==0)&&(banSetReloj==0)&&(buffer==0xA6)){
+ stsGPS = 1;
  i = 0;
- SPI1BUF = tramaCompleta[i];
  }
- if ((banLec==2)&&(buffer!=0xB1)){
- SPI1BUF = tramaCompleta[i];
+ if ((stsGPS==1)&&(buffer=!0xA6)&&(buffer!=0xF6)){
+ confGPS[i] = buffer;
  i++;
  }
- if ((banLec==2)&&(buffer==0xB1)){
- banLec = 0;
- SPI1BUF = 0xFF;
+ if ((stsGPS==1)&&(buffer==0xF6)){
+ stsGPS = 0;
+ ConfigurarGPS(confGPS[0],confGPS[1]);
+ banTIGPS = 0;
+ banTCGPS = 0;
+ i_gps = 0;
+
+ if (U1RXIE_bit==0){
+ U1RXIE_bit = 1;
+ }
+ }
+
+
+ if ((banSetReloj==0)&&(buffer==0xA7)){
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ banEsc = 0;
+ banSetReloj = 1;
+ InterrupcionP2();
  }
 
 }
@@ -903,9 +911,6 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  InterrupcionP2();
  banSetReloj = 1;
- } else {
- InterrupcionP2();
- banSetReloj = 0;
  }
  }
 

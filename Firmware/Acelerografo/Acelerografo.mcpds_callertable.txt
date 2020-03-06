@@ -38,26 +38,6 @@ urx_1
 	InterrupcionP2
 spi_1
 	ADXL355_write_byte
-	ConfigurarGPS
-		UART1_Init
-		UART1_Write_Text
-			UART1_Write
-	RecuperarHoraRTC
-		SPI2_Init_Advanced
-		DS3234_read_byte
-			SPI2_Write
-			SPI2_Read
-		Bcd2Dec
-		SPI2_Init
-		_Multiply_32x32
-	RecuperarFechaRTC
-		SPI2_Init_Advanced
-		DS3234_read_byte
-		Bcd2Dec
-		SPI2_Init
-		_Multiply_32x32
-	AjustarTiempoSistema
-	InterrupcionP2
 	RecuperarHoraRPI
 		_Multiply_32x32
 	RecuperarFechaRPI
@@ -74,6 +54,26 @@ spi_1
 		SPI2_Init
 		_Divide_32x32
 		_Modulus_32x32
+	RecuperarHoraRTC
+		SPI2_Init_Advanced
+		DS3234_read_byte
+			SPI2_Write
+			SPI2_Read
+		Bcd2Dec
+		SPI2_Init
+		_Multiply_32x32
+	RecuperarFechaRTC
+		SPI2_Init_Advanced
+		DS3234_read_byte
+		Bcd2Dec
+		SPI2_Init
+		_Multiply_32x32
+	AjustarTiempoSistema
+	InterrupcionP2
+	ConfigurarGPS
+		UART1_Init
+		UART1_Write_Text
+			UART1_Write
 Timer1Int
 	ADXL355_read_byte
 	ADXL355_read_FIFO

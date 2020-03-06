@@ -2332,6 +2332,7 @@ con_cm1con_bit
 con_cm2con_bit
 con_cm3con_bit
 con_cm4con_bit
+confgps
 configuracionprincipal
 configurargps
 contciclos
@@ -10754,6 +10755,7 @@ stsel
 stsel_bit
 stsel_u1mode_bit
 stsel_u2mode_bit
+stsgps
 swap
 swap
 swap

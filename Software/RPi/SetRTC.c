@@ -29,7 +29,7 @@ unsigned short banFile;
 unsigned short banNewFile;
 unsigned short numBytes;
 unsigned short contMuestras;
-unsigned char tiempoGPS[8];
+unsigned char tiempoPIC[8];
 unsigned char tiempoLocal[8];
 unsigned char tramaDatos[NUM_ELEMENTOS];
 
@@ -40,7 +40,7 @@ char ext[8];
 char nombreArchivo[16];
 char comando[40];
 char dateGPS[22];
-unsigned int timeNewFile[2] = {22, 15};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
+unsigned int timeNewFile[2] = {0, 0};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
 unsigned short banNewFile;
 
 unsigned short contCiclos;
@@ -49,14 +49,17 @@ pthread_t h1;
 
 //Declaracion de funciones
 int ConfiguracionPrincipal();
-void DetenerMuestreo();
-void EnviarTiempoLocal();
-void ObtenerTiempoPIC();
+void EnviarTiempoLocal();														//C:0xA4	F:0xF4
+void ObtenerTiempoPIC();														//C:0xA5	F:0xF5
+void ObtenerTiempoGPS();														//C:0xA6	F:0xF6
+void ObtenerTiempoRTC();										 				//C:0xA7	F:0xF7
+
+
 
 int main(void) {
 
   printf("Iniciando...\n");
-  
+
   //Inicializa las variables:
   i = 0;
   x = 0;
@@ -66,11 +69,11 @@ int main(void) {
   numBytes = 0;
   contCiclos = 0;
   contador = 0;  
-  
+
   ConfiguracionPrincipal();  
   sleep(5);
   EnviarTiempoLocal();
-         
+
   sleep(1);
   return 0;
 
@@ -78,7 +81,7 @@ int main(void) {
 
 
 int ConfiguracionPrincipal(){
-	
+
 	//Reinicia el modulo SPI
 	system("sudo rmmod  spi_bcm2835");
 	bcm2835_delayMicroseconds(500);
@@ -96,92 +99,90 @@ int ConfiguracionPrincipal(){
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_128);					//Clock divider RPi 3		
+	//bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2	
+	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);					//Clock divider RPi 3	
     bcm2835_spi_set_speed_hz(FreqSPI);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
-		
+
 	//Configuracion libreria WiringPi:
     wiringPiSetup();
     pinMode(P2, INPUT);
 	pinMode(MCLR, OUTPUT);
 	wiringPiISR (P2, INT_EDGE_RISING, ObtenerTiempoPIC);
-	
+
 	//Genera un pulso para resetear el dsPIC:
 	digitalWrite (MCLR, HIGH);
 	delay (100) ;
 	digitalWrite (MCLR,  LOW); 
 	delay (100) ;
 	digitalWrite (MCLR, HIGH);
-	
-	printf("Configuracion completa\n");
-	
-}
 
-void DetenerMuestreo(){
-	printf("Deteniendo el muestreo...\n");
-	bcm2835_spi_transfer(0xAF);
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xAF);	
+	printf("Configuracion completa\n");
+
 }
 
 void EnviarTiempoLocal(){
 	
 	//Obtiene la hora y la fecha del sistema:
-	
+
 	printf("Hora local: ");
-		
+
 	time_t t;
 	struct tm *tm;
 	t=time(NULL);
 	tm=localtime(&t);
-		
+
 	tiempoLocal[0] = tm->tm_mday;												//Dia del mes (0-31)
 	tiempoLocal[1] = tm->tm_mon+1;												//Mes desde Enero (0-11)
 	tiempoLocal[2] = tm->tm_year-100;											//Anio (contado desde 1900)
 	tiempoLocal[3] = tm->tm_hour;												//Hora
 	tiempoLocal[4] = tm->tm_min;												//Minuto
 	tiempoLocal[5] = tm->tm_sec;												//Segundo 
-	
+
 	for (i=0;i<6;i++){
 		printf("%0.2d ",tiempoLocal[i]);	
 	}
 	printf("\n");	
-	
-	bcm2835_spi_transfer(0xC3);                                                 //Envia el delimitador de inicio de trama
+
+	bcm2835_spi_transfer(0xA4);                                                 //Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI); 
-		
+
 	for (i=0;i<6;i++){
-        buffer = bcm2835_spi_transfer(tiempoLocal[i]);							//Envia los 6 datos de la trama tiempoLocal al dsPIC
+        bcm2835_spi_transfer(tiempoLocal[i]);							//Envia los 6 datos de la trama tiempoLocal al dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
-	
-	bcm2835_spi_transfer(0xC4);                                                 //Envia el delimitador de final de trama
+
+	bcm2835_spi_transfer(0xF4);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
-	
+
 }
 
 void ObtenerTiempoPIC(){
 	
 	printf("Hora dsPIC: ");	
+	bcm2835_spi_transfer(0xA5);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
 	for (i=0;i<6;i++){
         buffer = bcm2835_spi_transfer(0x00);
-        tiempoGPS[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
+        tiempoPIC[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
-    bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
+    
+	bcm2835_spi_transfer(0xF5);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
-							
-	printf("%0.2d:",tiempoGPS[3]);		//hh
-	printf("%0.2d:",tiempoGPS[4]);		//mm
-	printf("%0.2d ",tiempoGPS[5]);		//ss
-	printf("%0.2d/",tiempoGPS[0]);		//dd
-	printf("%0.2d/",tiempoGPS[1]);		//MM
-	printf("%0.2d\n",tiempoGPS[2]);		//aa
+
+	printf("%0.2d:",tiempoPIC[3]);		//hh
+	printf("%0.2d:",tiempoPIC[4]);		//mm
+	printf("%0.2d ",tiempoPIC[5]);		//ss
+	printf("%0.2d/",tiempoPIC[0]);		//dd
+	printf("%0.2d/",tiempoPIC[1]);		//MM
+	printf("%0.2d\n",tiempoPIC[2]);		//aa
 	
 	bcm2835_spi_end();
 	bcm2835_close();
-			
+
 }
 
 

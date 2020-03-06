@@ -1,0 +1,15 @@
+Tramas de tiempo: 
+
+ tramaTiempoSistema[0] = dia;
+ tramaTiempoSistema[1] = mes;
+ tramaTiempoSistema[2] = anio;
+ tramaTiempoSistema[3] = hora;
+ tramaTiempoSistema[4] = minuto;
+ tramaTiempoSistema[5] = segundo;
+
+tiempo[0] = 1;
+tiempo[1] = 2;
+tiempo[2] = 3;
+tiempo[3] = 4;
+tiempo[4] = 5;
+tiempo[5] = 6;
