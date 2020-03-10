@@ -74,7 +74,12 @@ void InterrupcionP2();
 void main() {
 
      ConfiguracionPrincipal();
-
+     
+     DS3234_init();                                                             //inicializa el RTC
+     /*horaSistema = RecuperarHoraRTC();                                          //Recupera la hora del RTC
+     fechaSistema = RecuperarFechaRTC();                                        //Recupera la fecha del RTC
+     AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                   //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas*/
+     
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
      numTMR1 = (tasaMuestreo*10)-1;                                             //Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
@@ -368,8 +373,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      if ((banEsc==1)&&(buffer==0xF4)){
         horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
         fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
-        DS3234_init();                                                          //inicializa el RTC
-        DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC con la hora recuperada de la RPi
+        DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC
         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
@@ -539,7 +543,6 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
            horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
            fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
-           DS3234_init();                                                       //inicializa el RTC
            DS3234_setDate(horaSistema, fechaSistema);                           //Configura la hora en el RTC con la hora recuperada de la RPi
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
            fuenteReloj = 1;

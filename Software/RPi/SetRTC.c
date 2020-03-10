@@ -45,7 +45,7 @@ unsigned short banNewFile;
 
 unsigned short contCiclos;
 unsigned short contador;
-pthread_t h1;
+short fuenteTiempoPic;
 
 //Declaracion de funciones
 int ConfiguracionPrincipal();
@@ -68,6 +68,7 @@ int main(void) {
   numBytes = 0;
   contCiclos = 0;
   contador = 0;  
+  fuenteTiempoPic = 0;
 
   ConfiguracionPrincipal();  
   sleep(1);																		//Espera hasta que termina de resetearse el pic
@@ -163,15 +164,25 @@ void ObtenerTiempoPIC(){
 	bcm2835_spi_transfer(0xA5);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 	
+	fuenteTiempoPic = bcm2835_spi_transfer(0x00);								//Recibe el byte que indica la fuente de tiempo del PIC
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
 	for (i=0;i<6;i++){
         buffer = bcm2835_spi_transfer(0x00);
         tiempoPIC[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
-    
+	    
 	bcm2835_spi_transfer(0xF5);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
+	if (fuenteTiempoPic==0){
+		printf("RTC ");
+	} 
+	if (fuenteTiempoPic==1){
+		printf("GPS ");
+	}
+	
 	printf("%0.2d:",tiempoPIC[3]);		//hh
 	printf("%0.2d:",tiempoPIC[4]);		//mm
 	printf("%0.2d ",tiempoPIC[5]);		//ss

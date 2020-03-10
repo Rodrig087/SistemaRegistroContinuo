@@ -449,6 +449,11 @@ void main() {
 
  ConfiguracionPrincipal();
 
+ DS3234_init();
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
  numTMR1 = (tasaMuestreo*10)-1;
@@ -742,7 +747,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if ((banEsc==1)&&(buffer==0xF4)){
  horaSistema = RecuperarHoraRPI(tiempoRPI);
  fechaSistema = RecuperarFechaRPI(tiempoRPI);
- DS3234_init();
  DS3234_setDate(horaSistema, fechaSistema);
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
@@ -913,7 +917,6 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
- DS3234_init();
  DS3234_setDate(horaSistema, fechaSistema);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  fuenteReloj = 1;

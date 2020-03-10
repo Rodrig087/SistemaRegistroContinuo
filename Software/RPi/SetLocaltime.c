@@ -133,6 +133,7 @@ void ObtenerTiempoPIC(){
 	printf("Hora dsPIC: ");	
 	bcm2835_spi_transfer(0xA5);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
 	fuenteTiempoPic = bcm2835_spi_transfer(0x00);								//Recibe el byte que indica la fuente de tiempo del PIC
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
 	
@@ -158,6 +159,8 @@ void ObtenerTiempoPIC(){
 	printf("%0.2d/",tiempoPIC[0]);		//dd
 	printf("%0.2d/",tiempoPIC[1]);		//MM
 	printf("%0.2d\n",tiempoPIC[2]);		//aa
+	
+	SetRelojLocal(tiempoPIC);
 	
 	bcm2835_spi_end();
 	bcm2835_close();
