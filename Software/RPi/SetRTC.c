@@ -55,7 +55,6 @@ void ObtenerTiempoGPS();														//C:0xA6	F:0xF6
 void ObtenerTiempoRTC();										 				//C:0xA7	F:0xF7
 
 
-
 int main(void) {
 
   printf("Iniciando...\n");
@@ -71,7 +70,7 @@ int main(void) {
   contador = 0;  
 
   ConfiguracionPrincipal();  
-  sleep(5);
+  sleep(1);																		//Espera hasta que termina de resetearse el pic
   EnviarTiempoLocal();
 
   sleep(1);

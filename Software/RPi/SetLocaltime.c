@@ -40,11 +40,13 @@ char ext[8];
 char nombreArchivo[16];
 char comando[40];
 unsigned int timeNewFile[2] = {22, 15};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
+unsigned short confGPS[2] = {0, 1};							                    //Parametros que se pasan para configurar el GPS (conf, NMA) cuando conf=1 realiza la configuracion del GPS y se realiza una sola vez la primera vez que es utilizado 
 unsigned short banNewFile;
 
 unsigned short contCiclos;
 unsigned short contador;
-pthread_t h1;
+int fuenteTiempo;
+short fuenteTiempoPic;
 
 //Declaracion de funciones
 int ConfiguracionPrincipal();
@@ -53,29 +55,35 @@ void ObtenerTiempoGPS();														//C:0xA6	F:0xF6
 void ObtenerTiempoRTC();										 				//C:0xA7	F:0xF7
 void SetRelojLocal(unsigned char* tramaTiempo);
 
-int main(void) {
+int main(int argc, char *argv[]) {
 
-  printf("Iniciando...\n");
+	printf("Iniciando...\n");
   
-  //Inicializa las variables:
-  i = 0;
-  x = 0;
-  contMuestras = 0;
-  banFile = 0;
-  banNewFile = 0;
-  numBytes = 0;
-  contCiclos = 0;
-  contador = 0;  
+	//Inicializa las variables:
+	i = 0;
+	x = 0;
+	contMuestras = 0;
+	banFile = 0;
+	banNewFile = 0;
+	numBytes = 0;
+	contCiclos = 0;
+	contador = 0;
+	fuenteTiempoPic = 0;
+	fuenteTiempo = atoi(argv[1]);
+	  
+	ConfiguracionPrincipal(); 
+	sleep(1);
   
-  ConfiguracionPrincipal(); 
-  sleep(5);
-  ObtenerTiempoRTC();
-    
-  sleep(1);
- 
-  return 0;
+	if (fuenteTiempo==0){
+		ObtenerTiempoGPS();
+	} else {
+		ObtenerTiempoRTC();	
+	}  
+  
+	sleep(5);
+	return 0;
 
- }
+}
 
 
 int ConfiguracionPrincipal(){
@@ -97,8 +105,8 @@ int ConfiguracionPrincipal(){
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);					//Clock divider RPi 2
-	//bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_128);					//Clock divider RPi 3		
+	//bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2
+	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);					//Clock divider RPi 3		
     bcm2835_spi_set_speed_hz(FreqSPI);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
@@ -125,14 +133,25 @@ void ObtenerTiempoPIC(){
 	printf("Hora dsPIC: ");	
 	bcm2835_spi_transfer(0xA5);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
+	fuenteTiempoPic = bcm2835_spi_transfer(0x00);								//Recibe el byte que indica la fuente de tiempo del PIC
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
 	for (i=0;i<6;i++){
         buffer = bcm2835_spi_transfer(0x00);
         tiempoPIC[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
-    bcm2835_spi_transfer(0xF5);                                                 //Envia el delimitador de final de trama
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
 
+	bcm2835_spi_transfer(0xF5);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
+	if (fuenteTiempoPic==0){
+		printf("RTC ");
+	} 
+	if (fuenteTiempoPic==1){
+		printf("GPS ");
+	}
+	
 	printf("%0.2d:",tiempoPIC[3]);		//hh
 	printf("%0.2d:",tiempoPIC[4]);		//mm
 	printf("%0.2d ",tiempoPIC[5]);		//ss
@@ -145,11 +164,11 @@ void ObtenerTiempoPIC(){
 
 }
 
-void ObtenerTiempoGPS(){
-	printf("Obteniendo hora del RTC...\n");
+void ObtenerTiempoGPS(){ 
+	printf("Obteniendo hora del GPS...\n");
 	bcm2835_spi_transfer(0xA6);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xF6);		
+	bcm2835_spi_transfer(0xF6);
 }
 
 void ObtenerTiempoRTC(){

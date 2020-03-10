@@ -146,21 +146,21 @@ unsigned char ADXL355_read_byte(unsigned char address){
 
 
 unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
-         unsigned short j;
-         unsigned short muestra;
-         if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
-             CS_ADXL355=0;
-             for (j=0;j<9;j++){
-                 muestra = ADXL355_read_byte(axisAddresses[j]);
-                 vectorMuestra[j] = muestra;
-             }
-             CS_ADXL355=1;
-         } else {
-             for (j=0;j<9;j++){
-                 vectorMuestra[j] = 0;
-             }
+     unsigned short j;
+     unsigned short muestra;
+     if((ADXL355_read_byte(Status)&0x01)==1){                                 //Verifica que el bit DATA_RDY del registro Status este en alto
+          CS_ADXL355=0;
+          for (j=0;j<9;j++){
+              muestra = ADXL355_read_byte(axisAddresses[j]);
+              vectorMuestra[j] = muestra;
+          }
+          CS_ADXL355=1;
+     } else {
+         for (j=0;j<9;j++){
+             vectorMuestra[j] = 0;
          }
-         return;
+     }
+     return;
 }
 
 

@@ -422,6 +422,7 @@ unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
+unsigned short fuenteReloj;
 short confGPS[2];
 unsigned long horaSistema, fechaSistema;
 
@@ -448,9 +449,6 @@ void main() {
 
  ConfiguracionPrincipal();
 
-
-
-
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
  numTMR1 = (tasaMuestreo*10)-1;
@@ -466,6 +464,7 @@ void main() {
  banTFGPS = 0;
  banTCGPS = 0;
  stsGPS = 0;
+ fuenteReloj = 0;
 
  banMuestrear = 0;
  banInicio = 0;
@@ -630,7 +629,7 @@ void Muestrear(){
  Delay_us(20);
  RP1 = 0;
 
- TEST = 0;
+
 
  }
 
@@ -651,6 +650,8 @@ void Muestrear(){
  Delay_us(20);
  RP2 = 0;
 }
+
+
 
 
 
@@ -755,9 +756,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if ((banSetReloj==1)&&(buffer==0xA5)){
  banSetReloj = 2;
  j = 0;
- SPI1BUF = tiempo[j];
+ SPI1BUF = fuenteReloj;
  }
- if ((banSetReloj==2)&&(buffer!=0xF5)){
+ if ((banSetReloj==2)&&(buffer!=0xA5)&&(buffer!=0xF5)){
  SPI1BUF = tiempo[j];
  j++;
  }
@@ -766,18 +767,10 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  SPI1BUF = 0xFF;
  }
 
-
- if ((stsGPS==0)&&(banSetReloj==0)&&(buffer==0xA6)){
- stsGPS = 1;
- i = 0;
- }
- if ((stsGPS==1)&&(buffer=!0xA6)&&(buffer!=0xF6)){
- confGPS[i] = buffer;
- i++;
- }
- if ((stsGPS==1)&&(buffer==0xF6)){
+ if ((banSetReloj==0)&&(buffer==0xA6)){
  stsGPS = 0;
- ConfigurarGPS(confGPS[0],confGPS[1]);
+
+ ConfigurarGPS(0,1);
  banTIGPS = 0;
  banTCGPS = 0;
  i_gps = 0;
@@ -785,6 +778,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if (U1RXIE_bit==0){
  U1RXIE_bit = 1;
  }
+
  }
 
 
@@ -792,7 +786,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- banEsc = 0;
+ fuenteReloj = 0;
  banSetReloj = 1;
  InterrupcionP2();
  }
@@ -871,6 +865,15 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  if (banTIGPS==0){
  if ((byteGPS==0x24)&&(i_gps==0)){
  banTIGPS = 1;
+ } else {
+
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ fuenteReloj = 0;
+ banSetReloj = 1;
+ InterrupcionP2();
+ U1RXIE_bit = 0;
  }
  }
 
@@ -893,12 +896,13 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
 
- if (banTCGPS==1){
 
- if ( tramaGPS[1]==0x47 && tramaGPS[2]==0x50 && tramaGPS[3]==0x52 && tramaGPS[4]==0x4D && tramaGPS[5]==0x43 ){
+ if (banTCGPS==1){
+ if (tramaGPS[18]==0x41) {
  for (x=0;x<6;x++){
  datosGPS[x] = tramaGPS[7+x];
  }
+
  for (x=50;x<60;x++){
  if (tramaGPS[x]==0x2C){
  for (y=0;y<6;y++){
@@ -906,12 +910,24 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
  }
+
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
+ DS3234_init();
+ DS3234_setDate(horaSistema, fechaSistema);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- InterrupcionP2();
- banSetReloj = 1;
+ fuenteReloj = 1;
+ } else {
+
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ fuenteReloj = 0;
  }
+
+ banSetReloj = 1;
+ InterrupcionP2();
+ U1RXIE_bit = 0;
  }
 
 }
