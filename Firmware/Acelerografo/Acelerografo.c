@@ -74,12 +74,8 @@ void InterrupcionP2();
 void main() {
 
      ConfiguracionPrincipal();
-     
      DS3234_init();                                                             //inicializa el RTC
-     /*horaSistema = RecuperarHoraRTC();                                          //Recupera la hora del RTC
-     fechaSistema = RecuperarFechaRTC();                                        //Recupera la fecha del RTC
-     AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                   //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas*/
-     
+
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
      numTMR1 = (tasaMuestreo*10)-1;                                             //Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
@@ -260,7 +256,7 @@ void Muestrear(){
          Delay_us(20);
          RP1 = 0;
          
-         //TEST = 0;
+         TEST = 0;
          
      }
 

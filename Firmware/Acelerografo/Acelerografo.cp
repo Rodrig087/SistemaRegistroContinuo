@@ -448,11 +448,7 @@ void InterrupcionP2();
 void main() {
 
  ConfiguracionPrincipal();
-
  DS3234_init();
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
 
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -634,7 +630,7 @@ void Muestrear(){
  Delay_us(20);
  RP1 = 0;
 
-
+ TEST = 0;
 
  }
 

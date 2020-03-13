@@ -1,5 +1,5 @@
 //Compilar:
-//gcc RegistroContinuo_V1.4.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi 
+//gcc RegistroContinuo_V1.7.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi 
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +13,7 @@
 //Declaracion de constantes
 #define P2 2
 #define P1 0
-#define MCLR 28
+#define MCLR 28																	//Pin 38 GPIO						
 #define NUM_MUESTRAS 199
 #define NUM_ELEMENTOS 2506
 #define TIEMPO_SPI 10
@@ -29,69 +29,68 @@ unsigned short banFile;
 unsigned short banNewFile;
 unsigned short numBytes;
 unsigned short contMuestras;
-unsigned char tiempoGPS[8];
+unsigned char tiempoPIC[8];
 unsigned char tiempoLocal[8];
 unsigned char tramaDatos[NUM_ELEMENTOS];
 
 FILE *fp;
 FILE *ftmp;
+FILE *fTramaTmp;
 char path[30];
 char ext[8];
 char nombreArchivo[16];
 char comando[40];
 char dateGPS[22];
-//unsigned int timeNewFile[2] = {22, 15};											//Variable para configurar la hora a la que se desea generar un archivo nuevo	
-unsigned int timeNewFile[2] = {0, 0};	
+unsigned int timeNewFile[2] = {0, 0};											//Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)		
+unsigned short confGPS[2] = {0, 1};							                    //Parametros que se pasan para configurar el GPS (conf, NMA) cuando conf=1 realiza la configuracion del GPS y se realiza una sola vez la primera vez que es utilizado 
 unsigned short banNewFile;
 
 unsigned short contCiclos;
 unsigned short contador;
-pthread_t h1;
+short fuenteTiempoPic;
 
 //Declaracion de funciones
 int ConfiguracionPrincipal();
-void NuevoCiclo();
 void GuardarVector(unsigned char* tramaD);
 void CrearArchivo();
-void IniciarMuestreo();
-void DetenerMuestreo();
-void ConfigurarGPS();
-void ObtenerTiempoGPS();
-void MostrarTiempoGPS();
-void EnviarTiempoLocal();
+void IniciarMuestreo();															//C:0xA1	F:0xF1
+void DetenerMuestreo();															//C:0xA2	F:0xF2
+void NuevoCiclo();																//C:0xA3	F:0xF3
+void EnviarTiempoLocal();														//C:0xA4	F:0xF4
+void ObtenerTiempoPIC();														//C:0xA5	F:0xF5
+void ObtenerTiempoGPS();														//C:0xA6	F:0xF6
+void ObtenerTiempoRTC();										 				//C:0xA7	F:0xF7
+
 
 int main(void) {
 
-  printf("Iniciando...\n");
+	printf("Iniciando...\n");
   
-  //Inicializa las variables:
-  i = 0;
-  x = 0;
-  contMuestras = 0;
-  banFile = 0;
-  banNewFile = 0;
-  numBytes = 0;
-  contCiclos = 0;
-  contador = 0;  
+	//Inicializa las variables:
+	i = 0;
+	x = 0;
+	contMuestras = 0;
+	banFile = 0;
+	banNewFile = 0;
+	numBytes = 0;
+	contCiclos = 0;
+	contador = 0;  
   
-  ConfiguracionPrincipal(); 
-  digitalWrite (MCLR,  LOW); 
-  delay (100) ;
-  digitalWrite (MCLR, HIGH);
-  sleep(5);
-  //ObtenerTiempoGPS();
-  EnviarTiempoLocal();
-  CrearArchivo();
+	ConfiguracionPrincipal(); 
+	sleep(1);
+	ObtenerTiempoRTC();
+	sleep(5);
+	
     
-  while(1){	
-  }
+	while(1){	
+	}
   
-  bcm2835_spi_end();
-  bcm2835_close();
+	bcm2835_spi_end();
+	bcm2835_close();
  
-  return 0;
+	return 0;
 
- }
+}
 
 
 int ConfiguracionPrincipal(){
@@ -113,20 +112,25 @@ int ConfiguracionPrincipal(){
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2		
+	//bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2
+	bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64);					//Clock divider RPi 3		
     bcm2835_spi_set_speed_hz(FreqSPI);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
-	
-	DetenerMuestreo();
-	
+		
 	//Configuracion libreria WiringPi:
     wiringPiSetup();
     pinMode(P1, INPUT);
     pinMode(P2, INPUT);
 	pinMode(MCLR, OUTPUT);
 	wiringPiISR (P1, INT_EDGE_RISING, NuevoCiclo);
-	wiringPiISR (P2, INT_EDGE_RISING, MostrarTiempoGPS);
+	wiringPiISR (P2, INT_EDGE_RISING, ObtenerTiempoPIC);
+	
+	//Genera un pulso para resetear el dsPIC:
+	digitalWrite (MCLR, HIGH);
+	delay (100) ;
+	digitalWrite (MCLR,  LOW); 
+	delay (100) ;
 	digitalWrite (MCLR, HIGH);
 	
 	printf("Configuracion completa\n");
@@ -136,126 +140,24 @@ int ConfiguracionPrincipal(){
 
 void IniciarMuestreo(){
 	printf("Iniciando el muestreo...\n");
-	bcm2835_spi_transfer(0xA0);
+	bcm2835_spi_transfer(0xA1);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xA0);	
+	bcm2835_spi_transfer(0xF1);	
 }
 
 
 void DetenerMuestreo(){
 	printf("Deteniendo el muestreo...\n");
-	bcm2835_spi_transfer(0xAF);
+	bcm2835_spi_transfer(0xA2);
 	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xAF);	
-}
-
-
-void ConfigurarGPS(){
-	printf("Configurando el GPS...\n");
-	bcm2835_spi_transfer(0xC2);
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xC2);		
-}
-
-
-void ObtenerTiempoGPS(){
-	printf("Obteniendo hora del GPS...\n");
-	bcm2835_spi_transfer(0xC0);
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xC0);		
-}
-
-
-void MostrarTiempoGPS(){
-	printf("Hora GPS: ");	
-	for (i=0;i<6;i++){
-        buffer = bcm2835_spi_transfer(0x00);
-        tiempoGPS[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
-        bcm2835_delayMicroseconds(TIEMPO_SPI);
-    }
-    bcm2835_spi_transfer(0xC1);                                                 //Envia el delimitador de final de trama
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
-							
-	printf("%0.2d:",tiempoGPS[3]);		//hh
-	printf("%0.2d:",tiempoGPS[4]);		//mm
-	printf("%0.2d ",tiempoGPS[5]);		//ss
-	printf("%0.2d/",tiempoGPS[0]);		//dd
-	printf("%0.2d/",tiempoGPS[1]);		//MM
-	printf("%0.2d\n",tiempoGPS[2]);		//aa
-	
-	//Configura el reloj interno de la RPi con la hora recuperada del GPS:
-	strcpy(comando, "sudo date --set ");	//strcpy( <variable_destino>, <cadena_fuente> )
-	//'2019-09-13 17:45:00':
-	dateGPS[0] = 0x27;						//'
-	dateGPS[1] = '2';
-	dateGPS[2] = '0';
-	dateGPS[3] = (tiempoGPS[2]/10)+48;		//aa: (19/10)+48 = 49 = '1'
-	dateGPS[4] = (tiempoGPS[2]%10)+48;		//    (19%10)+48 = 57 = '9'
-	dateGPS[5] = '-';	
-	dateGPS[6] = (tiempoGPS[1]/10)+48;		//MM
-	dateGPS[7] = (tiempoGPS[1]%10)+48;
-	dateGPS[8] = '-';
-	dateGPS[9] = (tiempoGPS[0]/10)+48;		//dd
-	dateGPS[10] = (tiempoGPS[0]%10)+48;
-	dateGPS[11] = ' ';
-	dateGPS[12] = (tiempoGPS[3]/10)+48;		//hh
-	dateGPS[13] = (tiempoGPS[3]%10)+48;
-	dateGPS[14] = ':';
-	dateGPS[15] = (tiempoGPS[4]/10)+48;		//mm
-	dateGPS[16] = (tiempoGPS[4]%10)+48;
-	dateGPS[17] = ':';
-	dateGPS[18] = (tiempoGPS[5]/10)+48;		//ss
-	dateGPS[19] = (tiempoGPS[5]%10)+48;
-	dateGPS[20] = 0x27;
-	dateGPS[21] = '\0';
-	
-	strcat(comando, dateGPS);
-	
-	system(comando);
-	system("date");
-	
-	IniciarMuestreo();
-	
-}
-
-void EnviarTiempoLocal(){
-	
-	//Obtiene la hora y la fecha del sistema:
-	time_t t;
-	struct tm *tm;
-	t=time(NULL);
-	tm=localtime(&t);
-		
-	tiempoLocal[0] = tm->tm_mday;												//Dia del mes (0-31)
-	tiempoLocal[1] = tm->tm_mon+1;												//Mes desde Enero (0-11)
-	tiempoLocal[2] = tm->tm_year-100;											//Anio (contado desde 1900)
-	tiempoLocal[3] = tm->tm_hour;												//Hora
-	tiempoLocal[4] = tm->tm_min;												//Minuto
-	tiempoLocal[5] = tm->tm_sec;												//Segundo 
-	
-	for (i=0;i<6;i++){
-		printf("%0.2d ",tiempoLocal[i]);	
-	}
-	printf("\n");	
-	
-	bcm2835_spi_transfer(0xC3);                                                 //Envia el delimitador de inicio de trama
-    bcm2835_delayMicroseconds(TIEMPO_SPI); 
-		
-	for (i=0;i<6;i++){
-        buffer = bcm2835_spi_transfer(tiempoLocal[i]);							//Envia los 6 datos de la trama tiempoLocal al dsPIC
-        bcm2835_delayMicroseconds(TIEMPO_SPI);
-    }
-	
-	bcm2835_spi_transfer(0xC4);                                                 //Envia el delimitador de final de trama
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
-	
+	bcm2835_spi_transfer(0xF2);	
 }
 
 
 void NuevoCiclo(){
 	
 	//printf("Nuevo ciclo\n");
-	bcm2835_spi_transfer(0xB0);                                                 //Envia el delimitador de inicio de trama
+	bcm2835_spi_transfer(0xA3);                                                 //Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);                                      
 
 	for (i=0;i<2506;i++){
@@ -264,7 +166,7 @@ void NuevoCiclo(){
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
 
-    bcm2835_spi_transfer(0xB1);                                                 //Envia el delimitador de final de trama
+    bcm2835_spi_transfer(0xF3);                                                 //Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
 	GuardarVector(tramaDatos);													//Guarda la el vector tramaDatos en el archivo binario
@@ -272,9 +174,93 @@ void NuevoCiclo(){
 }
 
 
+void EnviarTiempoLocal(){
+	
+	//Obtiene la hora y la fecha del sistema:
+	printf("Hora local: ");
+	time_t t;
+	struct tm *tm;
+	t=time(NULL);
+	tm=localtime(&t);
+	tiempoLocal[0] = tm->tm_mday;												//Dia del mes (0-31)
+	tiempoLocal[1] = tm->tm_mon+1;												//Mes desde Enero (0-11)
+	tiempoLocal[2] = tm->tm_year-100;											//Anio (contado desde 1900)
+	tiempoLocal[3] = tm->tm_hour;												//Hora
+	tiempoLocal[4] = tm->tm_min;												//Minuto
+	tiempoLocal[5] = tm->tm_sec;												//Segundo 
+	for (i=0;i<6;i++){
+		printf("%0.2d ",tiempoLocal[i]);	
+	}
+	printf("\n");	
+
+	bcm2835_spi_transfer(0xA4);                                                 //Envia el delimitador de inicio de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI); 
+	for (i=0;i<6;i++){
+        bcm2835_spi_transfer(tiempoLocal[i]);							//Envia los 6 datos de la trama tiempoLocal al dsPIC
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+    }
+	bcm2835_spi_transfer(0xF4);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+
+}
+
+
+void ObtenerTiempoPIC(){
+	
+	printf("Hora dsPIC: ");	
+	bcm2835_spi_transfer(0xA5);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
+	fuenteTiempoPic = bcm2835_spi_transfer(0x00);								//Recibe el byte que indica la fuente de tiempo del PIC
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
+	for (i=0;i<6;i++){
+        buffer = bcm2835_spi_transfer(0x00);
+        tiempoPIC[i] = buffer;													//Guarda la hora y fecha devuelta por el dsPIC
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+    }
+
+	bcm2835_spi_transfer(0xF5);                                                 //Envia el delimitador de final de trama
+    bcm2835_delayMicroseconds(TIEMPO_SPI);
+	
+	if (fuenteTiempoPic==0){
+		printf("RTC ");
+	} 
+	if (fuenteTiempoPic==1){
+		printf("GPS ");
+	}
+	
+	printf("%0.2d:",tiempoPIC[3]);		//hh
+	printf("%0.2d:",tiempoPIC[4]);		//mm
+	printf("%0.2d ",tiempoPIC[5]);		//ss
+	printf("%0.2d/",tiempoPIC[0]);		//dd
+	printf("%0.2d/",tiempoPIC[1]);		//MM
+	printf("%0.2d\n",tiempoPIC[2]);		//aa
+	
+	IniciarMuestreo();
+	
+}
+
+
+void ObtenerTiempoGPS(){ 
+	printf("Obteniendo hora del GPS...\n");
+	bcm2835_spi_transfer(0xA6);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xF6);
+}
+
+
+void ObtenerTiempoRTC(){
+	printf("Obteniendo hora del RTC...\n");
+	bcm2835_spi_transfer(0xA7);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xF7);		
+}
+
+
 void CrearArchivo(){
 	
-	//printf("   Entro\n");	
+	//printf("Crear archivo\n");	
 	
 	//Obtiene la hora y la fecha del sistema:
 	time_t t;
@@ -283,7 +269,6 @@ void CrearArchivo(){
 	tm=localtime(&t);
 	//Cambia el estado de la bandera faltando un minuto para que se cumpla la hora fijada para la creacion de un archivo nuevo:
 	if ((tm->tm_hour==23)&&((tm->tm_min==59))){
-    //if ((tm->tm_hour==timeNewFile[0])&&((tm->tm_min==timeNewFile[1]-1))){
 		banNewFile = 2;	
 	}
 	//Verifica si llego la hora/minuto que se configuro para cambiar el estado de la bandera de nuevo archivo y asi permitir la creacion de un nuevo archivo binario
@@ -302,12 +287,11 @@ void CrearArchivo(){
 		strftime(nombreArchivo, 20, "%Y%m%d%H%M", tm);
 		
 		//Asigna espacio en la memoria para el nombre completo de la ruta
-		char *path = malloc(strlen(nombreArchivo)+5+27);
-		//char *path = malloc(strlen(nombreArchivo)+5+13);
-		
+		char *path = malloc(strlen(nombreArchivo)+5+20);
+				
 		//Asigna el nombre de la ruta y la extencion a los array de caracteres
 		strcpy(ext, ".dat");
-		strcpy(path, "/media/PenDrive/Resultados/");
+		strcpy(path, "/home/pi/Resultados/");
 				
 		//Realiza la concatenacion de array de caracteres
 		strcat(path, nombreArchivo);
@@ -316,11 +300,14 @@ void CrearArchivo(){
 		//Abre o crea el archivo binario
 		fp = fopen (path, "ab+");
 
-		//Crea el archivo temporal
+		//Crea el archivo temporal para almacenar el nombre del archivo
 		ftmp = fopen ("/home/pi/TMP/namefile.tmp", "wb");
 		fwrite(nombreArchivo, sizeof(char), 12, ftmp);
 		fclose (ftmp);
 		
+		//Crea el archivo temporal para almacenar el nombre del archivo
+		//fTramaTmp = fopen ("/home/pi/TMP/tramafile.tmp", "wb");
+				
 		//Cambia el valor de la bandera de nuevo archivo para que ignore esta funcion en la siguientes muestras y libera la memoria reservada para el nombre de la ruta 
 		banNewFile = 1;	
 		free(path);	
@@ -338,7 +325,11 @@ void GuardarVector(unsigned char* tramaD){
 	if (fp!=NULL){
 		do{
 		//Guarda la trama en el archivo binario:
-		outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);			
+		outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);
+		//Guarda la trama en el archivo temporal:
+		fTramaTmp = fopen ("/home/pi/TMP/tramafile.tmp", "wb");
+		fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
+		fclose (fTramaTmp);
 		} while (outFwrite!=NUM_ELEMENTOS);
 		fflush(fp);
 	}
