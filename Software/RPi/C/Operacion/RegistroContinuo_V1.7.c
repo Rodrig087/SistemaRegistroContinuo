@@ -313,7 +313,7 @@ void CrearArchivo(){
 		free(path);	
 		printf("Archivo abierto\n");	
 	}
-		 
+
 }
 
 
@@ -330,6 +330,8 @@ void GuardarVector(unsigned char* tramaD){
 		fTramaTmp = fopen ("/home/pi/TMP/tramafile.tmp", "wb");
 		fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
 		fclose (fTramaTmp);
+		//Ejecuta el script de python:
+		system("python /home/pi/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
 		} while (outFwrite!=NUM_ELEMENTOS);
 		fflush(fp);
 	}

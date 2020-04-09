@@ -1,4 +1,7 @@
 import numpy as np
+from time import time
+
+start_time = time()
 
 tramaSize = 2506
 
@@ -46,3 +49,6 @@ print("Datos de la trama:")
 print("|%02d:%02d:%02d %02d/%02d/%02d|" % (tramaDatos[tramaSize-3], tramaDatos[tramaSize-2],  tramaDatos[tramaSize-1], tramaDatos[tramaSize-6], tramaDatos[tramaSize-5], tramaDatos[tramaSize-4]))
 #Imprime los datos de 
 print("|X: %2.8f Y: %2.8f Z: %2.8f|" % (xAceleracion, yAceleracion, zAceleracion))
+
+elapsed_time = time() - start_time
+print("Elapsed time: %0.10f seconds." % elapsed_time)

@@ -34,10 +34,9 @@ try:
 						axisValue = ((axisData[0]<<12)&0xFF000)+((axisData[1]<<4)&0xFF0)+((axisData[2]>>4)&0xF)
 						
 						#Aplica el complemento a 2:
-						if (axisValue >= 0x80000) {
+						if (axisValue >= 0x80000) :
 							axisValue = axisValue & 0x7FFFF		      #Se descarta el bit 20 que indica el signo (1=negativo)
 							axisValue = -1*(((~axisValue)+1)& 0x7FFFF)
-						}
 						
 						aceleracion = axisValue * (9.8/pow(2,18))
 						if (contEje==0){
@@ -59,6 +58,8 @@ try:
 			}
 						
 	    }
+
+
 
 		for x in range(0, 3):
 			xData[x] = tramaDatos[x+1]

@@ -13,3 +13,14 @@ tiempo[2] = 3;
 tiempo[3] = 4;
 tiempo[4] = 5;
 tiempo[5] = 6;
+
+horaSistema = 36672; //10:11:12
+fechaSistema = 201216; //20/12/16
+
+TEST = ~TEST;
+
+Paths:
+RC: C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo
+SE: C:\Users\milto\Milton\RSA\Git\Salud Estructural\SaludEstructuralCS\Firmware\Master
+
+
