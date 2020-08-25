@@ -1,6 +1,6 @@
-#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/adxl355_spi.c"
-#line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/adxl355_spi.c"
+#line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -93,15 +93,24 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/tiempo_gps.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 
 
 
 
-void ConfigurarGPS(short conf,short NMA){
+void GPS_init(short conf,short NMA);
+unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
+unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
+
+
+
+
+
+void GPS_init(short conf,short NMA){
  if (conf==1){
  UART1_Init(9600);
-
+ Delay_ms(200);
+ UART1_Write_Text("$PMTK605*31\r\n");
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
  UART1_Write_Text("$PMTK251,115200*1F\r\n");
  Delay_ms(1000);
@@ -109,8 +118,9 @@ void ConfigurarGPS(short conf,short NMA){
  }
 
  UART1_Write_Text("$PMTK313,1*2E\r\n");
+ UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
  UART1_Write_Text("$PMTK319,1*24\r\n");
-
+ UART1_Write_Text("$PMTK413*34\r\n");
  UART1_Write_Text("$PMTK513,1*28\r\n");
 
  switch (NMA){
@@ -127,8 +137,6 @@ void ConfigurarGPS(short conf,short NMA){
 
  Delay_ms(1000);
 }
-
-
 
 
 
@@ -164,8 +172,6 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
 }
 
 
-
-
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
 
  unsigned long tramaTiempo[4];
@@ -194,67 +200,10 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
  return horaGPS;
 
 }
-
-
-
-
-unsigned long RecuperarFechaRPI(unsigned short *tramaTiempoRpi){
-
- unsigned long fechaRPi;
-
- fechaRPi = ((long)tramaTiempoRpi[0]*10000)+((long)tramaTiempoRpi[1]*100)+((long)tramaTiempoRpi[2]);
-
-
- return fechaRPi;
-
-}
-
-
-
-
-unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
-
- unsigned long horaRPi;
-
- horaRPi = ((long)tramaTiempoRpi[3]*3600)+((long)tramaTiempoRpi[4]*60)+((long)tramaTiempoRpi[5]);
-
-
- return horaRPi;
-
-}
-
-
-
-
-void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema){
-
- unsigned char hora;
- unsigned char minuto;
- unsigned char segundo;
- unsigned char dia;
- unsigned char mes;
- unsigned char anio;
-
- hora = longHora / 3600;
- minuto = (longHora%3600) / 60;
- segundo = (longHora%3600) % 60;
-
- dia = longFecha / 10000;
- mes = (longFecha%10000) / 100;
- anio = (longFecha%10000) % 100;
-
- tramaTiempoSistema[0] = dia;
- tramaTiempoSistema[1] = mes;
- tramaTiempoSistema[2] = anio;
- tramaTiempoSistema[3] = hora;
- tramaTiempoSistema[4] = minuto;
- tramaTiempoSistema[5] = segundo;
-
-
-}
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/tiempo_rtc.c"
-#line 36 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/acelerografo/tiempo_rtc.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 sbit CS_DS3234 at LATA2_bit;
+
 
 
 
@@ -264,39 +213,47 @@ void DS3234_read_byte(unsigned char address, unsigned char value);
 void DS3234_setDate(unsigned long longHora, unsigned long longFecha);
 unsigned long RecuperarFechaRTC();
 unsigned long RecuperarHoraRTC();
+unsigned long IncrementarFecha(unsigned long longFecha);
+void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema);
 
 
 
+
+
+void DS3234_init(){
+
+ SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
+ DS3234_write_byte( 0x8E ,0x20);
+ DS3234_write_byte( 0x8F ,0x08);
+ SPI2_Init();
+
+}
 
 
 void DS3234_write_byte(unsigned char address, unsigned char value){
+
  CS_DS3234 = 0;
  SPI2_Write(address);
  SPI2_Write(value);
  CS_DS3234 = 1;
+
 }
 
 
 unsigned char DS3234_read_byte(unsigned char address){
+
  unsigned char value = 0x00;
  CS_DS3234 = 0;
  SPI2_Write(address);
  value = SPI2_Read(0);
  CS_DS3234 = 1;
  return value;
-}
 
-
-void DS3234_init(){
- SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
-
- DS3234_write_byte( 0x8E ,0x60);
- DS3234_write_byte( 0x8F ,0x08);
- SPI2_Init();
 }
 
 
 void DS3234_setDate(unsigned long longHora, unsigned long longFecha){
+
  unsigned short valueSet;
  unsigned short hora;
  unsigned short minuto;
@@ -332,10 +289,12 @@ void DS3234_setDate(unsigned long longHora, unsigned long longFecha){
  SPI2_Init();
 
  return;
+
 }
 
 
 unsigned long RecuperarHoraRTC(){
+
  unsigned short valueRead;
  unsigned long hora;
  unsigned long minuto;
@@ -350,21 +309,21 @@ unsigned long RecuperarHoraRTC(){
  valueRead = DS3234_read_byte( 0x01 );
  valueRead = Bcd2Dec(valueRead);
  minuto = (long)valueRead;
-
- valueRead = DS3234_read_byte( 0x02 );
+ valueRead = 0x1F & DS3234_read_byte( 0x02 );
  valueRead = Bcd2Dec(valueRead);
  hora = (long)valueRead;
 
  horaRTC = (hora*3600)+(minuto*60)+(segundo);
 
-
  SPI2_Init();
 
  return horaRTC;
+
 }
 
 
 unsigned long RecuperarFechaRTC(){
+
  unsigned short valueRead;
  unsigned long dia;
  unsigned long mes;
@@ -376,21 +335,145 @@ unsigned long RecuperarFechaRTC(){
  valueRead = DS3234_read_byte( 0x04 );
  valueRead = Bcd2Dec(valueRead);
  dia = (long)valueRead;
-
- valueRead = DS3234_read_byte( 0x05 );
+ valueRead = 0x1F & DS3234_read_byte( 0x05 );
  valueRead = Bcd2Dec(valueRead);
  mes = (long)valueRead;
  valueRead = DS3234_read_byte( 0x06 );
  valueRead = Bcd2Dec(valueRead);
  anio = (long)valueRead;
 
- fechaRTC = (dia*10000)+(mes*100)+(anio);
+ fechaRTC = (anio*10000)+(mes*100)+(dia);
 
  SPI2_Init();
 
  return fechaRTC;
+
 }
-#line 20 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
+unsigned long IncrementarFecha(unsigned long longFecha){
+
+ unsigned long dia;
+ unsigned long mes;
+ unsigned long anio;
+ unsigned long fechaInc;
+
+ anio = longFecha / 10000;
+ mes = (longFecha%10000) / 100;
+ dia = (longFecha%10000) % 100;
+
+ if (dia<28){
+ dia++;
+ } else {
+ if (mes==2){
+
+ if (((anio-16)%4)==0){
+ if (dia==29){
+ dia = 1;
+ mes++;
+ } else {
+ dia++;
+ }
+ } else {
+ dia = 1;
+ mes++;
+ }
+ } else {
+ if (dia<30){
+ dia++;
+ } else {
+ if (mes==4||mes==6||mes==9||mes==11){
+ if (dia==30){
+ dia = 1;
+ mes++;
+ } else {
+ dia++;
+ }
+ }
+ if ((dia!=1)&&(mes==1||mes==3||mes==5||mes==7||mes==8||mes==10)){
+ if (dia==31){
+ dia = 1;
+ mes++;
+ } else {
+ dia++;
+ }
+ }
+ if ((dia!=1)&&(mes==12)){
+ if (dia==31){
+ dia = 1;
+ mes = 1;
+ anio++;
+ } else {
+ dia++;
+ }
+ }
+ }
+ }
+
+ }
+
+ fechaInc = (anio*10000)+(mes*100)+(dia);
+ return fechaInc;
+
+}
+
+
+void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned short *tramaTiempoSistema){
+
+ unsigned short hora;
+ unsigned short minuto;
+ unsigned short segundo;
+ unsigned short dia;
+ unsigned short mes;
+ unsigned short anio;
+
+ hora = (short)(longHora / 3600);
+ minuto = (short)((longHora%3600) / 60);
+ segundo = (short)((longHora%3600) % 60);
+
+ anio = (short)(longFecha / 10000);
+ mes = (short)((longFecha%10000) / 100);
+ dia = (short)((longFecha%10000) % 100);
+
+ tramaTiempoSistema[0] = anio;
+ tramaTiempoSistema[1] = mes;
+ tramaTiempoSistema[2] = dia;
+ tramaTiempoSistema[3] = hora;
+ tramaTiempoSistema[4] = minuto;
+ tramaTiempoSistema[5] = segundo;
+
+}
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
+
+
+
+unsigned long RecuperarFechaRPI(unsigned short *tramaTiempoRpi);
+unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi);
+
+
+
+
+unsigned long RecuperarFechaRPI(unsigned short *tramaTiempoRpi){
+
+ unsigned long fechaRPi;
+
+ fechaRPi = ((long)tramaTiempoRpi[0]*10000)+((long)tramaTiempoRpi[1]*100)+((long)tramaTiempoRpi[2]);
+
+ return fechaRPi;
+
+}
+
+
+unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
+
+ unsigned long horaRPi;
+
+ horaRPi = ((long)tramaTiempoRpi[3]*3600)+((long)tramaTiempoRpi[4]*60)+((long)tramaTiempoRpi[5]);
+
+ return horaRPi;
+
+}
+#line 21 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -420,6 +503,7 @@ short numTMR1;
 unsigned short banTC, banTI, banTF;
 unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
 unsigned short banMuestrear, banLeer, banConf;
+unsigned short banOperacion, tipoOperacion;
 
 unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
 unsigned short fuenteReloj;
@@ -433,13 +517,7 @@ unsigned long horaSistema, fechaSistema;
 
 void ConfiguracionPrincipal();
 void Muestrear();
-void ConfigurarGPS();
-unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
-unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
-unsigned long RecuperarFechaRPI(unsigned short *tramaTiempoRpi);
-unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi);
-void AjustarTiempoSistema(unsigned long hGPS, unsigned long fGPS, unsigned char *tramaTiempoSistema);
-void InterrupcionP2();
+void InterrupcionP1(unsigned short operacion);
 
 
 
@@ -448,11 +526,14 @@ void InterrupcionP2();
 void main() {
 
  ConfiguracionPrincipal();
- DS3234_init();
 
+ DS3234_init();
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
  numTMR1 = (tasaMuestreo*10)-1;
+
+ banOperacion = 0;
+ tipoOperacion = 0;
 
  banTI = 0;
  banLec = 0;
@@ -534,11 +615,11 @@ void ConfiguracionPrincipal(){
 
  RPINR18bits.U1RXR = 0x22;
  RPOR0bits.RP35R = 0x01;
- UART1_Init(115200);
  U1RXIE_bit = 0;
  U1RXIF_bit = 0;
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
+ UART1_Init(115200);
 
 
  SPI1STAT.SPIEN = 1;
@@ -576,6 +657,24 @@ void ConfiguracionPrincipal(){
 
  Delay_ms(200);
 
+}
+
+
+
+
+ void InterrupcionP1(unsigned short operacion){
+
+
+ if (INT1IE_bit==0){
+ INT1IE_bit = 1;
+ }
+#line 221 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ banOperacion = 0;
+ tipoOperacion = operacion;
+
+ RP1 = 1;
+ Delay_us(20);
+ RP1 = 0;
 }
 
 
@@ -626,9 +725,7 @@ void Muestrear(){
  T1CON.TON = 1;
 
  banLec = 1;
- RP1 = 1;
- Delay_us(20);
- RP1 = 0;
+ InterrupcionP1(0XB1);
 
  TEST = 0;
 
@@ -636,20 +733,6 @@ void Muestrear(){
 
  contCiclos++;
 
-}
-
-
-
-
- void InterrupcionP2(){
-
- if (INT1IE_bit==0){
- INT1IE_bit = 1;
- }
-
- RP2 = 1;
- Delay_us(20);
- RP2 = 0;
 }
 
 
@@ -663,6 +746,18 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
  SPI1IF_bit = 0;
  buffer = SPI1BUF;
+
+
+
+ if ((banOperacion==0)&&(buffer==0xA0)) {
+ banOperacion = 1;
+ SPI1BUF = tipoOperacion;
+ }
+ if ((banOperacion==1)&&(buffer==0xF0)){
+ banOperacion = 0;
+ tipoOperacion = 0;
+ }
+
 
 
 
@@ -749,7 +844,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  banEsc = 0;
  banSetReloj = 1;
- InterrupcionP2();
+ InterrupcionP1(0XB2);
  }
 
 
@@ -767,10 +862,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  SPI1BUF = 0xFF;
  }
 
- if ((banSetReloj==0)&&(buffer==0xA6)){
- stsGPS = 0;
 
- ConfigurarGPS(0,1);
+ if ((banSetReloj==0)&&(buffer==0xA6)){
  banTIGPS = 0;
  banTCGPS = 0;
  i_gps = 0;
@@ -778,7 +871,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  if (U1RXIE_bit==0){
  U1RXIE_bit = 1;
  }
-
  }
 
 
@@ -788,7 +880,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  fuenteReloj = 0;
  banSetReloj = 1;
- InterrupcionP2();
+ InterrupcionP1(0XB2);
  }
 
 }
@@ -808,6 +900,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
  }
 
  if (banInicio==1){
+
  Muestrear();
  }
 
@@ -863,32 +956,36 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  OERR_bit = 0;
 
  if (banTIGPS==0){
- if ((byteGPS==0x24)&&(i_gps==0)){
+
+ if (byteGPS==0x24){
  banTIGPS = 1;
+ i_gps = 0;
  } else {
+ i_gps++;
+ }
+
+ if (i_gps>90){
 
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  fuenteReloj = 0;
  banSetReloj = 1;
- InterrupcionP2();
+ InterrupcionP1(0XB2);
  U1RXIE_bit = 0;
  }
  }
 
  if (banTIGPS==1){
+
  if (byteGPS!=0x2A){
  tramaGPS[i_gps] = byteGPS;
- banTFGPS = 0;
- if (i_gps<70){
- i_gps++;
- }
- if ((i_gps>1)&&(tramaGPS[1]!=0x47)){
+ if ((i_gps==1)&&(tramaGPS[1]!=0x47)){
  i_gps = 0;
  banTIGPS = 0;
  banTCGPS = 0;
  }
+ i_gps++;
  } else {
  tramaGPS[i_gps] = byteGPS;
  banTIGPS = 2;
@@ -896,21 +993,19 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  }
  }
 
-
  if (banTCGPS==1){
  if (tramaGPS[18]==0x41) {
  for (x=0;x<6;x++){
  datosGPS[x] = tramaGPS[7+x];
  }
-
  for (x=50;x<60;x++){
  if (tramaGPS[x]==0x2C){
  for (y=0;y<6;y++){
  datosGPS[6+y] = tramaGPS[x+y+1];
  }
+ break;
  }
  }
-
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  DS3234_setDate(horaSistema, fechaSistema);
@@ -923,9 +1018,8 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  fuenteReloj = 0;
  }
-
  banSetReloj = 1;
- InterrupcionP2();
+ InterrupcionP1(0XB2);
  U1RXIE_bit = 0;
  }
 

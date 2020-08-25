@@ -1,6 +1,6 @@
-//Libreria para el manejo del DS3234
+//Libreria para el manejo del tiempo del RTC DS3234
 
-// Definicion de registros //
+/////////////////////////////////////////// Definicion de registros ///////////////////////////////////////////
 
 // Registros de lectura //
 #define Segundos_Lec      0x00                                                  //00-59 BCD
@@ -32,50 +32,60 @@
 
 
 
-// Pines //
+///////////////////////////////////////////   Definicion de pines   ///////////////////////////////////////////
+
 sbit CS_DS3234 at LATA2_bit;                                                    //Define el pin CS
 
 
-// Definicion de funciones //
+/////////////////////////////////////////// Definicion de funciones ///////////////////////////////////////////
+
 void DS3234_init();
 void DS3234_write_byte(unsigned char address, unsigned char value);
 void DS3234_read_byte(unsigned char address, unsigned char value);
 void DS3234_setDate(unsigned long longHora, unsigned long longFecha);
 unsigned long RecuperarFechaRTC();
 unsigned long RecuperarHoraRTC();
+unsigned long IncrementarFecha(unsigned long longFecha);
+void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned char *tramaTiempoSistema);
 
 
-// Funciones //
+///////////////////////////////////////////        Funciones        ///////////////////////////////////////////
+
+//Funcion para configurar el DS3234
+void DS3234_init(){
+        
+     SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
+     DS3234_write_byte(Control,0x20);
+     DS3234_write_byte(ControlStatus,0x08);
+     SPI2_Init();
+         
+}
 
 //Funcion para escirbir un solo byte en el DS3234
 void DS3234_write_byte(unsigned char address, unsigned char value){
+        
      CS_DS3234 = 0;
      SPI2_Write(address);
      SPI2_Write(value);
      CS_DS3234 = 1;
+         
 }
 
 //Funcion para leer un solo byte del DS3234
 unsigned char DS3234_read_byte(unsigned char address){
+        
      unsigned char value = 0x00;
      CS_DS3234 = 0;
      SPI2_Write(address);
      value = SPI2_Read(0);
      CS_DS3234 = 1;
      return value;
-}
-
-//Funcion para configurar el DS3234
-void DS3234_init(){
-     SPI2_Init_Advanced(_SPI_MASTER, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_64, _SPI_SS_DISABLE, _SPI_DATA_SAMPLE_MIDDLE, _SPI_CLK_IDLE_LOW, _SPI_ACTIVE_2_IDLE);
-     //DS3234_write_byte(Control,0x20);
-     DS3234_write_byte(Control,0x60);                                           //0x60= Desactiva Oscilador, Alarmas, onda SQ @1hz, compensacion temperatura
-     DS3234_write_byte(ControlStatus,0x08);
-     SPI2_Init();
+         
 }
 
 //Funcion para establecer la hora y fecha en el DS3234 con la hora y fecha recuperada del GPS
 void DS3234_setDate(unsigned long longHora, unsigned long longFecha){
+        
      unsigned short valueSet;
      unsigned short hora;
      unsigned short minuto;
@@ -111,10 +121,12 @@ void DS3234_setDate(unsigned long longHora, unsigned long longFecha){
      SPI2_Init();
      
      return;
+         
 }
 
 //Funcion para recuperar la hora del DS3234
 unsigned long RecuperarHoraRTC(){
+        
      unsigned short valueRead;
      unsigned long hora;
      unsigned long minuto;
@@ -129,21 +141,21 @@ unsigned long RecuperarHoraRTC(){
      valueRead = DS3234_read_byte(Minutos_Lec);
      valueRead = Bcd2Dec(valueRead);
      minuto = (long)valueRead;
-     //valueRead = 0x1F & DS3234_read_byte(Horas_Lec);
-     valueRead = DS3234_read_byte(Horas_Lec);
+     valueRead = 0x1F & DS3234_read_byte(Horas_Lec);
      valueRead = Bcd2Dec(valueRead);
      hora = (long)valueRead;
 
      horaRTC = (hora*3600)+(minuto*60)+(segundo);                               //Calcula el segundo actual = hh*3600 + mm*60 + ss
-     //horaRTC = (3*3600)+(minuto*60)+(segundo);
-     
+             
      SPI2_Init();
      
      return horaRTC;
+         
 }
 
 //Funcion para recuperar la fecha del DS3234
 unsigned long RecuperarFechaRTC(){
+        
      unsigned short valueRead;
      unsigned long dia;
      unsigned long mes;
@@ -155,17 +167,111 @@ unsigned long RecuperarFechaRTC(){
      valueRead = DS3234_read_byte(DiaMes_Lec);
      valueRead = Bcd2Dec(valueRead);
      dia = (long)valueRead;
-     //valueRead = 0x1F & DS3234_read_byte(Mes_Lec);
-     valueRead = DS3234_read_byte(Mes_Lec);
+     valueRead = 0x1F & DS3234_read_byte(Mes_Lec);
      valueRead = Bcd2Dec(valueRead);
      mes = (long)valueRead;
      valueRead = DS3234_read_byte(Anio_Lec);
      valueRead = Bcd2Dec(valueRead);
      anio = (long)valueRead;
 
-     fechaRTC = (dia*10000)+(mes*100)+(anio);                                   //10000*dd + 100*mm + aa
-     
+     fechaRTC = (anio*10000)+(mes*100)+(dia);                                   //10000*aa + 100*mm + dd
+          
      SPI2_Init();
      
      return fechaRTC;
+         
+}
+
+//Funcion para incrementar la fecha
+unsigned long IncrementarFecha(unsigned long longFecha){
+         
+         unsigned long dia;
+     unsigned long mes;
+     unsigned long anio; 
+         unsigned long fechaInc;
+         
+         anio = longFecha / 10000;
+     mes = (longFecha%10000) / 100;
+     dia = (longFecha%10000) % 100;
+         
+         if (dia<28){
+                dia++;                 
+         } else {
+                if (mes==2){
+                        //Comprueba si es año biciesto:
+                        if (((anio-16)%4)==0){
+                                if (dia==29){
+                                        dia = 1;
+                                        mes++;        
+                                } else {
+                                        dia++;
+                                }
+                        } else {
+                                dia = 1;
+                                mes++;
+                        }
+                } else {
+                        if (dia<30){
+                                dia++;
+                        } else {
+                                if (mes==4||mes==6||mes==9||mes==11){
+                                        if (dia==30){
+                                                dia = 1;
+                                                mes++;
+                                        } else {
+                                                dia++;
+                                        }
+                                }
+                                if ((dia!=1)&&(mes==1||mes==3||mes==5||mes==7||mes==8||mes==10)){
+                                        if (dia==31){
+                                                dia = 1;
+                                                mes++;
+                                        } else {
+                                                dia++;
+                                        }
+                                }
+                                if ((dia!=1)&&(mes==12)){
+                                        if (dia==31){
+                                                dia = 1;
+                                                mes = 1;
+                                                anio++;
+                                        } else {
+                                                dia++;
+                                        }
+                                }
+                        }
+        }
+                
+         }
+         
+         fechaInc = (anio*10000)+(mes*100)+(dia);                                   //10000*aa + 100*mm + dd
+         return fechaInc;         
+        
+}
+
+//Funcion para ajustar la hora y la fecha del sistema
+void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsigned short *tramaTiempoSistema){
+
+     unsigned short hora;
+     unsigned short minuto;
+     unsigned short segundo;
+     unsigned short dia;
+     unsigned short mes;
+     unsigned short anio;
+
+     hora = (short)(longHora / 3600);
+     minuto = (short)((longHora%3600) / 60);
+     segundo = (short)((longHora%3600) % 60);
+
+     anio = (short)(longFecha / 10000);
+     mes = (short)((longFecha%10000) / 100);
+     dia = (short)((longFecha%10000) % 100);
+     
+     tramaTiempoSistema[0] = anio;
+     tramaTiempoSistema[1] = mes;
+     tramaTiempoSistema[2] = dia;
+     tramaTiempoSistema[3] = hora;
+     tramaTiempoSistema[4] = minuto;
+     tramaTiempoSistema[5] = segundo;
+         
 }

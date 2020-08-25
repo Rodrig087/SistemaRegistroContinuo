@@ -31,6 +31,7 @@ int_1
 		AjustarTiempoSistema
 			_Divide_32x32
 			_Modulus_32x32
+		InterrupcionP1
 urx_1
 	RecuperarHoraRTC
 		SPI2_Init_Advanced
@@ -47,7 +48,7 @@ urx_1
 		SPI2_Init
 		_Multiply_32x32
 	AjustarTiempoSistema
-	InterrupcionP2
+	InterrupcionP1
 	RecuperarHoraGPS
 		atoi
 			isdigit
@@ -72,11 +73,7 @@ spi_1
 	RecuperarHoraRTC
 	RecuperarFechaRTC
 	AjustarTiempoSistema
-	InterrupcionP2
-	ConfigurarGPS
-		UART1_Init
-		UART1_Write_Text
-			UART1_Write
+	InterrupcionP1
 Timer1Int
 	ADXL355_read_byte
 	ADXL355_read_FIFO

@@ -1296,6 +1296,7 @@ baninicio
 banlec
 banleer
 banmuestrear
+banoperacion
 bansetgps
 bansetreloj
 bantc
@@ -2334,7 +2335,6 @@ con_cm3con_bit
 con_cm4con_bit
 confgps
 configuracionprincipal
-configurargps
 contciclos
 contfifo
 contmuestras
@@ -3988,6 +3988,7 @@ get_fosc_per_cyc
 gie
 gie
 gie_bit
+gps_init
 half
 half
 half
@@ -4927,6 +4928,7 @@ imv_0
 imv_0_bit
 imv_1
 imv_1_bit
+incrementarfecha
 index
 index_
 index_bit
@@ -5178,7 +5180,7 @@ intdiv_1
 intdiv_1_bit
 intdiv_2
 intdiv_2_bit
-interrupcionp2
+interrupcionp1
 inthldh_0
 inthldh_0_bit
 inthldh_1
@@ -11139,6 +11141,7 @@ tgen_bit
 tiempo
 tiemporpi
 timer1int
+tipooperacion
 tmr1
 tmr1_0
 tmr1_0_bit

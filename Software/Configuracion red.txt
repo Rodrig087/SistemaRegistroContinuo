@@ -1,9 +1,14 @@
 Chanlud:
+RPi:
 #Configuracion ip estatica estacion Chanlud
 #interface eth0
 #static ip_address=192.170.110.35
 #static routers=192.170.110.135
 #static domain_name_servers=192.170.100.250
+PC:
+Direccion IP: 192.170.110.1
+Mascara de subred: 255.255.255.0
+Puerta de enlace:IP: 192.170.110.1 
 
 
 Labrado:
@@ -12,4 +17,9 @@ Labrado:
 #static ip_address=192.170.109.136
 #static routers=192.170.109.135
 #static domain_name_servers=192.170.100.249
+PC:
+Direccion IP: 192.170.109.1
+Mascara de subred: 255.255.255.0
+Puerta de enlace:IP: 192.170.109.1 
+
 

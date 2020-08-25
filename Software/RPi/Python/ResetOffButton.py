@@ -12,7 +12,7 @@ shutdownPin = 36
 
 # if button pressed for at least this long then shut down. if less then reboot.
 shutdownMinSeconds = 3
-led = 32
+led = 40
 
 # button debounce time in seconds
 debounceSeconds = 1
