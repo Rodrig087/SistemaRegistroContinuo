@@ -1,0 +1,2 @@
+201126:	Al iniciar el sistema a las 21:xx la hora del RTC se guarda como 01:xx
+	Al iniciar el sistema a las 00:00 UTC el RTC guarda la hora correctamente
