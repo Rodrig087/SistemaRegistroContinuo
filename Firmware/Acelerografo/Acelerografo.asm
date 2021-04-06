@@ -945,11 +945,9 @@ _RecuperarHoraRTC:
 ; minuto start address is: 16 (W8)
 	ZE	W0, W8
 	CLR	W9
-;tiempo_rtc.c,144 :: 		valueRead = 0x1F & DS3234_read_byte(Horas_Lec);
+;tiempo_rtc.c,144 :: 		valueRead = DS3234_read_byte(Horas_Lec);
 	MOV.B	#2, W10
 	CALL	_DS3234_read_byte
-	ZE	W0, W0
-	AND	W0, #31, W0
 ;tiempo_rtc.c,145 :: 		valueRead = Bcd2Dec(valueRead);
 	MOV.B	W0, W10
 	CALL	_Bcd2Dec

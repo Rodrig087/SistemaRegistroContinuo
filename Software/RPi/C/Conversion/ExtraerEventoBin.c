@@ -2,7 +2,7 @@
 //Fecha: 24/03/2021
 //Version OS: Raspbian OS
 //Compilar: gcc ExtraerEvento.c -o extraerevento
-//gcc ExtraerEventoBin.c -o /home/pi/Ejecutables/extraerevento
+//gcc /home/pi/Programas/ExtraerEventoBin.c -o /home/pi/Ejecutables/extraerevento
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,6 +15,7 @@
 #define P1 2
 #define NUM_MUESTRAS 249
 #define TIEMPO_SPI 100
+char idEstacion[8] = "LAB02";
 
 //Declaracion de variables
 unsigned short i, k;
@@ -76,6 +77,7 @@ FILE *fileZ;
 
 //Declaracion de funciones
 void RecuperarVector();
+void CrearArchivo(char* idEstacion, unsigned short duracionEvento, unsigned char* tramaRegistro);
 
 
 int main(int argc, char *argv[]) {
@@ -188,8 +190,11 @@ void RecuperarVector() {
 		
 		printf("\nExtrayendo...\n");
 		
-		//Crea una carpeta con el nombre de la fecha del evento
+		//Crea un archivo binario para guardar el evento:
+		CrearArchivo(idEstacion, duracionEvento, tramaDatos);
+		//CrearArchivo(duracionEvento, tramaDatos);
 		
+		/*
 		//Asigna espacio en la memoria para el nombre completo de la ruta:
 		char *rutaSalidaX = (char*)malloc(strlen(nombreArchivo)+19+3+5);
 
@@ -200,8 +205,10 @@ void RecuperarVector() {
 		strcat(rutaSalidaX, ext2);
 		
 		//Crea el archivo binario de salida:
-		fileX = fopen (rutaSalidaX, "wb+");
+		//fileX = fopen (rutaSalidaX, "wb+");
+		fileX = fopen (rutaSalidaX, "ab+");
 		free(rutaSalidaX);
+		*/
 					
 		//Escritura de datos en los archivo de aceleracion:
 		while (contMuestras<duracionEvento){											//Se almacena el numero de muestras que indique la variable duracionEvento
@@ -234,3 +241,38 @@ void RecuperarVector() {
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 }
 
+
+void CrearArchivo(char* idEstacion, unsigned short duracionEvento, unsigned char* tramaRegistro){
+
+	char idArchivo[8];
+	char tiempoNodo[6];
+	char nombreArchivoEvento[50];
+	char tiempoNodoStr[25];
+	char duracionEventoStr[4];
+	char ext[5];
+	
+	//Extrae el tiempo de la trama pyload:	
+	tiempoNodo[0] = tramaRegistro[tramaSize-6];                                    //aa
+	tiempoNodo[1] = tramaRegistro[tramaSize-5];                                    //mm
+	tiempoNodo[2] = tramaRegistro[tramaSize-4];                                    //dd
+	tiempoNodo[3] = tramaRegistro[tramaSize-3];                                    //hh
+	tiempoNodo[4] = tramaRegistro[tramaSize-2];                                    //mm
+	tiempoNodo[5] = tramaRegistro[tramaSize-1];                                    //ss		
+	
+	//Realiza la concatenacion para obtner el nombre del archivo:			
+	strcpy(nombreArchivoEvento, "/home/pi/Eventos/");
+	strcpy(idArchivo, idEstacion);
+	//sprintf(idArchivo, "C%0.2dN%0.2d_", idConc, idNodo); 
+	sprintf(tiempoNodoStr, "_%0.2d%0.2d%0.2d-%0.2d%0.2d%0.2d_", tiempoNodo[0], tiempoNodo[1], tiempoNodo[2], tiempoNodo[3], tiempoNodo[4], tiempoNodo[5]);
+	sprintf(duracionEventoStr, "%0.3d", duracionEvento); 
+	strcpy(ext, ".dat");
+	strcat(nombreArchivoEvento, idArchivo);
+	strcat(nombreArchivoEvento, tiempoNodoStr);
+	strcat(nombreArchivoEvento, duracionEventoStr);
+	strcat(nombreArchivoEvento, ext); 
+	
+	//Crea el archivo binario:
+	printf("Se ha creado el archivo: %s\n", nombreArchivoEvento);
+	fileX = fopen (nombreArchivoEvento, "ab+");
+	
+}

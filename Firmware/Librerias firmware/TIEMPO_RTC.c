@@ -141,7 +141,7 @@ unsigned long RecuperarHoraRTC(){
      valueRead = DS3234_read_byte(Minutos_Lec);
      valueRead = Bcd2Dec(valueRead);
      minuto = (long)valueRead;
-     valueRead = 0x1F & DS3234_read_byte(Horas_Lec);
+     valueRead = DS3234_read_byte(Horas_Lec);
      valueRead = Bcd2Dec(valueRead);
      hora = (long)valueRead;
 
