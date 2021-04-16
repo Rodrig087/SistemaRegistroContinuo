@@ -15,7 +15,7 @@
 #define P1 2
 #define NUM_MUESTRAS 249
 #define TIEMPO_SPI 100
-char idEstacion[8] = "LAB02";
+char idEstacion[8] = "CHA02";
 
 //Declaracion de variables
 unsigned short i, k;
@@ -77,7 +77,7 @@ FILE *fileZ;
 
 //Declaracion de funciones
 void RecuperarVector();
-void CrearArchivo(char* idEstacion, unsigned short duracionEvento, unsigned char* tramaRegistro);
+void CrearArchivo(char* idEstacion, unsigned int duracionEvento, unsigned char* tramaRegistro);
 
 
 int main(int argc, char *argv[]) {
@@ -192,23 +192,7 @@ void RecuperarVector() {
 		
 		//Crea un archivo binario para guardar el evento:
 		CrearArchivo(idEstacion, duracionEvento, tramaDatos);
-		//CrearArchivo(duracionEvento, tramaDatos);
 		
-		/*
-		//Asigna espacio en la memoria para el nombre completo de la ruta:
-		char *rutaSalidaX = (char*)malloc(strlen(nombreArchivo)+19+3+5);
-
-		strcpy(rutaSalidaX, "/home/pi/Eventos/");
-		strcpy(ext2, ".dat");
-		
-		strcat(rutaSalidaX, nombreArchivo);
-		strcat(rutaSalidaX, ext2);
-		
-		//Crea el archivo binario de salida:
-		//fileX = fopen (rutaSalidaX, "wb+");
-		fileX = fopen (rutaSalidaX, "ab+");
-		free(rutaSalidaX);
-		*/
 					
 		//Escritura de datos en los archivo de aceleracion:
 		while (contMuestras<duracionEvento){											//Se almacena el numero de muestras que indique la variable duracionEvento
@@ -242,7 +226,7 @@ void RecuperarVector() {
 }
 
 
-void CrearArchivo(char* idEstacion, unsigned short duracionEvento, unsigned char* tramaRegistro){
+void CrearArchivo(char* idEstacion, unsigned int duracionEvento, unsigned char* tramaRegistro){
 
 	char idArchivo[8];
 	char tiempoNodo[6];
