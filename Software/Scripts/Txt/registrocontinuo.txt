@@ -5,7 +5,7 @@ case "$1" in
   start)
     echo "Arrancando sistema de registro continuo..."
     sudo killall -q acelerografo
-    sudo /home/pi/Ejecutables/acelerografo &
+    sudo /home/rsa/Ejecutables/acelerografo &
     ;;
   stop)
     echo "Deteniendo sistema de registro continuo..."

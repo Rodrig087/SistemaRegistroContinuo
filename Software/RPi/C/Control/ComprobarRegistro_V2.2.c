@@ -1,5 +1,5 @@
 //Compilar:
-//gcc ComprobarRegistro_V2.2.c -o /home/pi/Ejecutables/comprobarregistro 
+//gcc ComprobarRegistro_V2.2.c -o /home/rsa/Ejecutables/comprobarregistro 
 
 
 #include <stdio.h>
@@ -43,6 +43,7 @@ unsigned char nombreArchivo[13];
 unsigned int segInicio;
 unsigned int segActual;
 unsigned int segTranscurridos;
+unsigned int tiempoSegundos;
 
 unsigned short xData[3];
 unsigned short yData[3];
@@ -81,14 +82,14 @@ int main(void) {
 void RecuperarVector() {
 
 	//Abre el archivo temporal en modo lectura
-	tmpf = fopen ("/home/pi/TMP/namefile.tmp", "rb"); 
+	tmpf = fopen ("/home/rsa/TMP/namefile.tmp", "rb"); 
 	fread(nombreArchivo, sizeof(char), 12, tmpf);									//Recupera el nombre del archivo en forma de 12 caracteres
 		
 	//Asigna espacio en la memoria para el nombre completo de la ruta:
-	char *path = malloc(strlen(nombreArchivo)+5+20);		
+	char *path = malloc(strlen(nombreArchivo)+5+22);		
 	//Asigna el nombre de la ruta y la extencion a los array de caracteres:
 	strcpy(ext, ".dat");
-	strcpy(path, "/home/pi/Resultados/");
+	strcpy(path, "/home/rsa/Resultados/");
 	//Realiza la concatenacion de array de caracteres:
 	strcat(path, nombreArchivo);
 	strcat(path, ext);		
@@ -114,6 +115,9 @@ void RecuperarVector() {
 		fread(tramaDatos, sizeof(char), tramaSize, lf);								//Se salta el numero de segundos que indique la variable tiempoInicial
 	}
 	
+	//Calcula el tiempo en segundos:
+	tiempoSegundos = (3600*tramaDatos[tramaSize-3])+(60*tramaDatos[tramaSize-2])+(tramaDatos[tramaSize-1]);
+	
 	printf("Archivo actual:\n");
 	printf(nombreArchivo);
 	printf("\n");
@@ -125,12 +129,13 @@ void RecuperarVector() {
 	//Imprime la hora y fecha recuperada de la trama de datos
 	printf("Datos de la trama:\n");
 	printf("| ");
-	printf("%0.2d:", tramaDatos[tramaSize-3]);			//hh
-	printf("%0.2d:", tramaDatos[tramaSize-2]);			//mm
-	printf("%0.2d ", tramaDatos[tramaSize-1]);			//ss
 	printf("%0.2d/", tramaDatos[tramaSize-6]);			//aa
 	printf("%0.2d/", tramaDatos[tramaSize-5]);			//mm
 	printf("%0.2d ", tramaDatos[tramaSize-4]);			//dd
+	printf("%0.2d:", tramaDatos[tramaSize-3]);			//hh
+	printf("%0.2d:", tramaDatos[tramaSize-2]);			//mm
+	printf("%0.2d-", tramaDatos[tramaSize-1]);			//ss
+	printf("%d ", tiempoSegundos);
 	printf("| ");
 	
 	for (x=0;x<3;x++){

@@ -2,7 +2,7 @@
 //Fecha: 24/03/2021
 //Version OS: Raspbian OS
 //Compilar: gcc ExtraerEvento.c -o extraerevento
-//gcc /home/pi/Programas/ExtraerEventoBin.c -o /home/pi/Ejecutables/extraerevento
+//gcc /home/rsa/Programas/ExtraerEventoBin.c -o /home/rsa/Ejecutables/extraerevento
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -130,7 +130,7 @@ void RecuperarVector() {
 	//Asigna espacio en la memoria para el nombre completo de la ruta:
 	char *rutaEntrada = (char*)malloc(strlen(nombreArchivo)+5+23);
 	//Asignacion del nombre de la ruta y la extencion a los array de caracteres:
-	strcpy(rutaEntrada, "/home/pi/Resultados/");
+	strcpy(rutaEntrada, "/home/rsa/Resultados/");
 	strcpy(ext1, ".dat");
 	strcat(rutaEntrada, nombreArchivo);
 	strcat(rutaEntrada, ext1);
@@ -243,8 +243,8 @@ void CrearArchivo(char* idEstacion, unsigned int duracionEvento, unsigned char* 
 	tiempoNodo[4] = tramaRegistro[tramaSize-2];                                    //mm
 	tiempoNodo[5] = tramaRegistro[tramaSize-1];                                    //ss		
 	
-	//Realiza la concatenacion para obtner el nombre del archivo:			
-	strcpy(nombreArchivoEvento, "/home/pi/Eventos/");
+	//Realiza la concatenacion para obtener el nombre del archivo:			
+	strcpy(nombreArchivoEvento, "/home/rsa/Eventos/");
 	strcpy(idArchivo, idEstacion);
 	//sprintf(idArchivo, "C%0.2dN%0.2d_", idConc, idNodo); 
 	sprintf(tiempoNodoStr, "_%0.2d%0.2d%0.2d-%0.2d%0.2d%0.2d_", tiempoNodo[0], tiempoNodo[1], tiempoNodo[2], tiempoNodo[3], tiempoNodo[4], tiempoNodo[5]);

@@ -1,7 +1,0 @@
-#!/bin/bash
-
-echo " "
-/home/pi/Ejecutables/comprobarregistro
-echo " "
-
-exit 0

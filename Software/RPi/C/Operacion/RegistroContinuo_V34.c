@@ -1,5 +1,5 @@
 //Compilar:
-//gcc /home/pi/Programas/RegistroContinuo_V34.c -o /home/pi/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm 
+//gcc /home/rsa/Programas/RegistroContinuo_V34.c -o /home/rsa/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm 
 
 
 #include <stdio.h>
@@ -73,7 +73,7 @@ double coeficientes[FILTER_LEN] = {
 // Variable con la ruta y el nombre del archivo temporal para guardar la informacion de cada evento detectado
 // Se guarda solo la fecha long, la hora en segundos del inicio del evento y su duracion
 // Con cada evento nuevo se sobreescribe la informacion, antes se debe leer en el programa de Python
-static char* fileNameEventoDetectado = "/home/pi/TMP/EventosDetectados.tmp";
+static char* fileNameEventoDetectado = "/home/rsa/TMP/EventosDetectados.tmp";
 
 
 //Declaracion de variables
@@ -384,12 +384,12 @@ void CrearArchivo(){
 		strftime(nombreArchivo, 20, "%Y%m%d%H%M", tm);
 		
 		//Asigna espacio en la memoria para el nombre completo de la ruta
-		char *path = malloc(strlen(nombreArchivo)+5+20);
+		char *path = malloc(strlen(nombreArchivo)+5+23);
 		//char *path = malloc(strlen(nombreArchivo)+5+27);
 				
 		//Asigna el nombre de la ruta y la extencion a los array de caracteres
 		strcpy(ext, ".dat");
-		strcpy(path, "/home/pi/Resultados/");
+		strcpy(path, "/home/rsa/Resultados/");
 		//strcpy(path, "/media/PenDrive/Resultados/");
 				
 		//Realiza la concatenacion de array de caracteres
@@ -400,12 +400,12 @@ void CrearArchivo(){
 		fp = fopen (path, "ab+");
 
 		//Crea el archivo temporal para almacenar el nombre del archivo
-		ftmp = fopen ("/home/pi/TMP/namefile.tmp", "wb");
+		ftmp = fopen ("/home/rsa/TMP/namefile.tmp", "wb");
 		fwrite(nombreArchivo, sizeof(char), 12, ftmp);
 		fclose (ftmp);
 		
 		//Crea el archivo temporal para almacenar el nombre del archivo
-		fTramaTmp = fopen ("/home/pi/TMP/tramafile.tmp", "wb");
+		fTramaTmp = fopen ("/home/rsa/TMP/tramafile.tmp", "wb");
 				
 		//Cambia el valor de la bandera de nuevo archivo para que ignore esta funcion en la siguientes muestras y libera la memoria reservada para el nombre de la ruta 
 		banNewFile = 1;	
@@ -425,12 +425,12 @@ void GuardarVector(unsigned char* tramaD){
 		do{
 		//Guarda la trama en el archivo binario:
 		outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);
-		//Guarda la trama en el archivo temporal:
-		fTramaTmp = fopen ("/home/pi/TMP/tramafile.tmp", "wb");
-		fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
-		fclose (fTramaTmp);
+		 //Guarda la trama en el archivo temporal:
+		 //fTramaTmp = fopen ("/home/rsa/TMP/tramafile.tmp", "wb");
+		 //fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
+		 //fclose (fTramaTmp);
 		//Ejecuta el script de python:
-		//system("python /home/pi/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
+		//system("python /home/rsa/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
 		} while (outFwrite!=NUM_ELEMENTOS);
 		fflush(fp);
 	}
@@ -596,7 +596,7 @@ void DetectarEvento(unsigned char* tramaD) {
                 printf ("Enviado solicitud Evt Inicio %lu %lu Duracion %lu HoraActual %lu \n", fechaInitEvtAnt, tiempoInitEvtAnt, duracionEvtAnt, horaLong);
             
 				//Extrae el evento:
-				//ExtraerEvento(nombreArchivo, tiempoInitEvtAnt, duracionEvtAnt);
+				ExtraerEvento(nombreArchivo, tiempoInitEvtAnt, duracionEvtAnt);
 			
 			}
 
@@ -943,19 +943,22 @@ char calcularIsEvento(float resul_STA_LTA) {
 // *********************************************************************************************
 void ExtraerEvento(char* nombreArchivoRegistro, unsigned int tiempoEvento, unsigned int duracionEvento){
 
-	char parametroExtraerEvento[50];
+	char parametroExtraerEvento[65];
 	char nombreArchivoRegistroStr[16];
 	char tiempoEventoStr[7];
 	char duracionEventoStr[5];
+	char backgroud[3];
 	
 	strcpy(nombreArchivoRegistroStr, nombreArchivoRegistro);
 	sprintf(tiempoEventoStr, " %d ", tiempoEvento); 
 	sprintf(duracionEventoStr, "%d", duracionEvento); 
 	
-	strcpy(parametroExtraerEvento, "/home/pi/Ejecutables/extraerevento ");
+	strcpy(parametroExtraerEvento, "/home/rsa/Ejecutables/extraerevento ");
+	strcpy(backgroud, " &");
 	strcat(parametroExtraerEvento, nombreArchivoRegistroStr);
 	strcat(parametroExtraerEvento, tiempoEventoStr);
 	strcat(parametroExtraerEvento, duracionEventoStr);
+	strcat(parametroExtraerEvento, backgroud);
 	
 	system(parametroExtraerEvento);	
 	
@@ -963,3 +966,4 @@ void ExtraerEvento(char* nombreArchivoRegistro, unsigned int tiempoEvento, unsig
 // *********************************************************************************************
 // ******************************** Fin Metodo ExtraerEvento **********************************
 // *********************************************************************************************
+
