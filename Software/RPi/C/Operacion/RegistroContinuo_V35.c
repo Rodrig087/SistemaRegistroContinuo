@@ -231,6 +231,8 @@ void CrearArchivos()
     char extBin[5];
     char extTxt[5];
     char extTmp[5];
+	char nombreActualARC[24];
+	char nombreAnteriorARC[24];
 
     //Variables para crear los archivos de datos:
     char archivoRegistroContinuo[35];
@@ -267,7 +269,6 @@ void CrearArchivos()
     strcpy(extTxt, ".txt");
     strcpy(extTmp, ".tmp");
 
-
     //Se crean los archivos necesarios para almacenar los datos:
     printf("Se crearon los archivos:\n");
 
@@ -295,9 +296,17 @@ void CrearArchivos()
     strcat(filenameActualRegistroContinuo, archivoActualRegistroContinuo);
     strcat(filenameActualRegistroContinuo, extTmp);
     printf("   %s\n",filenameActualRegistroContinuo);
-    //Crea el archivo temporal en modo sobrescritura
-    ftmp = fopen(filenameActualRegistroContinuo, "wb");
-    fwrite(filenameArchivoRegistroContinuo, 1, sizeof(filenameArchivoRegistroContinuo), ftmp);
+    //Crea el archivo temporal en modo sobrescritura:
+    ftmp = fopen(filenameActualRegistroContinuo, "w+");
+	
+	//Establece el nombre del archivo actual de registro continuo (es el mismo nombre sin el path):
+	strcpy(nombreActualARC, "UCUE01_");
+    strcat(nombreActualARC, archivoRegistroContinuo);
+    strcat(nombreActualARC, extBin);
+	printf("   %s\n",nombreActualARC);
+	
+    //Escribe el nombre del archivo de registro continuo actual en el archivo temporal:
+	fwrite(nombreActualARC, sizeof(char), sizeof(nombreActualARC), ftmp);
     fclose(ftmp);
 
     //Establece el nombre del archivo de texto para guardar los eventos detectados
@@ -661,7 +670,7 @@ void DetectarEvento(unsigned char *tramaD)
                 printf("Enviado solicitud Evt Inicio %lu %lu Duracion %lu HoraActual %lu \n", fechaInitEvtAnt, tiempoInitEvtAnt, duracionEvtAnt, horaLong);
 
                 //Extrae el evento:
-                ExtraerEvento(filenameArchivoRegistroContinuo, tiempoInitEvtAnt, duracionEvtAnt);
+                //ExtraerEvento(filenameArchivoRegistroContinuo, tiempoInitEvtAnt, duracionEvtAnt);
             }
 
             // Si aun no se han detectado eventos y el dato es 1, significa el comienzo de un evento
