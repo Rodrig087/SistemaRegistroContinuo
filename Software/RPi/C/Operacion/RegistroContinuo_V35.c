@@ -8,6 +8,7 @@
 #include <time.h>
 #include <string.h>
 #include <unistd.h>
+#include <errno.h>
 // Para operaciones en la deteccion de eventos
 #include <math.h>
 #include <stdbool.h>
@@ -290,24 +291,49 @@ void CrearArchivos()
     //Crea el archivo binario en modo append
     fp = fopen(filenameArchivoRegistroContinuo, "ab+");
 
-    //Crea el archivo temporal para guardar el nombre del archivo de registro continuo actual:
+    //Establece el nombre del archivo temporal:
     strcpy(archivoActualRegistroContinuo, "NombreArchivoRegistroContinuo");
     strcat(filenameActualRegistroContinuo, pathTMP);
     strcat(filenameActualRegistroContinuo, archivoActualRegistroContinuo);
     strcat(filenameActualRegistroContinuo, extTmp);
-    printf("   %s\n",filenameActualRegistroContinuo);
-    //Crea el archivo temporal en modo sobrescritura:
-    ftmp = fopen(filenameActualRegistroContinuo, "w+");
 	
-	//Establece el nombre del archivo actual de registro continuo (es el mismo nombre sin el path):
+	//Abre el archivo temporal en modo lectura:
+	ftmp = fopen(filenameActualRegistroContinuo, "rt");
+	//Si el archivo existe lee el contenido:
+	if (errno=!NULL){
+		//Recupera el nombre del archivo anterior.
+		fgets(nombreAnteriorARC, 24, ftmp);
+		//Elimina el caracter de fin de linea (\n):
+		strtok(nombreAnteriorARC, "\n");
+		//Elimina el caracter de retorno de carro (\r):
+		strtok(nombreAnteriorARC, "\r");
+		fclose(ftmp);
+	}
+	
+	//Crea el archivo temporal si este no existe:
+	ftmp = fopen(filenameActualRegistroContinuo, "w+");
+	printf("   %s\n",filenameActualRegistroContinuo);
+	
+	
+    //Crea el archivo temporal en modo sobrescritura:
+    //ftmp = fopen(filenameActualRegistroContinuo, "w+");
+	
+	//Establece el nombre del archivo RC actual (es el mismo nombre sin el path):
 	strcpy(nombreActualARC, "UCUE01_");
     strcat(nombreActualARC, archivoRegistroContinuo);
     strcat(nombreActualARC, extBin);
+	strcat(nombreActualARC, "/n");
 	printf("   %s\n",nombreActualARC);
 	
-    //Escribe el nombre del archivo de registro continuo actual en el archivo temporal:
+    //Escribe el nombre del archivo RC actual en el archivo temporal:
 	fwrite(nombreActualARC, sizeof(char), sizeof(nombreActualARC), ftmp);
-    fclose(ftmp);
+	//Si es que existe, escribe el nombre del archivo RC anterior en el archivo temporal
+    //if (errno=!NULL){
+	fwrite(nombreAnteriorARC, sizeof(char), sizeof(nombreAnteriorARC), ftmp);
+	//}
+	
+	//Cierra el archivo temporal:
+	fclose(ftmp);
 
     //Establece el nombre del archivo de texto para guardar los eventos detectados
     strcpy(archivoEventoDetectado, "EventosDetectados");
