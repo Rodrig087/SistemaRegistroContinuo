@@ -109,7 +109,7 @@ char extBin[5];
 char extTxt[5];
 char extTmp[5];
 char nombreActualARC[25];
-char nombreAnteriorARC[25];
+char nombreAnteriorARC[26];
 
 //Variables para crear los archivos de datos:
 char archivoRegistroContinuo[35];
@@ -315,7 +315,7 @@ void CrearArchivos()
 	//Abre el archivo temporal en modo lectura (El archivo debe existir):
 	ftmp = fopen(filenameActualRegistroContinuo, "rt");
 	//Recupera el nombre del archivo anterior (Lee solo la primera fila del archivo temporal):
-	fgets(nombreAnteriorARC, 25, ftmp);
+	fgets(nombreAnteriorARC, 26, ftmp);
 	//Cierra el archivo temporal:
 	fclose(ftmp);
 		
