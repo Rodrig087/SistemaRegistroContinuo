@@ -1,5 +1,5 @@
 //Compilar:
-//gcc ComprobarRegistro_V3.c -o /home/rsa/Ejecutables/comprobarregistro
+//gcc /home/rsa/Programas/ComprobarRegistro_V3.c -o /home/rsa/Ejecutables/comprobarregistro
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -32,10 +32,15 @@ char salida[30];
 char ext1[8];
 char ext2[8];
 
+char idEstacion[10];
+char pathTMP[60];
+char pathRegistroContinuo[60];
+char nombreActualARC[25];
+char filenameActualRegistroContinuo[100];
+
+FILE *ficheroDatosConfiguracion;
 FILE *tmpf;
 FILE *lf;
-
-char filenameActualRegistroContinuo[100];
 
 unsigned int segInicio;
 unsigned int segActual;
@@ -74,10 +79,34 @@ int main(void)
 }
 
 void RecuperarVector()
-{
+{	
+	//Abre el fichero de datos de configuracion:
+    ficheroDatosConfiguracion = fopen("/home/rsa/Configuracion/DatosConfiguracion.txt", "r");
+	fgets(idEstacion, 10, ficheroDatosConfiguracion);
+    fgets(pathTMP, 60, ficheroDatosConfiguracion);
+    fgets(pathRegistroContinuo, 60, ficheroDatosConfiguracion);
+    //Cierra el fichero de informacion:
+    fclose(ficheroDatosConfiguracion);
+	
+	//Elimina el caracter de fin de linea (\n):
+    strtok(idEstacion, "\n");
+    strtok(pathRegistroContinuo, "\n");
+    strtok(pathTMP, "\n");
+    //Elimina el caracter de retorno de carro (\r):
+    strtok(idEstacion, "\r");
+    strtok(pathRegistroContinuo, "\r");
+    strtok(pathTMP, "\r");
+	
 	//Abre el archivo temporal en modo lectura
-	tmpf = fopen("/home/rsa/TMP/NombreArchivoRegistroContinuo.tmp", "rb");
-	fgets(filenameActualRegistroContinuo, 100, tmpf);
+	tmpf = fopen("/home/rsa/TMP/NombreArchivoRegistroContinuo.tmp", "r");
+	fgets(nombreActualARC, 25, tmpf);
+	strtok(nombreActualARC, "\n");
+	strtok(nombreActualARC, "\r");
+	fclose(tmpf);
+	
+	//Incluye el path del nombre del archivo actual RC:
+	strcat(filenameActualRegistroContinuo, pathRegistroContinuo);
+	strcat(filenameActualRegistroContinuo, nombreActualARC);	
 
 	//Abre el archivo binario en modo lectura:
 	lf = fopen(filenameActualRegistroContinuo, "rb");
@@ -106,7 +135,7 @@ void RecuperarVector()
 	tiempoSegundos = (3600 * tramaDatos[tramaSize - 3]) + (60 * tramaDatos[tramaSize - 2]) + (tramaDatos[tramaSize - 1]);
 
 	printf("Archivo actual:\n");
-	printf(nombreArchivo);
+	printf(nombreActualARC);
 	printf("\n");
 
 	printf("\nHora del sistema:\n");
@@ -170,6 +199,5 @@ void RecuperarVector()
 	printf("%2.8f ", zAceleracion);
 	printf("|\n");
 
-	fclose(tmpf);
 	fclose(lf);
 }

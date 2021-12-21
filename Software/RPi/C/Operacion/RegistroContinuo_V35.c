@@ -100,6 +100,22 @@ unsigned short contCiclos;
 unsigned short contador;
 short fuenteTiempoPic;
 
+//Variables para extraer los datos de configuracion:
+char idEstacion[10];
+char pathRegistroContinuo[60];
+char pathEventosDetectados[60];
+char pathTMP[60];
+char extBin[5];
+char extTxt[5];
+char extTmp[5];
+char nombreActualARC[25];
+char nombreAnteriorARC[25];
+
+//Variables para crear los archivos de datos:
+char archivoRegistroContinuo[35];
+char archivoEventoDetectado[35];
+char archivoActualRegistroContinuo[35];
+
 FILE *fp;
 FILE *ftmp;
 FILE *fTramaTmp;
@@ -223,28 +239,12 @@ int ConfiguracionPrincipal()
 
 
 void CrearArchivos()
-{
-    //Variables para extraer los datos de configuracion:
-    char idEstacion[10];
-    char pathRegistroContinuo[60];
-    char pathEventosDetectados[60];
-    char pathTMP[60];
-    char extBin[5];
-    char extTxt[5];
-    char extTmp[5];
-	char nombreActualARC[24];
-	char nombreAnteriorARC[24];
-
-    //Variables para crear los archivos de datos:
-    char archivoRegistroContinuo[35];
-    char archivoEventoDetectado[35];
-    char archivoActualRegistroContinuo[35];
-    
+{    
     //Se leen los datos de configuracion:
-    printf("Leyendo archivo de configuracion...\n");
+    printf("\nLeyendo archivo de configuracion...\n");
 
     //Abre el fichero de datos de configuracion:
-    ficheroDatosConfiguracion = fopen("/home/rsa/Configuracion/DatosConfiguracion.txt", "rt");
+    ficheroDatosConfiguracion = fopen("/home/rsa/Configuracion/DatosConfiguracion.txt", "r");
     //Recupera el contenido del archivo en la variable arg1 hasta que encuentra el carácter de fin de línea (\n):
     //fgets(idEstacion, 10, ficheroDatosConfiguracion); //La funcion fgets lee el archivo linea por linea, esta parte es necesaria para saltar el encabezado del archivo
     fgets(idEstacion, 10, ficheroDatosConfiguracion);
@@ -271,7 +271,7 @@ void CrearArchivos()
     strcpy(extTmp, ".tmp");
 
     //Se crean los archivos necesarios para almacenar los datos:
-    printf("Se crearon los archivos:\n");
+    printf("\nSe crearon los archivos:\n");
 
     //Obtiene la hora y la fecha del sistema:
     time_t t;
@@ -279,6 +279,7 @@ void CrearArchivos()
     t = time(NULL);
     tm = localtime(&t);
 
+	//*****************************************************************************
     //Crea el archivo binario para los datos de registro continuo:
     //Establece la fecha y hora actual como nombre que tendra el archivo binario
     strftime(archivoRegistroContinuo, 20, "%y%m%d-%H%M%S", tm);  
@@ -290,52 +291,10 @@ void CrearArchivos()
     printf("   %s\n",filenameArchivoRegistroContinuo);
     //Crea el archivo binario en modo append
     fp = fopen(filenameArchivoRegistroContinuo, "ab+");
-
-    //Establece el nombre del archivo temporal:
-    strcpy(archivoActualRegistroContinuo, "NombreArchivoRegistroContinuo");
-    strcat(filenameActualRegistroContinuo, pathTMP);
-    strcat(filenameActualRegistroContinuo, archivoActualRegistroContinuo);
-    strcat(filenameActualRegistroContinuo, extTmp);
+	//*****************************************************************************
 	
-	//Abre el archivo temporal en modo lectura:
-	ftmp = fopen(filenameActualRegistroContinuo, "rt");
-	//Si el archivo existe lee el contenido:
-	if (errno=!NULL){
-		//Recupera el nombre del archivo anterior.
-		fgets(nombreAnteriorARC, 24, ftmp);
-		//Elimina el caracter de fin de linea (\n):
-		strtok(nombreAnteriorARC, "\n");
-		//Elimina el caracter de retorno de carro (\r):
-		strtok(nombreAnteriorARC, "\r");
-		fclose(ftmp);
-	}
-	
-	//Crea el archivo temporal si este no existe:
-	ftmp = fopen(filenameActualRegistroContinuo, "w+");
-	printf("   %s\n",filenameActualRegistroContinuo);
-	
-	
-    //Crea el archivo temporal en modo sobrescritura:
-    //ftmp = fopen(filenameActualRegistroContinuo, "w+");
-	
-	//Establece el nombre del archivo RC actual (es el mismo nombre sin el path):
-	strcpy(nombreActualARC, "UCUE01_");
-    strcat(nombreActualARC, archivoRegistroContinuo);
-    strcat(nombreActualARC, extBin);
-	strcat(nombreActualARC, "/n");
-	printf("   %s\n",nombreActualARC);
-	
-    //Escribe el nombre del archivo RC actual en el archivo temporal:
-	fwrite(nombreActualARC, sizeof(char), sizeof(nombreActualARC), ftmp);
-	//Si es que existe, escribe el nombre del archivo RC anterior en el archivo temporal
-    //if (errno=!NULL){
-	fwrite(nombreAnteriorARC, sizeof(char), sizeof(nombreAnteriorARC), ftmp);
-	//}
-	
-	//Cierra el archivo temporal:
-	fclose(ftmp);
-
-    //Establece el nombre del archivo de texto para guardar los eventos detectados
+	//*****************************************************************************
+	//Crea el archivo de texto para guardar los eventos detectados
     strcpy(archivoEventoDetectado, "EventosDetectados");
     strcat(filenameEventosDetectados, pathEventosDetectados);
     strcat(filenameEventosDetectados, idEstacion);
@@ -344,8 +303,44 @@ void CrearArchivos()
     printf("   %s\n",filenameEventosDetectados);
     //Crea el archivo de texto en modo append
     obj_fp = fopen(filenameEventosDetectados, "a");
-    fclose(ftmp);
+	//*****************************************************************************
 
+	//*****************************************************************************
+    //Crea el archivo temporal para guardar los nombres actual y anterior de los archivos RC 
+	//Establece el nombre del archivo temporal:
+    strcpy(archivoActualRegistroContinuo, "NombreArchivoRegistroContinuo");
+    strcat(filenameActualRegistroContinuo, pathTMP);
+    strcat(filenameActualRegistroContinuo, archivoActualRegistroContinuo);
+    strcat(filenameActualRegistroContinuo, extTmp);
+	//Abre el archivo temporal en modo lectura (El archivo debe existir):
+	ftmp = fopen(filenameActualRegistroContinuo, "rt");
+	//Recupera el nombre del archivo anterior (Lee solo la primera fila del archivo temporal):
+	fgets(nombreAnteriorARC, 25, ftmp);
+	//Cierra el archivo temporal:
+	fclose(ftmp);
+		
+	//Abre el archivo temporal en modo escritura:
+	ftmp = fopen(filenameActualRegistroContinuo, "w+");
+	//printf("   %s\n",filenameActualRegistroContinuo);
+		
+	//Establece el nombre del archivo RC actual (es el mismo nombre sin el path):
+	strcat(nombreActualARC, idEstacion);
+    strcat(nombreActualARC, archivoRegistroContinuo);
+    strcat(nombreActualARC, extBin);
+	strcat(nombreActualARC, "\n");
+		
+    //Escribe el nombre del archivo RC actual en el archivo temporal:
+	fwrite(nombreActualARC, sizeof(char), sizeof(nombreActualARC), ftmp);
+	//Escribe el nombre del archivo RC anterior en el archivo temporal:
+	fwrite(nombreAnteriorARC, sizeof(char), sizeof(nombreAnteriorARC), ftmp);
+	
+	printf("\nArchivo RC Actual: %s",nombreActualARC);
+	printf("Archivo RC Anterior: %s\n\n",nombreAnteriorARC);
+	
+	//Cierra el archivo temporal:
+	fclose(ftmp);
+	//*****************************************************************************
+    
 }
 
 
@@ -696,7 +691,7 @@ void DetectarEvento(unsigned char *tramaD)
                 printf("Enviado solicitud Evt Inicio %lu %lu Duracion %lu HoraActual %lu \n", fechaInitEvtAnt, tiempoInitEvtAnt, duracionEvtAnt, horaLong);
 
                 //Extrae el evento:
-                //ExtraerEvento(filenameArchivoRegistroContinuo, tiempoInitEvtAnt, duracionEvtAnt);
+                ExtraerEvento(filenameArchivoRegistroContinuo, tiempoInitEvtAnt, duracionEvtAnt);
             }
 
             // Si aun no se han detectado eventos y el dato es 1, significa el comienzo de un evento
