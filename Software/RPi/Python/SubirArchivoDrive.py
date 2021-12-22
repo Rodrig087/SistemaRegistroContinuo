@@ -9,15 +9,20 @@ from oauth2client import file, client, tools
 
 # ///////////////////////////////// Archivos //////////////////////////////////
 
-direccionCarpeta = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/'
-credentialsFile = direccionCarpeta + 'credentials.json'
-tokenFile = direccionCarpeta + 'token.json'
-nombreArchivo = 'C00N02_210611-065731-GPS_090.dat'
-archivoSubir = direccionCarpeta + nombreArchivo
+pathArchivosConfiguracion = '/home/rsa/Configuracion/'
+pathNombresArchvivosRC = '/home/rsa/TMP/'
+
+archivoDatosConfiguracion = pathArchivosConfiguracion + 'DatosConfiguracion.txt'
+archivoNombresArchivosRC = pathNombresArchvivosRC + 'NombreArchivoRegistroContinuo.tmp'
+
+credentialsFile = pathArchivosConfiguracion + 'credentials.json'
+tokenFile = pathArchivosConfiguracion + 'token.json'
+#nombreArchivo = 'C00N02_210611-065731-GPS_090.dat'
+#archivoSubir = direccionCarpeta + nombreArchivo
 # ID de la carpeta para almacenar los archivos en Drive
 # Esta ID se obtiene ingresando al Drive mediante el navegador y en la URL
 # https://drive.google.com/drive/u/1/folders/12S_kjBDl1wZALM1B0El892Oa-Il7kEXa
-pathDriveID = '1LLSy9PkgP7CEUKfPYPjwWgp48V9i6NA3'
+#pathDriveID = '1LLSy9PkgP7CEUKfPYPjwWgp48V9i6NA3'
 
 # /////////////////////////////////////////////////////////////////////////////
 
@@ -130,12 +135,26 @@ if __name__ == '__main__':
 	 # Llama al metodo para realizar la autenticacion, la primera vez se
 	 # abrira el navegador, pero desde la segunda ya no
 	 #service = get_authenticated(SCOPES)
+     
+    ficheroConfiguracion = open(archivoDatosConfiguracion)
+    ficheroNombresArchivos = open(archivoNombresArchivosRC)
+    
+    lineasFicheroConfiguracion = ficheroConfiguracion.readlines()
+    lineasFicheroNombresArchivos = ficheroNombresArchivos.readlines()
+    
+    nombreArchvioRegistroContinuo = lineasFicheroNombresArchivos[1].rstrip('\n')
+    pathArchivoRegistroContinuo = lineasFicheroConfiguracion[2].rstrip('\n') + nombreArchvioRegistroContinuo
+    pathDriveID = lineasFicheroConfiguracion[6].rstrip('\n')
+    
+    #print('Subiendo el archivo: %s' %nombreArchvioRegistroContinuo)
+    print('Subiendo el archivo: %s' %pathArchivoRegistroContinuo)
+    #print(pathArchivoRegistroContinuo)
     
     #Llama al metodo para intentar conectarse a Google Drive
     service = Try_Autenticar_Drive(SCOPES)
     
     if isConecctedDrive == True:
         # El metodo tiene este formato: insert_file(service, name, description, parent_id, mime_type, filename)
-        file_uploaded = insert_file(service, nombreArchivo, nombreArchivo, pathDriveID, 'text/x-script.txt', archivoSubir)
-        
+        #file_uploaded = insert_file(service, nombreArchivo, nombreArchivo, pathDriveID, 'text/x-script.txt', archivoSubir)
+        file_uploaded = insert_file(service, nombreArchvioRegistroContinuo, nombreArchvioRegistroContinuo, pathDriveID, 'text/x-script.txt', pathArchivoRegistroContinuo)
 # /////////////////////////////////////////////////////////////////////////////
