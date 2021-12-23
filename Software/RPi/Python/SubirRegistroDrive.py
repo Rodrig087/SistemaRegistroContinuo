@@ -81,16 +81,14 @@ def insert_file(service, name, description, parent_id, mime_type, filename):
     Returns:
         Inserted file metadata if successful, None otherwise.
     """
-    #CHUNK_SIZE = 256 * 1024
-    #media_body = MediaFileUpload(filename, mimetype = mime_type, chunksize=CHUNK_SIZE, resumable = True)
-    media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = True)
+    #media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False, chunksize=256 * 1024)
+    media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False)
     body = {
         'name': name,
         'description': description,
         'mimeType': mime_type
     }
-    
-    
+        
     # Si se recibe la ID de la carpeta superior, la coloca
     if parent_id:
         body['parents'] = [parent_id]

@@ -6,14 +6,20 @@ from googleapiclient.discovery import build
 from httplib2 import Http
 from oauth2client import file, client, tools
 
+from datetime import datetime
+import time
+
 
 # ///////////////////////////////// Archivos //////////////////////////////////
 
-direccionCarpeta = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/'
-credentialsFile = direccionCarpeta + 'credentials.json'
-tokenFile = direccionCarpeta + 'token.json'
-nombreArchivo = 'C00N02_210611-065731-GPS_090.dat'
-archivoSubir = direccionCarpeta + nombreArchivo
+pathArchivos = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/Archivos/'
+pathCredenciales = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/Credenciales/'
+
+credentialsFile = pathCredenciales + 'credentials.json'
+tokenFile = pathCredenciales + 'token.json'
+
+nombreArchivo = 'UCUE01_211219-000001.dat'
+archivoSubir = pathArchivos + nombreArchivo
 # ID de la carpeta para almacenar los archivos en Drive
 # Esta ID se obtiene ingresando al Drive mediante el navegador y en la URL
 # https://drive.google.com/drive/u/1/folders/12S_kjBDl1wZALM1B0El892Oa-Il7kEXa
@@ -70,7 +76,7 @@ def insert_file(service, name, description, parent_id, mime_type, filename):
     Returns:
         Inserted file metadata if successful, None otherwise.
     """
-    media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = True)
+    media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False)
     body = {
         'name': name,
         'description': description,
@@ -133,9 +139,12 @@ if __name__ == '__main__':
     
     #Llama al metodo para intentar conectarse a Google Drive
     service = Try_Autenticar_Drive(SCOPES)
+    now = datetime.now() 
+    print(now)
     
     if isConecctedDrive == True:
         # El metodo tiene este formato: insert_file(service, name, description, parent_id, mime_type, filename)
         file_uploaded = insert_file(service, nombreArchivo, nombreArchivo, pathDriveID, 'text/x-script.txt', archivoSubir)
-        
+        now = datetime.now() 
+        print(now)
 # /////////////////////////////////////////////////////////////////////////////
