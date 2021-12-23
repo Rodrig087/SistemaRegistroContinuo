@@ -12,8 +12,11 @@ import time
 
 # ///////////////////////////////// Archivos //////////////////////////////////
 
-pathArchivos = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/Archivos/'
-pathCredenciales = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/Credenciales/'
+#pathArchivos = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/Archivos/'
+#pathCredenciales = 'C:/Users/milto/Milton/RSA/Proyectos/Google Drive API Python/Acelerografos/Credenciales/'
+
+pathArchivos = 'D:/Proyectos/Google Drive API Python/Acelerografos/Archivos/'
+pathCredenciales = 'D:/Proyectos/Google Drive API Python/Acelerografos/Credenciales/'
 
 credentialsFile = pathCredenciales + 'credentials.json'
 tokenFile = pathCredenciales + 'token.json'
@@ -76,7 +79,7 @@ def insert_file(service, name, description, parent_id, mime_type, filename):
     Returns:
         Inserted file metadata if successful, None otherwise.
     """
-    media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False)
+    media_body = MediaFileUpload(filename, mimetype = mime_type, chunksize=-1, resumable = True)
     body = {
         'name': name,
         'description': description,

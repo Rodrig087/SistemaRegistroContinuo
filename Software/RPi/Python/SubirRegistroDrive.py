@@ -82,7 +82,8 @@ def insert_file(service, name, description, parent_id, mime_type, filename):
         Inserted file metadata if successful, None otherwise.
     """
     #media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False, chunksize=256 * 1024)
-    media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False)
+    #media_body = MediaFileUpload(filename, mimetype = mime_type, resumable = False)
+    media_body = MediaFileUpload(filename, mimetype = mime_type, chunksize=-1, resumable = True)
     body = {
         'name': name,
         'description': description,
@@ -95,7 +96,7 @@ def insert_file(service, name, description, parent_id, mime_type, filename):
 
     # Realiza la carga del archivo en la carpeta respectiva de Drive
     try:
-        print("punto de control")
+        #print("punto de control")
         file = service.files().create(
             body = body,
             media_body = media_body,
@@ -135,10 +136,12 @@ def Try_Autenticar_Drive(SCOPES):
         service = get_authenticated(SCOPES)
         isConecctedDrive = True
         print("Inicio Drive Ok")
+        guardarDataInLogFile ("Inicio Drive Ok")
         return service
     except:
         isConecctedDrive = False
         print("********** Error Inicio Drive ********")
+        guardarDataInLogFile ("Error Inicio Drive")
         return 0
 # **********************************************************************
 # Fin del metodo para conectarse a Drive
@@ -194,7 +197,7 @@ if __name__ == '__main__':
     # Crea el archivo para almacenar los logs del proyectos, que eventos ocurren
     objLogFile = pathLogFiles + 'Log' + lineasFicheroConfiguracion[0].rstrip('\n') + fechaFormato + '.txt'
     # Llama al metodo para crear un nuevo archivo log
-    guardarDataInLogFile ("Inicio")
+    #guardarDataInLogFile ("Inicio")
     
     
     #Llama al metodo para intentar conectarse a Google Drive
@@ -206,12 +209,13 @@ if __name__ == '__main__':
             # El metodo tiene este formato: insert_file(service, name, description, parent_id, mime_type, filename)
             #file_uploaded = insert_file(service, nombreArchivo, nombreArchivo, pathDriveID, 'text/x-script.txt', archivoSubir)
             print('Subiendo el archivo: %s' %pathArchivoRegistroContinuo)
+            guardarDataInLogFile ("Subiendo el archivo: " + nombreArchvioRegistroContinuo)
             #file_uploaded = insert_file(service, nombreArchvioRegistroContinuo, nombreArchvioRegistroContinuo, pathDriveID, 'text/x-script.txt', pathArchivoRegistroContinuo)
             file_uploaded = insert_file(service, nombreArchvioRegistroContinuo, nombreArchvioRegistroContinuo, pathDriveID, 'text/plain', pathArchivoRegistroContinuo)
-            guardarDataInLogFile ("Archivo " + str(file_uploaded) + " subido drive Ok")
-            print('Archivo subido a Drive correctamente ' + str(file_uploaded))
+            guardarDataInLogFile ("Archivo subido correctamente a Google Drive " + str(file_uploaded))
+            print('Archivo' + nombreArchvioRegistroContinuo + ' subido correctamente a Google Drive ' )
         except:
             # Llama al metodo para guardar el evento ocurrido en el archivo
-            guardarDataInLogFile ("***** Error al subir archivo " + nombreArchvioRegistroContinuo + " *****")
+            guardarDataInLogFile ("Error subiendo el archivo a Google Drive")
             print ('Error subiendo el archivo a Google Drive')
 # /////////////////////////////////////////////////////////////////////////////
