@@ -300,9 +300,9 @@ void CrearArchivos()
     strcat(filenameEventosDetectados, idEstacion);
     strcat(filenameEventosDetectados, archivoEventoDetectado);
     strcat(filenameEventosDetectados, extTxt);
-    printf("   %s\n",filenameEventosDetectados);
-    //Crea el archivo de texto en modo append
+	//Crea el archivo de texto en modo append
     obj_fp = fopen(filenameEventosDetectados, "a");
+	printf("   %s\n",filenameEventosDetectados);
 	//*****************************************************************************
 
 	//*****************************************************************************
@@ -318,7 +318,7 @@ void CrearArchivos()
 	fgets(nombreAnteriorARC, 26, ftmp);
 	//Cierra el archivo temporal:
 	fclose(ftmp);
-		
+			
 	//Abre el archivo temporal en modo escritura:
 	ftmp = fopen(filenameActualRegistroContinuo, "w+");
 	//printf("   %s\n",filenameActualRegistroContinuo);
@@ -330,9 +330,9 @@ void CrearArchivos()
 	strcat(nombreActualARC, "\n");
 		
     //Escribe el nombre del archivo RC actual en el archivo temporal:
-	fwrite(nombreActualARC, sizeof(char), sizeof(nombreActualARC), ftmp);
+	fwrite(nombreActualARC, sizeof(char), 24, ftmp);
 	//Escribe el nombre del archivo RC anterior en el archivo temporal:
-	fwrite(nombreAnteriorARC, sizeof(char), sizeof(nombreAnteriorARC), ftmp);
+	fwrite(nombreAnteriorARC, sizeof(char), 24, ftmp);
 	
 	printf("\nArchivo RC Actual: %s",nombreActualARC);
 	printf("Archivo RC Anterior: %s\n\n",nombreAnteriorARC);

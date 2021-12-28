@@ -191,6 +191,7 @@ if __name__ == '__main__':
     lineasFicheroNombresArchivos = ficheroNombresArchivos.readlines()
     
     nombreArchvioRegistroContinuo = lineasFicheroNombresArchivos[1].rstrip('\n')
+    print(nombreArchvioRegistroContinuo)
     pathArchivoRegistroContinuo = lineasFicheroConfiguracion[2].rstrip('\n') + nombreArchvioRegistroContinuo
     pathDriveID = lineasFicheroConfiguracion[6].rstrip('\n')
     
