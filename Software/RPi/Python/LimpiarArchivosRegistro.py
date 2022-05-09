@@ -22,7 +22,7 @@ if __name__ == '__main__':
     for i in listaArchivosOrdenada: 
         nombreArchivo = i
         #print(nombreArchivo[7:11])
-        listaMeses.append(nombreArchivo[0:11])
+        listaMeses.append(nombreArchivo[0:10])
     
     #Crea un set con el nombre de los meses
     #print(set(listaMeses))
@@ -37,10 +37,10 @@ if __name__ == '__main__':
     #******************************************************************************
     #Borra todos los archivos excepto los correspondientes a los 2 ultimos meses:    
     for nombreArchivo in listaArchivosOrdenada: 
-        if (nombreArchivo[0:11]!=mes1) and (nombreArchivo[0:11]!=mes2):
+        if (nombreArchivo[0:10]!=mes1) and (nombreArchivo[0:10]!=mes2):
             print(nombreArchivo)
             pathArchivo = rutaCarpeta + nombreArchivo
-            #print(pathArchivo)
+            print(pathArchivo)
             os.remove(pathArchivo)
     
     #******************************************************************************
