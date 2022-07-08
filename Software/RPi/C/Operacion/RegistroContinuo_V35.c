@@ -87,6 +87,7 @@ unsigned char tramaDatos[NUM_ELEMENTOS];
 
 //Variables para crear los archivos de datos:
 char filenameArchivoRegistroContinuo[100];
+char filenameTemporalRegistroContinuo[100];
 char filenameEventosDetectados[100];
 char filenameActualRegistroContinuo[100];
 
@@ -113,6 +114,7 @@ char nombreAnteriorARC[26];
 
 //Variables para crear los archivos de datos:
 char archivoRegistroContinuo[35];
+char temporalRegistroContinuo[35];
 char archivoEventoDetectado[35];
 char archivoActualRegistroContinuo[35];
 
@@ -291,6 +293,18 @@ void CrearArchivos()
     printf("   %s\n",filenameArchivoRegistroContinuo);
     //Crea el archivo binario en modo append
     fp = fopen(filenameArchivoRegistroContinuo, "ab+");
+	//*****************************************************************************
+	
+	//*****************************************************************************
+    //Crea el archivo temporal para los datos de registro continuo:
+    strcpy(temporalRegistroContinuo, "TramaTemporal");
+	strcat(filenameTemporalRegistroContinuo, pathTMP);
+    strcat(filenameTemporalRegistroContinuo, temporalRegistroContinuo);
+    strcat(filenameTemporalRegistroContinuo, extTmp);
+	//Crea el archivo de texto en modo sobrescritura
+    //fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+	//printf("   %s\n",filenameTemporalRegistroContinuo);
+	//*******************************************
 	//*****************************************************************************
 	
 	//*****************************************************************************
@@ -505,24 +519,40 @@ void ObtenerTiempoRTC()
 //Esta funcion sirve para guardar en el archivo binario las tramas de 1 segundo recibidas
 void GuardarVector(unsigned char *tramaD)
 {
-
     unsigned int outFwrite;
+	unsigned int tmpFwrite;
 
-    if (fp != NULL)
+    //Guarda la trama en el archivo de registro continuo
+	if (fp != NULL)
     {
         do
         {
             //Guarda la trama en el archivo binario:
             outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);
             //Guarda la trama en el archivo temporal:
-            //fTramaTmp = fopen ("/home/rsa/TMP/tramafile.tmp", "wb");
-            //fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
-            //fclose (fTramaTmp);
+            /* fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+			fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);      
+			fclose(fTramaTmp); */
             //Ejecuta el script de python:
             //system("python /home/rsa/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
         } while (outFwrite != NUM_ELEMENTOS);
         fflush(fp);
     }
+	
+	//Guarda la trama en el archivo temporal
+	fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+	if (fTramaTmp != NULL)
+    {
+        do
+        {
+			tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);      
+			
+        } while (tmpFwrite != NUM_ELEMENTOS);
+        
+		fflush(fTramaTmp);
+		fclose(fTramaTmp);
+    }
+	
 }
 
 
