@@ -530,9 +530,9 @@ void GuardarVector(unsigned char *tramaD)
             //Guarda la trama en el archivo binario:
             outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);
             //Guarda la trama en el archivo temporal:
-            /* fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
-			fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);      
-			fclose(fTramaTmp); */
+            //fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+			//tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);      
+			//fclose(fTramaTmp); */
             //Ejecuta el script de python:
             //system("python /home/rsa/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
         } while (outFwrite != NUM_ELEMENTOS);
@@ -540,6 +540,7 @@ void GuardarVector(unsigned char *tramaD)
     }
 	
 	//Guarda la trama en el archivo temporal
+	
 	fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
 	if (fTramaTmp != NULL)
     {
@@ -552,6 +553,7 @@ void GuardarVector(unsigned char *tramaD)
 		fflush(fTramaTmp);
 		fclose(fTramaTmp);
     }
+	
 	
 }
 
