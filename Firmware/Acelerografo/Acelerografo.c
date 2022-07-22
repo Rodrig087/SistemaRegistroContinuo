@@ -22,7 +22,7 @@ sbit RP1 at LATA4_bit;                                                          
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;                                                          //Definicion del pin P2
 sbit RP2_Direction at TRISB4_bit;
-sbit TEST at LATB12_bit;                                                        //Definicion del pin P2
+sbit LedTest at LATB12_bit;                                                        //Definicion del pin P2
 sbit TEST_Direction at TRISB12_bit;
 
 unsigned char tramaGPS[70];
@@ -114,7 +114,7 @@ void main() {
 
      RP1 = 0;
      RP2 = 0;
-     TEST = 1;
+     LedTest = 1;
 
      SPI1BUF = 0x00;
 
@@ -276,7 +276,7 @@ void Muestrear(){
          banLec = 1;                                                            //Activa la bandera de lectura para enviar la trama
          InterrupcionP1(0XB1);
          
-         TEST = 0;
+         LedTest = 0;
          
      }
 
@@ -441,7 +441,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
      
-     TEST = ~TEST;
+     LedTest = ~LedTest;
      horaSistema++;                                                             //Incrementa el reloj del sistema
 
      if (horaSistema==86400){                                                   //(24*3600)+(0*60)+(0) = 86400
@@ -449,7 +449,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      }
      
      if (banInicio==1){
-        //TEST = ~TEST;
+        //LedTest = ~LedTest;
         Muestrear();
      }
      
