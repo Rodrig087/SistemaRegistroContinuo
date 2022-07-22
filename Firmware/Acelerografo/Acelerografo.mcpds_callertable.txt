@@ -56,13 +56,6 @@ urx_1
 	RecuperarFechaGPS
 		atoi
 		_Multiply_32x32
-	DS3234_setDate
-		SPI2_Init_Advanced
-		Dec2Bcd
-		DS3234_write_byte
-		SPI2_Init
-		_Divide_32x32
-		_Modulus_32x32
 spi_1
 	ADXL355_write_byte
 	RecuperarHoraRPI
@@ -70,6 +63,12 @@ spi_1
 	RecuperarFechaRPI
 		_Multiply_32x32
 	DS3234_setDate
+		SPI2_Init_Advanced
+		Dec2Bcd
+		DS3234_write_byte
+		SPI2_Init
+		_Divide_32x32
+		_Modulus_32x32
 	RecuperarHoraRTC
 	RecuperarFechaRTC
 	AjustarTiempoSistema

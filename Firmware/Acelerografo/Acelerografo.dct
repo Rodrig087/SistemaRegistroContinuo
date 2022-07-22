@@ -1292,6 +1292,8 @@ b9
 banciclo
 banconf
 banesc
+bangpsc
+bangpsi
 baninicio
 banlec
 banleer
@@ -1299,12 +1301,10 @@ banmuestrear
 banoperacion
 bansetgps
 bansetreloj
+bansyncreloj
 bantc
-bantcgps
 bantf
-bantfgps
 banti
-bantigps
 bcd2dec
 bcd2dec16
 bch
@@ -5929,6 +5929,7 @@ lebdly2
 lebdly2bits
 lebdly3
 lebdly3bits
+ledtest
 lendian
 lendian
 lendian_bit
@@ -10758,7 +10759,6 @@ stsel
 stsel_bit
 stsel_u1mode_bit
 stsel_u2mode_bit
-stsgps
 swap
 swap
 swap
@@ -11121,7 +11121,6 @@ tcs_t2con_bit
 tcs_t3con_bit
 tcs_t4con_bit
 tcs_t5con_bit
-test
 test_direction
 tgate
 tgate
