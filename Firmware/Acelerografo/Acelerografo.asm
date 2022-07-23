@@ -2142,9 +2142,9 @@ L__Muestrear316:
 	MOV	#lo_addr(_banCiclo), W1
 	MOV.B	#2, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,242 :: 		tramaCompleta[0] = contCiclos;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+;Acelerografo.c,242 :: 		tramaCompleta[0] = fuenteReloj;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
 	MOV	#lo_addr(_tramaCompleta), W1
-	MOV	#lo_addr(_contCiclos), W0
+	MOV	#lo_addr(_fuenteReloj), W0
 	MOV.B	[W0], [W1]
 ;Acelerografo.c,243 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
 	MOV.B	#5, W10

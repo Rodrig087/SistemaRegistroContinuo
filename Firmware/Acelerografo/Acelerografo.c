@@ -239,7 +239,7 @@ void Muestrear(){
 
          banCiclo = 2;                                                          //Limpia la bandera de ciclo completo
 
-         tramaCompleta[0] = contCiclos;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+         tramaCompleta[0] = fuenteReloj;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
          numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
          numSetsFIFO = (numFIFO)/3;                                             //Lee el numero de sets disponibles en el FIFO
 

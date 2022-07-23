@@ -690,7 +690,7 @@ void Muestrear(){
 
  banCiclo = 2;
 
- tramaCompleta[0] = contCiclos;
+ tramaCompleta[0] = fuenteReloj;
  numFIFO = ADXL355_read_byte( 0x05 );
  numSetsFIFO = (numFIFO)/3;
 

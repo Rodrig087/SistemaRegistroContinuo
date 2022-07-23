@@ -1,5 +1,5 @@
 //Compilar:
-//gcc /home/rsa/Programas/RegistroContinuo_V35.c -o /home/rsa/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm
+//gcc /home/rsa/Programas/RegistroContinuo_V4.c -o /home/rsa/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -420,7 +420,7 @@ void NuevoCiclo()
     //CrearArchivos();           //Crea un archivo nuevo si se cumplen las condiciones
 
     // Llama al metodo para determinar si existe o no un evento sismico:
-    DetectarEvento(tramaDatos);
+    //DetectarEvento(tramaDatos);
 }
 
 
