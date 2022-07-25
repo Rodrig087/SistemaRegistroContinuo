@@ -481,34 +481,51 @@ sbit RP2_Direction at TRISB4_bit;
 sbit LedTest at LATB12_bit;
 sbit TEST_Direction at TRISB12_bit;
 
+
+unsigned int i_gps;
+unsigned char byteGPS, banGPSI, banGPSC;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned short tiempo[6];
-unsigned short tiempoRPI[6];
+unsigned char contTimeout1;
+
+
+unsigned char tiempo[6];
+unsigned char tiempoRPI[6];
+unsigned char banSetReloj, banSyncReloj;
+unsigned long horaSistema, fechaSistema;
+unsigned char fuenteReloj;
+
+
+
+
+
+
+
+
+
+unsigned char bufferSPI;
+unsigned char banRespuestaPi;
+unsigned char banLec, banEsc;
+unsigned char banInicio;
+unsigned char banOperacion, tipoOperacion;
+unsigned char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
+
+
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];
 unsigned char tramaCompleta[2506];
-unsigned char tramaSalida[2506];
-unsigned short numFIFO, numSetsFIFO;
-unsigned short contTimer1;
-
-unsigned int i, x, y, i_gps, j;
-unsigned short buffer;
-unsigned short contMuestras;
-unsigned short contCiclos;
+unsigned char numFIFO, numSetsFIFO;
+unsigned char contTimer1;
+unsigned char contMuestras;
+unsigned char contCiclos;
+unsigned char tasaMuestreo;
+unsigned char numTMR1;
+unsigned char banCiclo;
+unsigned char banMuestrear;
 unsigned int contFIFO;
-short tasaMuestreo;
-short numTMR1;
 
-unsigned short banTC, banTI, banTF;
-unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSyncReloj, banSetGPS;
-unsigned short banMuestrear, banLeer, banConf;
-unsigned short banOperacion, tipoOperacion;
 
-unsigned char byteGPS, banGPSI, banGPSC;
-unsigned short fuenteReloj;
-short confGPS[2];
-unsigned long horaSistema, fechaSistema;
+unsigned int i, j, x, y;
 
 
 
@@ -525,6 +542,7 @@ void InterrupcionP1(unsigned short operacion);
 
 void main() {
 
+
  ConfiguracionPrincipal();
 
  DS3234_init();
@@ -532,25 +550,36 @@ void main() {
  ADXL355_init(tasaMuestreo);
  numTMR1 = (tasaMuestreo*10)-1;
 
+
  banOperacion = 0;
  tipoOperacion = 0;
 
- banTI = 0;
+
+ banSPI0 = 0;
+ banSPI1 = 0;
+ banSPI2 = 0;
+ banSPI3 = 0;
+ banSPI4 = 0;
+ banSPI5 = 0;
+ banSPI6 = 0;
+ banSPI7 = 0;
+ banSPI8 = 0;
+ banSPI9 = 0;
+ banSPIA = 0;
+
  banLec = 0;
  banEsc = 0;
  banCiclo = 0;
  banSetReloj = 0;
  banSyncReloj = 0;
 
- banSetGPS = 0;
  banGPSI = 0;
  banGPSC = 0;
  fuenteReloj = 0;
+ contTimeout1 = 0;
 
  banMuestrear = 0;
  banInicio = 0;
- banLeer = 0;
- banConf = 0;
 
  i = 0;
  x = 0;
@@ -572,6 +601,7 @@ void main() {
  LedTest = 1;
 
  SPI1BUF = 0x00;
+
 
  while(1){
 
@@ -618,7 +648,7 @@ void ConfiguracionPrincipal(){
  U1RXIF_bit = 0;
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
- UART1_Init(115200);
+ UART1_Init(9600);
 
 
  SPI1STAT.SPIEN = 1;
@@ -654,6 +684,14 @@ void ConfiguracionPrincipal(){
  PR1 = 62500;
  IPC0bits.T1IP = 0x02;
 
+
+ T2CON = 0x30;
+ T2CON.TON = 0;
+ T2IE_bit = 1;
+ T2IF_bit = 0;
+ PR2 = 46875;
+ IPC1bits.T2IP = 0x02;
+
  Delay_ms(200);
 
 }
@@ -667,7 +705,7 @@ void ConfiguracionPrincipal(){
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 220 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 258 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -741,18 +779,19 @@ void Muestrear(){
 
 
 
+
 void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
  SPI1IF_bit = 0;
- buffer = SPI1BUF;
+ bufferSPI = SPI1BUF;
 
 
 
- if ((banOperacion==0)&&(buffer==0xA0)) {
+ if ((banOperacion==0)&&(bufferSPI==0xA0)) {
  banOperacion = 1;
  SPI1BUF = tipoOperacion;
  }
- if ((banOperacion==1)&&(buffer==0xF0)){
+ if ((banOperacion==1)&&(bufferSPI==0xF0)){
  banOperacion = 0;
  tipoOperacion = 0;
  }
@@ -760,7 +799,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
 
 
- if ((banMuestrear==0)&&(buffer==0xA1)){
+ if ((banMuestrear==0)&&(bufferSPI==0xA1)){
  banMuestrear = 1;
  banCiclo = 0;
  contMuestras = 0;
@@ -776,19 +815,15 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
- if ((banMuestrear==1)&&(buffer==0xA2)){
+ if ((banMuestrear==1)&&(bufferSPI==0xA2)){
  banInicio = 0;
  banMuestrear = 0;
 
- banTI = 0;
  banLec = 0;
  banEsc = 0;
  banSetReloj = 0;
- banSetGPS = 0;
  banGPSI = 0;
  banGPSC = 0;
- banLeer = 0;
- banConf = 0;
  i = 0;
  x = 0;
  y = 0;
@@ -808,16 +843,16 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
- if ((banLec==1)&&(buffer==0xA3)){
+ if ((banLec==1)&&(bufferSPI==0xA3)){
  banLec = 2;
  i = 0;
  SPI1BUF = tramaCompleta[i];
  }
- if ((banLec==2)&&(buffer!=0xF3)){
+ if ((banLec==2)&&(bufferSPI!=0xF3)){
  SPI1BUF = tramaCompleta[i];
  i++;
  }
- if ((banLec==2)&&(buffer==0xF3)){
+ if ((banLec==2)&&(bufferSPI==0xF3)){
  banLec = 0;
  SPI1BUF = 0xFF;
  }
@@ -825,58 +860,59 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
 
 
- if ((banSetReloj==0)&&(buffer==0xA4)){
+ if ((banSetReloj==0)&&(bufferSPI==0xA4)){
  banEsc = 1;
  j = 0;
  }
- if ((banEsc==1)&&(buffer!=0xA4)&&(buffer!=0xF4)){
- tiempoRPI[j] = buffer;
+ if ((banEsc==1)&&(bufferSPI!=0xA4)&&(bufferSPI!=0xF4)){
+ tiempoRPI[j] = bufferSPI;
  j++;
  }
- if ((banEsc==1)&&(buffer==0xF4)){
+ if ((banEsc==1)&&(bufferSPI==0xF4)){
  horaSistema = RecuperarHoraRPI(tiempoRPI);
  fechaSistema = RecuperarFechaRPI(tiempoRPI);
  DS3234_setDate(horaSistema, fechaSistema);
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ fuenteReloj = 2;
  banEsc = 0;
  banSetReloj = 1;
  InterrupcionP1(0XB2);
  }
 
 
- if ((banSetReloj==1)&&(buffer==0xA5)){
+ if ((banSetReloj==1)&&(bufferSPI==0xA5)){
  banSetReloj = 2;
  j = 0;
  SPI1BUF = fuenteReloj;
  }
- if ((banSetReloj==2)&&(buffer!=0xA5)&&(buffer!=0xF5)){
+ if ((banSetReloj==2)&&(bufferSPI!=0xA5)&&(bufferSPI!=0xF5)){
  SPI1BUF = tiempo[j];
  j++;
  }
- if ((banSetReloj==2)&&(buffer==0xF5)){
+ if ((banSetReloj==2)&&(bufferSPI==0xF5)){
  banSetReloj = 0;
  SPI1BUF = 0xFF;
  }
 
 
- if ((banSetReloj==0)&&(buffer==0xA6)){
- banGPSI = 0;
+ if ((banSetReloj==0)&&(bufferSPI==0xA6)){
+ banGPSI = 1;
  banGPSC = 0;
- i_gps = 0;
 
- if (U1RXIE_bit==0){
- U1RXIE_bit = 1;
+ U1MODE.UARTEN = 1;
+
+ T2CON.TON = 1;
+ TMR2 = 0;
  }
- }
 
 
- if ((banSetReloj==0)&&(buffer==0xA7)){
+ if ((banSetReloj==0)&&(bufferSPI==0xA7)){
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 0;
+ fuenteReloj = 1;
  banSetReloj = 1;
  InterrupcionP1(0XB2);
  }
@@ -903,6 +939,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
  }
 
 }
+
 
 
 
@@ -943,6 +980,37 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  }
 
 }
+
+
+
+
+void Timer2Int() org IVT_ADDR_T2INTERRUPT{
+
+ T2IF_bit = 0;
+ contTimeout1++;
+
+
+ if (contTimeout1==4){
+ T2CON.TON = 0;
+ TMR2 = 0;
+ contTimeout1 = 0;
+
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ fuenteReloj = 5;
+ banSetReloj = 1;
+
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+ U1MODE.UARTEN = 0;
+
+ InterrupcionP1(0XB2);
+ }
+
+}
+
 
 
 
@@ -991,7 +1059,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 5;
+ fuenteReloj = 4;
  InterrupcionP1(0xB2);
  banGPSI = 0;
  banGPSC = 0;
@@ -1003,7 +1071,6 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
  if (banGPSC==1){
 
- if (tramaGPS[12]==0x41) {
  for (x=0;x<6;x++){
  datosGPS[x] = tramaGPS[x+1];
  }
@@ -1018,15 +1085,18 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 1;
+
+ if (tramaGPS[12]==0x41) {
+ fuenteReloj = 0;
  banSyncReloj = 1;
  banSetReloj = 0;
- } else {
 
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 6;
+ InterrupcionP1(0xB2);
+
+ } else {
+ fuenteReloj = 3;
+ banSyncReloj = 1;
+ banSetReloj = 0;
  InterrupcionP1(0xB2);
  }
 

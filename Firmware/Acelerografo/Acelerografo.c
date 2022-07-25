@@ -17,42 +17,59 @@ Configuracion: dsPIC33EP256MC202, XT=80MHz
 
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 
-//Variables y contantes para la peticion y respuesta de datos
-sbit RP1 at LATA4_bit;                                                          //Definicion del pin P1
+//Constantes:
+sbit RP1 at LATA4_bit;                                                          
 sbit RP1_Direction at TRISA4_bit;
-sbit RP2 at LATB4_bit;                                                          //Definicion del pin P2
+sbit RP2 at LATB4_bit;                                                          
 sbit RP2_Direction at TRISB4_bit;
-sbit LedTest at LATB12_bit;                                                        //Definicion del pin P2
+sbit LedTest at LATB12_bit;                                                        
 sbit TEST_Direction at TRISB12_bit;
 
+//Variables para manejo del GPS:
+unsigned int i_gps;
+unsigned char byteGPS, banGPSI, banGPSC;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned short tiempo[6];                                                       //Vector de datos de tiempo del sistema
-unsigned short tiempoRPI[6];                                                    //Vector para recuperar el tiempo enviado desde la RPi
+unsigned char contTimeout1;
+
+//Variables para manejo del tiempo:
+unsigned char tiempo[6];                                                       
+unsigned char tiempoRPI[6];                                                    
+unsigned char banSetReloj, banSyncReloj;
+unsigned long horaSistema, fechaSistema;
+unsigned char fuenteReloj;                                                     
+//Fuentes de reloj: 
+//0 -> GPS 
+//1 -> RTC 
+//2 -> RPi
+//3 -> Error 3: Problemas al recuperar la trama GPRMC del GPS
+//4 -> Error 4: La hora del GPS es invalida
+//5 -> Error 5: El GPS tarda en responder
+
+//Variables para la comunicacion SPI:
+unsigned char bufferSPI;
+unsigned char banRespuestaPi; 
+unsigned char banLec, banEsc;
+unsigned char banInicio;
+unsigned char banOperacion, tipoOperacion;
+unsigned char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
+
+//Variables para manejo del acelerometro:
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];                                                   //Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
-unsigned char tramaSalida[2506];
-unsigned short numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
-unsigned short contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
-
-unsigned int i, x, y, i_gps, j;
-unsigned short buffer;
-unsigned short contMuestras;
-unsigned short contCiclos;
+unsigned char numFIFO, numSetsFIFO;                                             //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
+unsigned char contTimer1;                                                       //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
+unsigned char contMuestras;
+unsigned char contCiclos;
+unsigned char tasaMuestreo;
+unsigned char numTMR1;
+unsigned char banCiclo;
+unsigned char banMuestrear;
 unsigned int contFIFO;
-short tasaMuestreo;
-short numTMR1;
 
-unsigned short banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
-unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSyncReloj, banSetGPS;
-unsigned short banMuestrear, banLeer, banConf;
-unsigned short banOperacion, tipoOperacion;
-
-unsigned char byteGPS, banGPSI, banGPSC;
-unsigned short fuenteReloj;                                                     //Indiaca la fuente de reloj 0:RTC 1:GPS
-short confGPS[2];
-unsigned long horaSistema, fechaSistema;
+//Subindices:
+unsigned int i, j, x, y;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -69,32 +86,44 @@ void InterrupcionP1(unsigned short operacion);
 //////////////////////////////////////////////////////////////      Main      ////////////////////////////////////////////////////////////////
 void main() {
 
-     ConfiguracionPrincipal();
-     //GPS_init(1,1);                                                             //Inicializa el GPS en modo configuracion y tipo de trama GPRMC
+     //Configuracion:
+         ConfiguracionPrincipal();
+     //GPS_init(1,1);                                                           //Inicializa el GPS en modo configuracion y tipo de trama GPRMC
      DS3234_init();                                                             //inicializa el RTC
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
      numTMR1 = (tasaMuestreo*10)-1;                                             //Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
      
+     //Inicio de variables:
      banOperacion = 0;
      tipoOperacion = 0;
+         
+     //Comunicacion SPI:
+     banSPI0 = 0;
+     banSPI1 = 0;
+     banSPI2 = 0;
+     banSPI3 = 0;
+     banSPI4 = 0;
+     banSPI5 = 0;
+     banSPI6 = 0;
+     banSPI7 = 0;
+     banSPI8 = 0;
+     banSPI9 = 0;
+     banSPIA = 0;
      
-     banTI = 0;
      banLec = 0;
      banEsc = 0;
      banCiclo = 0;
      banSetReloj = 0;
-         banSyncReloj = 0; 
+     banSyncReloj = 0; 
      
-     banSetGPS = 0;
      banGPSI = 0;
      banGPSC = 0;
      fuenteReloj = 0;
+     contTimeout1 = 0;
 
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
      banInicio = 0;                                                             //Bandera de inicio de muestreo
-     banLeer = 0;
-     banConf = 0;
 
      i = 0;
      x = 0;
@@ -116,7 +145,8 @@ void main() {
      LedTest = 1;
 
      SPI1BUF = 0x00;
-
+         
+     
      while(1){
 
      }
@@ -162,7 +192,7 @@ void ConfiguracionPrincipal(){
      U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
      U1STAbits.URXISEL = 0x00;
-     UART1_Init(115200);                                                        //Inicializa el UART1 con una velocidad de 115200 baudios
+     UART1_Init(9600);                                                        //Inicializa el UART1 con una velocidad de 115200 baudios
 
      //Configuracion del puerto SPI1 en modo Esclavo
      SPI1STAT.SPIEN = 1;                                                        //Habilita el SPI1 *
@@ -198,6 +228,14 @@ void ConfiguracionPrincipal(){
      PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
 
+     //Configuracion del TMR2 con un tiempo de 300ms
+     T2CON = 0x30;                                                              //Prescalador
+     T2CON.TON = 0;                                                             //Apaga el Timer2
+     T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
+     T2IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR2
+     PR2 = 46875;                                                               //Carga el preload para un tiempo de 300ms
+     IPC1bits.T2IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR2
+     
      Delay_ms(200);                                                             //Espera hasta que se estabilicen los cambios
 
 }
@@ -239,7 +277,7 @@ void Muestrear(){
 
          banCiclo = 2;                                                          //Limpia la bandera de ciclo completo
 
-         tramaCompleta[0] = fuenteReloj;                                         //LLena el primer elemento de la tramaCompleta con el contador de ciclos
+         tramaCompleta[0] = fuenteReloj;                                        //LLena el primer elemento de la tramaCompleta con el contador de ciclos
          numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
          numSetsFIFO = (numFIFO)/3;                                             //Lee el numero de sets disponibles en el FIFO
 
@@ -289,19 +327,20 @@ void Muestrear(){
 
 ////////////////////////////////////////////////////////////// Interrupciones /////////////////////////////////////////////////////////////
 
+//*****************************************************************************************************************************************
 //Interrupcion SPI1
 void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 
      SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI
-     buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
+     bufferSPI = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
 
      //************************************************************************************************************************************
      //Rutina para enviar la peticion de operacion a la RPi  (C:0xA0   F:0xF0)
-     if ((banOperacion==0)&&(buffer==0xA0)) {
+     if ((banOperacion==0)&&(bufferSPI==0xA0)) {
         banOperacion = 1;                                                       //Activa la bandera para enviar el tipo de operacion requerido a la RPi
-        SPI1BUF = tipoOperacion;                                                //Carga en el buffer el tipo de operacion requerido
+        SPI1BUF = tipoOperacion;                                                //Carga en el bufferSPI el tipo de operacion requerido
      }
-     if ((banOperacion==1)&&(buffer==0xF0)){
+     if ((banOperacion==1)&&(bufferSPI==0xF0)){
         banOperacion = 0;                                                       //Limpia la bandera
         tipoOperacion = 0;                                                      //Limpia la variable de tipo de operacion
      }
@@ -309,7 +348,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      
      //************************************************************************************************************************************
      //Rutina para inicio del muestreo (C:0xA1   F:0xF1):
-     if ((banMuestrear==0)&&(buffer==0xA1)){
+     if ((banMuestrear==0)&&(bufferSPI==0xA1)){
         banMuestrear = 1;                                                       //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
         banCiclo = 0;
         contMuestras = 0;
@@ -325,19 +364,15 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
      
      //Rutina para detener el muestreo (C:0xA2   F:0xF2):
-     if ((banMuestrear==1)&&(buffer==0xA2)){
+     if ((banMuestrear==1)&&(bufferSPI==0xA2)){
         banInicio = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
         banMuestrear = 0;                                                       //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
            
-        banTI = 0;
         banLec = 0;
         banEsc = 0;
         banSetReloj = 0;
-        banSetGPS = 0;
         banGPSI = 0;
         banGPSC = 0;
-        banLeer = 0;
-        banConf = 0;
         i = 0;
         x = 0;
         y = 0;
@@ -357,16 +392,16 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
      
      //Rutina de lectura de los datos del acelerometro (C:0xA3   F:0xF3):
-     if ((banLec==1)&&(buffer==0xA3)){                                          //Verifica si la bandera de inicio de trama esta activa
+     if ((banLec==1)&&(bufferSPI==0xA3)){                                       //Verifica si la bandera de inicio de trama esta activa
         banLec = 2;                                                             //Activa la bandera de lectura
         i = 0;
         SPI1BUF = tramaCompleta[i];
      }
-     if ((banLec==2)&&(buffer!=0xF3)){
+     if ((banLec==2)&&(bufferSPI!=0xF3)){
         SPI1BUF = tramaCompleta[i];
         i++;
      }
-     if ((banLec==2)&&(buffer==0xF3)){                                          //Si detecta el delimitador de final de trama:
+     if ((banLec==2)&&(bufferSPI==0xF3)){                                       //Si detecta el delimitador de final de trama:
         banLec = 0;                                                             //Limpia la bandera de lectura                        ****AQUI Me QUEDE
         SPI1BUF = 0xFF;
      }
@@ -374,66 +409,67 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 
      //************************************************************************************************************************************
      //Rutina para obtener la hora de la RPi (C:0xA4   F:0xF4):
-     if ((banSetReloj==0)&&(buffer==0xA4)){
+     if ((banSetReloj==0)&&(bufferSPI==0xA4)){
          banEsc = 1;
          j = 0;
      }
-     if ((banEsc==1)&&(buffer!=0xA4)&&(buffer!=0xF4)){
-        tiempoRPI[j] = buffer;
+     if ((banEsc==1)&&(bufferSPI!=0xA4)&&(bufferSPI!=0xF4)){
+        tiempoRPI[j] = bufferSPI;
         j++;
      }
-     if ((banEsc==1)&&(buffer==0xF4)){
+     if ((banEsc==1)&&(bufferSPI==0xF4)){
         horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
         fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
         DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC
         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+        fuenteReloj = 2;                                                        //Fuente reloj: RPi
         banEsc = 0;
         banSetReloj = 1;
         InterrupcionP1(0XB2);
      }
      
      //Rutina para enviar la hora local a la RPi (C:0xA5   F:0xF5):
-     if ((banSetReloj==1)&&(buffer==0xA5)){
+     if ((banSetReloj==1)&&(bufferSPI==0xA5)){
         banSetReloj = 2;
         j = 0;
-        SPI1BUF = fuenteReloj;                                                  //Envia el indicador de fuente de reloj (0:RTC, 1:GPS)
+        SPI1BUF = fuenteReloj;                                                  //Envia el indicador de fuente de reloj
      }
-     if ((banSetReloj==2)&&(buffer!=0xA5)&&(buffer!=0xF5)){
+     if ((banSetReloj==2)&&(bufferSPI!=0xA5)&&(bufferSPI!=0xF5)){
         SPI1BUF = tiempo[j];
         j++;
      }
-     if ((banSetReloj==2)&&(buffer==0xF5)){                                     //Si detecta el delimitador de final de trama:
+     if ((banSetReloj==2)&&(bufferSPI==0xF5)){                                  //Si detecta el delimitador de final de trama:
         banSetReloj = 0;                                                        //Limpia la bandera de lectura
         SPI1BUF = 0xFF;
      }
      
      //Rutina para obtener la hora del GPS(C:0xA6   F:0xF6):
-     if ((banSetReloj==0)&&(buffer==0xA6)){
-        banGPSI = 0;                                                           //Limpia la bandera de inicio de trama  del GPS
-        banGPSC = 0;                                                           //Limpia la bandera de trama completa
-        i_gps = 0;                                                              //Limpia el subindice de la trama GPS
-        //Habilita interrupcion por UART1Rx si esta desabilitada:
-        if (U1RXIE_bit==0){
-           U1RXIE_bit = 1;
-        }
+     if ((banSetReloj==0)&&(bufferSPI==0xA6)){
+        banGPSI = 1;                                                            //Limpia la bandera de inicio de trama  del GPS
+        banGPSC = 0;                                                            //Limpia la bandera de trama completa
+        //i_gps = 0;                                                              //Limpia el subindice de la trama GPS
+        U1MODE.UARTEN = 1;
+        //Inicia el Timeout 1:
+        T2CON.TON = 1;
+        TMR2 = 0;
      }
 
      //Rutina para obtener la hora del RTC (C:0xA7   F:0xF7):
-     if ((banSetReloj==0)&&(buffer==0xA7)){
+     if ((banSetReloj==0)&&(bufferSPI==0xA7)){
         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-        fuenteReloj = 0;                                                        //Indica que la fuente de reloj es el RTC
+        fuenteReloj = 1;                                                        //Fuente reloj: RTC
         banSetReloj = 1;
         InterrupcionP1(0XB2);
      }
      //************************************************************************************************************************************
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************************************************************************
 //Interrupcion INT1
 void int_1() org IVT_ADDR_INT1INTERRUPT {
      
@@ -452,8 +488,9 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      }
      
 }
+//*****************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************************************************************************
 //Interrupcion por desbordamiento del Timer1
 void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
@@ -492,8 +529,39 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      }
 
 }
+//*****************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************************************************************************
+//Timeout de 4*300ms para el UART1:
+void Timer2Int() org IVT_ADDR_T2INTERRUPT{
+
+     T2IF_bit = 0;                                                              //Limpia la bandera de interrupcion por desbordamiento del Timer1
+     contTimeout1++;                                                            //Incrementa el contador de Timeout
+
+     //Despues de 4 desbordamientos apaga el Timer2 y recupera la hora del RTC:
+     if (contTimeout1==4){
+        T2CON.TON = 0;
+        TMR2 = 0;
+        contTimeout1 = 0;
+        //Recupera la hora del RTC:
+        horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
+        fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
+        AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+        fuenteReloj = 5;                                                        //Fuente reloj: RTC/E5
+        banSetReloj = 1;
+        //Limpia las banderas del GPS:
+        banGPSI = 0;
+        banGPSC = 0;
+        i_gps = 0;
+        U1MODE.UARTEN = 0;                                                      //Desactiva el UART1
+        //Envia la hora local a la RPi:
+        InterrupcionP1(0XB2);
+     }
+
+}
+//*****************************************************************************************************************************************
+
+//*****************************************************************************************************************************************
 //Interrupcion UART1
 void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
@@ -540,7 +608,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
            horaSistema = RecuperarHoraRTC();                                    //Recupera la hora del RTC
            fechaSistema = RecuperarFechaRTC();                                  //Recupera la fecha del RTC
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
-           fuenteReloj = 5;                                                     //**Fuente de reloj = RTC
+           fuenteReloj = 4;                                                     //Fuente reloj: RTC/E4
            InterrupcionP1(0xB2);                                                //Envia la hora local a la RPi y a los nodos                                                   //Envia la hora local a la RPi
            banGPSI = 0;
            banGPSC = 0;
@@ -551,32 +619,34 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
      //Realiza el procesamiento de la informacion del  pyload:                  //Aqui se realiza cualquier accion con el pyload recuperado
      if (banGPSC==1){
+        //Extrae los datos de la trama GPS:
+        for (x=0;x<6;x++){
+                datosGPS[x] = tramaGPS[x+1];                                    //Guarda los datos de hhmmss
+        }
+        //Busca el simbolo "," a partir de la posicion 44
+        for (x=44;x<54;x++){
+            if (tramaGPS[x]==0x2C){
+               for (y=0;y<6;y++){
+                   datosGPS[6+y] = tramaGPS[x+y+1];                             //Guarda los datos de DDMMAA en la trama datosGPS
+               }
+            }
+        }
+        horaSistema = RecuperarHoraGPS(datosGPS);                               //Recupera la hora del GPS
+        fechaSistema = RecuperarFechaGPS(datosGPS);                             //Recupera la fecha del GPS
+        AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
         //Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
         if (tramaGPS[12]==0x41) {
-           for (x=0;x<6;x++){
-               datosGPS[x] = tramaGPS[x+1];                                     //Guarda los datos de hhmmss
-           }
-           //Busca el simbolo "," a partir de la posicion 44
-           for (x=44;x<54;x++){
-               if (tramaGPS[x]==0x2C){
-                   for (y=0;y<6;y++){
-                       datosGPS[6+y] = tramaGPS[x+y+1];                         //Guarda los datos de DDMMAA en la trama datosGPS
-                   }
-               }
-           }
-           horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
-           fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
-           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
-           fuenteReloj = 1;                                                     //Indica que se obtuvo la hora del GPS
+           fuenteReloj = 0;                                                     //Fuente reloj: GPS
            banSyncReloj = 1;
            banSetReloj = 0;
+           //Prueba
+           InterrupcionP1(0xB2);
+           //Fin prueba
         } else {
-           //Recupera la hora del RTC:
-           horaSistema = RecuperarHoraRTC();                                    //Recupera la hora del RTC
-           fechaSistema = RecuperarFechaRTC();                                  //Recupera la fecha del RTC
-           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
-           fuenteReloj = 6;                                                     //**Indica que se obtuvo la hora del RTC
-           InterrupcionP1(0xB2);                                                //Envia la hora local a la RPi y a los nodos
+            fuenteReloj = 3;                                                    //Fuente reloj: GPS/E3
+            banSyncReloj = 1;
+            banSetReloj = 0;
+            InterrupcionP1(0xB2);                                               //Envia la hora local a la RPi
         }
 
         banGPSI = 0;
@@ -587,4 +657,6 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
      }    
 
 }
+//*****************************************************************************************************************************************
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
