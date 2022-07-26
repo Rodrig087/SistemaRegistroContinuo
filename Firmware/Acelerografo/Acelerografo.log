@@ -13,13 +13,13 @@ hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer2Int at 0x0022)	Acelerografo.c
 hint: 0	1004	interrupt handler (urx_1 at 0x002A)	Acelerografo.c
-diagnostics: 659	123	Compiled Successfully	Acelerografo.c
+diagnostics: 683	123	Compiled Successfully	Acelerografo.c
 warning: 150	1519	Logical expression is always: 'False'	Acelerografo.c
 hint: 138	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
 hint: 150	1164	Variable 'muestra' has been eliminated by optimizer	Acelerografo.c
 hint: 168	1164	Variable 'add' has been eliminated by optimizer	Acelerografo.c
-hint: 51	1164	Variable 'fechaGPS' has been eliminated by optimizer	Acelerografo.c
-hint: 82	1164	Variable 'horaGPS' has been eliminated by optimizer	Acelerografo.c
+hint: 65	1164	Variable 'fechaGPS' has been eliminated by optimizer	Acelerografo.c
+hint: 96	1164	Variable 'horaGPS' has been eliminated by optimizer	Acelerografo.c
 hint: 77	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
 hint: 130	1164	Variable 'valueRead' has been eliminated by optimizer	Acelerografo.c
 hint: 131	1164	Variable 'hora' has been eliminated by optimizer	Acelerografo.c
@@ -30,9 +30,9 @@ hint: 12	1164	Variable 'fechaRPi' has been eliminated by optimizer	Acelerografo.
 hint: 23	1164	Variable 'horaRPi' has been eliminated by optimizer	Acelerografo.c
 diagnostics: 0	127	All files Compiled in 125 ms	 
 hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)
-hint: 0	1144	Static RAM (bytes): 2918   Dynamic RAM (bytes): 25754	Static RAM (bytes): 2918   Dynamic RAM (bytes): 25754
-hint: 0	1144	Used ROM (bytes): 5729 (3%)  Free ROM (bytes): 170379 (97%)	Used ROM (bytes): 5729 (3%)  Free ROM (bytes): 170379 (97%)
+hint: 0	1144	Static RAM (bytes): 3082   Dynamic RAM (bytes): 25590	Static RAM (bytes): 3082   Dynamic RAM (bytes): 25590
+hint: 0	1144	Used ROM (bytes): 5947 (3%)  Free ROM (bytes): 170161 (97%)	Used ROM (bytes): 5947 (3%)  Free ROM (bytes): 170161 (97%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
 diagnostics: 0	128	Linked in 141 ms	 
 diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 375 ms	 
-diagnostics: 0	103	Finished successfully: 25 jul. 2022, 14:48:11	Acelerografo.mcpds
+diagnostics: 0	103	Finished successfully: 25 jul. 2022, 19:17:19	Acelerografo.mcpds

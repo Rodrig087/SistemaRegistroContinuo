@@ -11,19 +11,21 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 //Funcion para configurar el GPS
 void GPS_init(short conf,short NMA){
-     if (conf==1){
-          UART1_Init(9600);                                                            //La configuracion debe hacerse a 9600 baudios
-          Delay_ms(200);
+    /* if (conf==1){
+          //UART1_Init(9600);
           UART1_Write_Text("$PMTK605*31\r\n");                                         //Consulta la información de la versión del firmware.
           UART1_Write_Text("$PMTK220,1000*1F\r\n");                                    //Set position fix interval. Interval: Position fix interval [msec]. Must be larger than 200.
           UART1_Write_Text("$PMTK251,115200*1F\r\n");                                  //Set NMEA port baud rate. 0 - 115200 bauds
           Delay_ms(1000);                                                              //Tiempo necesario para que se de efecto el cambio de configuracion
-          UART1_Init(115200);                                                          //Maxima velocidad del UART que soporta el GPS
+          UART1_Init(115200);
      }
 
      UART1_Write_Text("$PMTK313,1*2E\r\n");                                            //Enable to search a SBAS satellite or not. ‘1’ = Enable
-     UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
-     UART1_Write_Text("$PMTK319,1*24\r\n");                                            //Choose SBAS satellite test mode.‘1’ = Integrity mode
+     
+         UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+         
+         
+         UART1_Write_Text("$PMTK319,1*24\r\n");                                            //Choose SBAS satellite test mode.‘1’ = Integrity mode
      UART1_Write_Text("$PMTK413*34\r\n");                                              //Consulta el estado SBAS.
      UART1_Write_Text("$PMTK513,1*28\r\n");                                            //Enable to search a SBAS satellite or not. ‘1’ = Enable
      
@@ -39,7 +41,19 @@ void GPS_init(short conf,short NMA){
           break;
      }
 
-     Delay_ms(1000); 
+     Delay_ms(1000); */
+     UART1_Write_Text("$PMTK605*31\r\n");
+     UART1_Write_Text("$PMTK220,1000*1F\r\n");
+     UART1_Write_Text("$PMTK251,115200*1F\r\n");
+     Delay_ms(1000);                                                            //Tiempo necesario para que se de efecto el cambio de configuracion
+     UART1_Init(115200);
+     UART1_Write_Text("$PMTK313,1*2E\r\n");
+     UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+     UART1_Write_Text("$PMTK319,1*24\r\n");
+     UART1_Write_Text("$PMTK413*34\r\n");
+     UART1_Write_Text("$PMTK513,1*28\r\n");
+     Delay_ms(1000);
+     U1MODE.UARTEN = 0;                                                         //Desactiva el UART1
 }
 //* Estructura comandos PMTK: |Preamble ($)|Talker ID (PMTK)|Pkt Type,Data Field|*|Checksum (just an XOR of all the bytes between the $ and the *)|CR LF|
 //**SBAS es un sistema de corrección de las señales que los Sistemas Globales de Navegación por Satélite (GNSS) transmiten al receptor GPS del usuario.
@@ -54,22 +68,22 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
      datoStringF[2] = '\0';
      tramaFecha[3] = '\0';
 
-      //Dia
-     datoStringF[0] = tramaDatosGPS[6];
-     datoStringF[1] = tramaDatosGPS[7];
-     tramaFecha[0] =  atoi(ptrDatoStringF);
+     //Año
+     datoStringF[0] = tramaDatosGPS[10];
+     datoStringF[1] = tramaDatosGPS[11];
+     tramaFecha[0] = atoi(ptrDatoStringF); 
 
      //Mes
      datoStringF[0] = tramaDatosGPS[8];
      datoStringF[1] = tramaDatosGPS[9];
      tramaFecha[1] = atoi(ptrDatoStringF);
+	 
+	 //Dia
+     datoStringF[0] = tramaDatosGPS[6];
+     datoStringF[1] = tramaDatosGPS[7];
+     tramaFecha[2] =  atoi(ptrDatoStringF);
 
-     //Año
-     datoStringF[0] = tramaDatosGPS[10];
-     datoStringF[1] = tramaDatosGPS[11];
-     tramaFecha[2] = atoi(ptrDatoStringF);
-
-     fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);      //10000*dd + 100*mm + aa
+     fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);      //10000*aa + 100*mm + dd
      
      return fechaGPS;
 
