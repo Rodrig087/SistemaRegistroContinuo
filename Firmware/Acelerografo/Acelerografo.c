@@ -188,6 +188,7 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto UART1
      RPINR18bits.U1RXR = 0x22;                                                  //Configura el pin RB2/RPI34 como Rx1 *
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
+     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
      U1RXIF_bit = 1;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
      U1STAbits.URXISEL = 0x00;
@@ -196,6 +197,7 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto SPI1 en modo Esclavo
      SPI1STAT.SPIEN = 1;                                                        //Habilita el SPI1 *
      SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);        //*
+     SPI1IE_bit = 1;                                                            //Habilita la interrupcion por SPI1  *
      SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI *
      IPC2bits.SPI1IP = 0x03;                                                    //Prioridad de la interrupcion SPI1
      
@@ -210,15 +212,17 @@ void ConfiguracionPrincipal(){
      
      //Configuracion de las interrupcionesd externas INT1 INT2
      RPINR0 = 0x2F00;                                                           //Asigna INT1 al RB15/RPI47 (SQW)
-     RPINR1 = 0x002E;                                                           //Asigna INT2 al RB14/RPI46 (PPS)
+     //RPINR1 = 0x002E;                                                           //Asigna INT2 al RB14/RPI46 (PPS)
+     INT1IE_bit = 0;                                                            //Habilita la interrupcion externa INT1
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
-     INT2IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT2
-     IPC5bits.INT1IP = 0x02;                                                    //Prioridad en la interrupocion externa 1
-     IPC7bits.INT2IP = 0x01;                                                    //Prioridad en la interrupocion externa 2
+     //INT2IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT2
+     IPC5bits.INT1IP = 0x02;                                                    //Prioridad en la interrupcion externa 1
+     //IPC7bits.INT2IP = 0x01;                                                    //Prioridad en la interrupcion externa 2
 
      //Configuracion del TMR1 con un tiempo de 100ms
      T1CON = 0x0020;
      T1CON.TON = 0;                                                             //Apaga el Timer1
+     T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
      PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
@@ -226,17 +230,18 @@ void ConfiguracionPrincipal(){
      //Configuracion del TMR2 con un tiempo de 300ms
      T2CON = 0x30;                                                              //Prescalador
      T2CON.TON = 0;                                                             //Apaga el Timer2
+     T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
      T2IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR2
      PR2 = 46875;                                                               //Carga el preload para un tiempo de 300ms
      IPC1bits.T2IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR2
      
      //Habilitacion de interrupciones
-     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
-     SPI1IE_bit = 1;                                                            //Habilita la interrupcion por SPI1  *
-     INT1IE_bit = 0;                                                            //Habilita la interrupcion externa INT1
-     INT2IE_bit = 0;                                                            //Habilita la interrupcion externa INT2
-     T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
-     T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
+     //U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
+     //SPI1IE_bit = 1;                                                            //Habilita la interrupcion por SPI1  *
+     //INT1IE_bit = 0;                                                            //Habilita la interrupcion externa INT1
+     //INT2IE_bit = 0;                                                            //Habilita la interrupcion externa INT2
+     //T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
+     //T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
      
      //Configuracion del acelerometro
      ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                           //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
@@ -251,9 +256,11 @@ void ConfiguracionPrincipal(){
  void InterrupcionP1(unsigned short operacion){
      //Si se ejecuta una operacion de tiempo, habilita la interrupcion INT1 para incrementar la hora del sistema con cada pulso PPS
      //if (operacion==0xB2){
-        if (INT1IE_bit==0){
-           INT1IE_bit = 1;
-        }
+
+     if (INT1IE_bit==0){
+        INT1IE_bit = 1;
+     }
+
         //Desabilita interrupcion por UART1Rx si esta habilitada:
         /*if (U1RXIE_bit==1){
            U1RXIE_bit = 0;
@@ -363,13 +370,15 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         numSetsFIFO = 0;
         contTimer1 = 0;
         banInicioMuestreo = 1;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+
         if (INT1IE_bit==0){
            INT1IE_bit = 1;
         }
+
      }
      
      //Rutina para detener el muestreo (C:0xA2   F:0xF2):
-     /*
+
      if ((banMuestrear==1)&&(bufferSPI==0xA2)){
         banInicioMuestreo = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
         banMuestrear = 0;                                                       //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
@@ -396,7 +405,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            T1CON.TON = 0;
         }
      }
-     */
+
      
      //Rutina de lectura de los datos del acelerometro (C:0xA3   F:0xF3):
      if ((banLec==1)&&(bufferSPI==0xA3)){                                       //Verifica si la bandera de inicio de trama esta activa
@@ -570,6 +579,7 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT{
 }
 //*****************************************************************************************************************************************
 
+ /*
 //*****************************************************************************************************************************************
 //Interrupcion UART1
 void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
@@ -669,5 +679,5 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
 }
 //*****************************************************************************************************************************************
-
+*/
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

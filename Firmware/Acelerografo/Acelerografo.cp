@@ -490,7 +490,7 @@ unsigned char fuenteReloj;
 unsigned char bufferSPI;
 unsigned char banRespuestaPi;
 unsigned char banLec, banEsc;
-unsigned char banInicio;
+unsigned char banInicioMuestreo;
 unsigned char banOperacion, tipoOperacion;
 unsigned char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
@@ -563,7 +563,7 @@ void main() {
  contTimeout1 = 0;
 
  banMuestrear = 0;
- banInicio = 0;
+ banInicioMuestreo = 0;
 
  i = 0;
  x = 0;
@@ -628,6 +628,7 @@ void ConfiguracionPrincipal(){
 
  RPINR18bits.U1RXR = 0x22;
  RPOR0bits.RP35R = 0x01;
+ U1RXIE_bit = 1;
  U1RXIF_bit = 1;
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
@@ -636,6 +637,7 @@ void ConfiguracionPrincipal(){
 
  SPI1STAT.SPIEN = 1;
  SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);
+ SPI1IE_bit = 1;
  SPI1IF_bit = 0;
  IPC2bits.SPI1IP = 0x03;
 
@@ -650,15 +652,17 @@ void ConfiguracionPrincipal(){
 
 
  RPINR0 = 0x2F00;
- RPINR1 = 0x002E;
+
+ INT1IE_bit = 0;
  INT1IF_bit = 0;
- INT2IF_bit = 0;
+
  IPC5bits.INT1IP = 0x02;
- IPC7bits.INT2IP = 0x01;
+
 
 
  T1CON = 0x0020;
  T1CON.TON = 0;
+ T1IE_bit = 1;
  T1IF_bit = 0;
  PR1 = 62500;
  IPC0bits.T1IP = 0x02;
@@ -666,17 +670,18 @@ void ConfiguracionPrincipal(){
 
  T2CON = 0x30;
  T2CON.TON = 0;
+ T2IE_bit = 1;
  T2IF_bit = 0;
  PR2 = 46875;
  IPC1bits.T2IP = 0x02;
 
 
- U1RXIE_bit = 1;
- SPI1IE_bit = 1;
- INT1IE_bit = 0;
- INT2IE_bit = 0;
- T1IE_bit = 1;
- T2IE_bit = 1;
+
+
+
+
+
+
 
 
  ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
@@ -691,10 +696,11 @@ void ConfiguracionPrincipal(){
  void InterrupcionP1(unsigned short operacion){
 
 
+
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 263 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 270 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -797,12 +803,45 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
- banInicio = 1;
+ banInicioMuestreo = 1;
+
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
+
  }
-#line 402 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
+
+ if ((banMuestrear==1)&&(bufferSPI==0xA2)){
+ banInicioMuestreo = 0;
+ banMuestrear = 0;
+
+ banLec = 0;
+ banEsc = 0;
+ banSetReloj = 0;
+ banGPSI = 0;
+ banGPSC = 0;
+ i = 0;
+ x = 0;
+ y = 0;
+ i_gps = 0;
+ contTimer1 = 0;
+ byteGPS = 0;
+
+ ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
+
+ if (INT1IE_bit==1){
+ INT1IE_bit = 0;
+ }
+
+ if (T1CON.TON==1){
+ T1CON.TON = 0;
+ }
+ }
+
+
+
  if ((banLec==1)&&(bufferSPI==0xA3)){
  banLec = 2;
  i = 0;
@@ -892,7 +931,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
  horaSistema = 0;
  }
 
- if (banInicio==1){
+ if (banInicioMuestreo==1){
 
  Muestrear();
  }
@@ -969,107 +1008,6 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT{
  U1MODE.UARTEN = 0;
 
  InterrupcionP1(0XB2);
- }
-
-}
-
-
-
-
-void urx_1() org IVT_ADDR_U1RXINTERRUPT {
-
-
- U1RXIF_bit = 0;
- byteGPS = U1RXREG;
- U1STA.OERR = 0;
-
-
- if (banGPSI==3){
- if (byteGPS!=0x2A){
- tramaGPS[i_gps] = byteGPS;
- i_gps++;
- } else {
- banGPSI = 0;
- banGPSC = 1;
- }
- }
-
-
- if ((banGPSI==1)){
- if (byteGPS==0x24){
- banGPSI = 2;
- i_gps = 0;
- }
- }
- if ((banGPSI==2)&&(i_gps<6)){
- tramaGPS[i_gps] = byteGPS;
- i_gps++;
- }
- if ((banGPSI==2)&&(i_gps==6)){
-
- T2CON.TON = 0;
- TMR2 = 0;
-
- if (tramaGPS[1]=='G'&&tramaGPS[2]=='P'&&tramaGPS[3]=='R'&&tramaGPS[4]=='M'&&tramaGPS[5]=='C'){
- banGPSI = 3;
- i_gps = 0;
- } else {
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
-
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 4;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
- U1MODE.UARTEN = 0;
- }
- }
-
-
- if (banGPSC==1){
-
- for (x=0;x<6;x++){
- datosGPS[x] = tramaGPS[x+1];
- }
-
- for (x=44;x<54;x++){
- if (tramaGPS[x]==0x2C){
- for (y=0;y<6;y++){
- datosGPS[6+y] = tramaGPS[x+y+1];
- }
- }
- }
- horaSistema = RecuperarHoraGPS(datosGPS);
- fechaSistema = RecuperarFechaGPS(datosGPS);
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 661 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
- if (tramaGPS[12]==0x41) {
- fuenteReloj = 0;
- banSyncReloj = 1;
- banSetReloj = 1;
-
- InterrupcionP1(0xB2);
-
- } else {
- fuenteReloj = 3;
- banSyncReloj = 1;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- }
-
-
-
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
- U1MODE.UARTEN = 0;
-
  }
 
 }

@@ -36,7 +36,19 @@ int_1
 			_Divide_32x32
 			_Modulus_32x32
 		InterrupcionP1
-urx_1
+spi_1
+	ADXL355_write_byte
+	RecuperarHoraRPI
+		_Multiply_32x32
+	RecuperarFechaRPI
+		_Multiply_32x32
+	DS3234_setDate
+		SPI2_Init_Advanced
+		Dec2Bcd
+		DS3234_write_byte
+		SPI2_Init
+		_Divide_32x32
+		_Modulus_32x32
 	RecuperarHoraRTC
 		SPI2_Init_Advanced
 		DS3234_read_byte
@@ -51,29 +63,6 @@ urx_1
 		Bcd2Dec
 		SPI2_Init
 		_Multiply_32x32
-	AjustarTiempoSistema
-	InterrupcionP1
-	RecuperarHoraGPS
-		atoi
-			isdigit
-		_Multiply_32x32
-	RecuperarFechaGPS
-		atoi
-		_Multiply_32x32
-spi_1
-	RecuperarHoraRPI
-		_Multiply_32x32
-	RecuperarFechaRPI
-		_Multiply_32x32
-	DS3234_setDate
-		SPI2_Init_Advanced
-		Dec2Bcd
-		DS3234_write_byte
-		SPI2_Init
-		_Divide_32x32
-		_Modulus_32x32
-	RecuperarHoraRTC
-	RecuperarFechaRTC
 	AjustarTiempoSistema
 	InterrupcionP1
 Timer2Int
