@@ -50,7 +50,7 @@ unsigned char fuenteReloj;
 unsigned char bufferSPI;
 unsigned char banRespuestaPi; 
 unsigned char banLec, banEsc;
-unsigned char banInicio;
+unsigned char banInicioMuestreo;
 unsigned char banOperacion, tipoOperacion;
 unsigned char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
@@ -123,7 +123,7 @@ void main() {
      contTimeout1 = 0;
 
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
-     banInicio = 0;                                                             //Bandera de inicio de muestreo
+     banInicioMuestreo = 0;                                                             //Bandera de inicio de muestreo
 
      i = 0;
      x = 0;
@@ -188,7 +188,7 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto UART1
      RPINR18bits.U1RXR = 0x22;                                                  //Configura el pin RB2/RPI34 como Rx1 *
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
-     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
+     U1RXIF_bit = 1;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
      U1STAbits.URXISEL = 0x00;
      UART1_Init(9600);                                                          //Inicializa el UART1 con una velocidad de 115200 baudios
@@ -196,7 +196,6 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto SPI1 en modo Esclavo
      SPI1STAT.SPIEN = 1;                                                        //Habilita el SPI1 *
      SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);        //*
-     SPI1IE_bit = 1;                                                            //Habilita la interrupcion por SPI1  *
      SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI *
      IPC2bits.SPI1IP = 0x03;                                                    //Prioridad de la interrupcion SPI1
      
@@ -209,21 +208,17 @@ void ConfiguracionPrincipal(){
      CS_DS3234 = 1;                                                             //Pone en alto el CS del RTC
      CS_ADXL355 = 1;                                                            //Pone en alto el CS del acelerometro
      
-     //Configuracion del acelerometro
-     ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                           //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-
      //Configuracion de las interrupcionesd externas INT1 INT2
-     //RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46 (PPS)
      RPINR0 = 0x2F00;                                                           //Asigna INT1 al RB15/RPI47 (SQW)
+     RPINR1 = 0x002E;                                                           //Asigna INT2 al RB14/RPI46 (PPS)
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
      INT2IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT2
-     IPC5bits.INT1IP = 0x01;                                                    //Prioridad en la interrupocion externa 1
+     IPC5bits.INT1IP = 0x02;                                                    //Prioridad en la interrupocion externa 1
      IPC7bits.INT2IP = 0x01;                                                    //Prioridad en la interrupocion externa 2
 
      //Configuracion del TMR1 con un tiempo de 100ms
      T1CON = 0x0020;
      T1CON.TON = 0;                                                             //Apaga el Timer1
-     T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
      PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
@@ -231,14 +226,20 @@ void ConfiguracionPrincipal(){
      //Configuracion del TMR2 con un tiempo de 300ms
      T2CON = 0x30;                                                              //Prescalador
      T2CON.TON = 0;                                                             //Apaga el Timer2
-     T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
      T2IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR2
      PR2 = 46875;                                                               //Carga el preload para un tiempo de 300ms
      IPC1bits.T2IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR2
      
      //Habilitacion de interrupciones
+     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
+     SPI1IE_bit = 1;                                                            //Habilita la interrupcion por SPI1  *
      INT1IE_bit = 0;                                                            //Habilita la interrupcion externa INT1
      INT2IE_bit = 0;                                                            //Habilita la interrupcion externa INT2
+     T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
+     T2IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR2
+     
+     //Configuracion del acelerometro
+     ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                           //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
      
      Delay_ms(200);                                                             //Espera hasta que se estabilicen los cambios
 
@@ -361,7 +362,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         numFIFO = 0;
         numSetsFIFO = 0;
         contTimer1 = 0;
-        banInicio = 1;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+        banInicioMuestreo = 1;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
         if (INT1IE_bit==0){
            INT1IE_bit = 1;
         }
@@ -370,7 +371,7 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      //Rutina para detener el muestreo (C:0xA2   F:0xF2):
      /*
      if ((banMuestrear==1)&&(bufferSPI==0xA2)){
-        banInicio = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+        banInicioMuestreo = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
         banMuestrear = 0;                                                       //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
            
         banLec = 0;
@@ -487,7 +488,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
         horaSistema = 0;                                                        //Reinicia el reloj al llegar a las 24:00:00 horas
      }
      
-     if (banInicio==1){
+     if (banInicioMuestreo==1){
         //LedTest = ~LedTest;
         Muestrear();
      }
@@ -644,18 +645,6 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
         fechaSistema = RecuperarFechaGPS(datosGPS);                             //Recupera la fecha del GPS
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
         
-        /*
-        //Prueba
-         //Recupera la hora del RTC:
-         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
-         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
-         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-         fuenteReloj = 4;                                                        //Fuente reloj: RTC/E5
-         banSetReloj = 1;
-         InterrupcionP1(0XB2);
-        //Fin prueba
-        */
-
         //Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
         if (tramaGPS[12]==0x41) {
            fuenteReloj = 0;                                                     //Fuente reloj: GPS
@@ -670,8 +659,6 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
             banSetReloj = 1;
             InterrupcionP1(0xB2);                                               //Envia la hora local a la RPi
         }
-
-
 
         banGPSI = 0;
         banGPSC = 0;

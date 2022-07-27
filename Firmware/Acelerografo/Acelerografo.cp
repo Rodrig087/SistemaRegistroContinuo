@@ -628,7 +628,7 @@ void ConfiguracionPrincipal(){
 
  RPINR18bits.U1RXR = 0x22;
  RPOR0bits.RP35R = 0x01;
- U1RXIE_bit = 1;
+ U1RXIF_bit = 1;
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
  UART1_Init(9600);
@@ -636,7 +636,6 @@ void ConfiguracionPrincipal(){
 
  SPI1STAT.SPIEN = 1;
  SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);
- SPI1IE_bit = 1;
  SPI1IF_bit = 0;
  IPC2bits.SPI1IP = 0x03;
 
@@ -650,20 +649,16 @@ void ConfiguracionPrincipal(){
  CS_ADXL355 = 1;
 
 
- ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
-
-
-
  RPINR0 = 0x2F00;
+ RPINR1 = 0x002E;
  INT1IF_bit = 0;
  INT2IF_bit = 0;
- IPC5bits.INT1IP = 0x01;
+ IPC5bits.INT1IP = 0x02;
  IPC7bits.INT2IP = 0x01;
 
 
  T1CON = 0x0020;
  T1CON.TON = 0;
- T1IE_bit = 1;
  T1IF_bit = 0;
  PR1 = 62500;
  IPC0bits.T1IP = 0x02;
@@ -671,14 +666,20 @@ void ConfiguracionPrincipal(){
 
  T2CON = 0x30;
  T2CON.TON = 0;
- T2IE_bit = 1;
  T2IF_bit = 0;
  PR2 = 46875;
  IPC1bits.T2IP = 0x02;
 
 
+ U1RXIE_bit = 1;
+ SPI1IE_bit = 1;
  INT1IE_bit = 0;
  INT2IE_bit = 0;
+ T1IE_bit = 1;
+ T2IE_bit = 1;
+
+
+ ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
 
  Delay_ms(200);
 
@@ -693,7 +694,7 @@ void ConfiguracionPrincipal(){
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 262 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 263 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -801,7 +802,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  INT1IE_bit = 1;
  }
  }
-#line 401 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 402 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banLec==1)&&(bufferSPI==0xA3)){
  banLec = 2;
  i = 0;
@@ -1047,7 +1048,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 660 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 661 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if (tramaGPS[12]==0x41) {
  fuenteReloj = 0;
  banSyncReloj = 1;
