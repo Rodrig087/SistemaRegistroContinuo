@@ -17,7 +17,10 @@ Configuracion: dsPIC33EP256MC202, XT=80MHz
 
 //////////////////////////////////////////////////// Declaracion de variables //////////////////////////////////////////////////////////////
 
-//Variables y contantes para la peticion y respuesta de datos
+//Subindices:
+unsigned int i, x, y, j;
+
+//Definicion de pines:
 sbit RP1 at LATA4_bit;                                                          //Definicion del pin P1
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;                                                          //Definicion del pin P2
@@ -25,35 +28,42 @@ sbit RP2_Direction at TRISB4_bit;
 sbit TEST at LATB12_bit;                                                        //Definicion del pin P2
 sbit TEST_Direction at TRISB12_bit;
 
+//Variables para la comunicacion SPI:
+unsigned char buffer;
+unsigned char banLec, banEsc, banCiclo, banInicio;
+unsigned char banMuestrear, banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
+unsigned char banOperacion, tipoOperacion;
+
+//Variables para manejo del GPS:
+unsigned int i_gps;
+unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
+unsigned char banSetGPS;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned short tiempo[6];                                                       //Vector de datos de tiempo del sistema
-unsigned short tiempoRPI[6];                                                    //Vector para recuperar el tiempo enviado desde la RPi
+
+//Variables para manejo del tiempo:
+unsigned char tiempo[6];                                                       //Vector de datos de tiempo del sistema
+unsigned char tiempoRPI[6];                                                    //Vector para recuperar el tiempo enviado desde la RPi
+unsigned char banSetReloj;
+unsigned char fuenteReloj; 
+unsigned long horaSistema, fechaSistema;
+
+//Variables para manejo del acelerometro:
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];                                                   //Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
-unsigned char tramaSalida[2506];
-unsigned short numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
-unsigned short contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
-
-unsigned int i, x, y, i_gps, j;
-unsigned short buffer;
-unsigned short contMuestras;
-unsigned short contCiclos;
+unsigned char tramaSalida[2506];  //Declarado pero nunca utilizado
+unsigned char numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
+unsigned char contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
+unsigned char contMuestras;
+unsigned char contCiclos;
 unsigned int contFIFO;
-short tasaMuestreo;
-short numTMR1;
+unsigned char tasaMuestreo; //Cambio minimo: se agrego unsigned
+unsigned char numTMR1;  //Cambio minimo: se agrego unsigned
 
-unsigned short banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
-unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
-unsigned short banMuestrear, banLeer, banConf;
-unsigned short banOperacion, tipoOperacion;
-
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
-unsigned short fuenteReloj;                                                     //Indiaca la fuente de reloj 0:RTC 1:GPS
-short confGPS[2];
-unsigned long horaSistema, fechaSistema;
-
+//Variables sin usar:
+unsigned char banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
+char confGPS[2];
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -61,7 +71,7 @@ unsigned long horaSistema, fechaSistema;
 /////////////////////////////////////////////////////////  Declaracion de funciones  /////////////////////////////////////////////////////////
 void ConfiguracionPrincipal();
 void Muestrear();
-void InterrupcionP1(unsigned short operacion);
+void InterrupcionP1(unsigned char operacion);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -76,33 +86,42 @@ void main() {
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
      numTMR1 = (tasaMuestreo*10)-1;                                             //Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
      
-     banOperacion = 0;
-     tipoOperacion = 0;
-     
-     banTI = 0;
+     //Inicializacion de variables:
+
+     //Subindices:
+     i = 0;
+     j = 0;
+     x = 0;
+     y = 0;
+
+     //Comunicacion SPI:
      banLec = 0;
      banEsc = 0;
      banCiclo = 0;
-     banSetReloj = 0;
-     
-     banSetGPS = 0;
-     banTIGPS = 0;
-     banTFGPS = 0;
-     banTCGPS = 0;
-     stsGPS = 0;
-     fuenteReloj = 0;
-
+     banInicio = 0;
+     banOperacion = 0;
+     tipoOperacion = 0;
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
-     banInicio = 0;                                                             //Bandera de inicio de muestreo
      banLeer = 0;
      banConf = 0;
+     SPI1BUF = 0x00;
 
-     i = 0;
-     x = 0;
-     y = 0;
+     //GPS:
      i_gps = 0;
-     horaSistema = 0;
+     byteGPS = 0;
+     banTIGPS = 0;
+     banTFGPS = 0;   //Sin usar
+     banTCGPS = 0;
+     banSetGPS = 0;
+     stsGPS = 0;   //Sin usar
 
+     //Tiempo:
+     banSetReloj = 0;
+     fuenteReloj = 0;
+     horaSistema = 0;
+     fechaSistema = 0;
+     
+     //Acelerometro:
      contMuestras = 0;
      contCiclos = 0;
      contFIFO = 0;
@@ -110,13 +129,13 @@ void main() {
      numSetsFIFO = 0;
      contTimer1 = 0;
 
-     byteGPS = 0;
-
+     //Puertos:    
      RP1 = 0;
      RP2 = 0;
      TEST = 1;
 
-     SPI1BUF = 0x00;
+     //Variables sin usar:
+     banTI = 0;
 
      while(1){
 
@@ -194,7 +213,7 @@ void ConfiguracionPrincipal(){
      //Configuracion del TMR1 con un tiempo de 100ms
      T1CON = 0x0020;
      T1CON.TON = 0;                                                             //Apaga el Timer1
-     T1IE_bit = 1;                                                              //Habilita la interrupción de desbordamiento TMR1
+     T1IE_bit = 1;                                                              //Habilita la interrupciï¿½n de desbordamiento TMR1
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
      PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
@@ -206,7 +225,7 @@ void ConfiguracionPrincipal(){
 
 //*****************************************************************************************************************************************
 //Funcion para realizar la interrupcion en la RPi
- void InterrupcionP1(unsigned short operacion){
+ void InterrupcionP1(unsigned char operacion){
      //Si se ejecuta una operacion de tiempo, habilita la interrupcion INT1 para incrementar la hora del sistema con cada pulso PPS
      //if (operacion==0xB2){
         if (INT1IE_bit==0){

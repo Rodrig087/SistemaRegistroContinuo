@@ -1,6 +1,6 @@
-#line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
-#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -93,7 +93,7 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 
 
 
@@ -200,8 +200,8 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
  return horaGPS;
 
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
-#line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 37 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 sbit CS_DS3234 at LATA2_bit;
 
 
@@ -443,7 +443,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
  tramaTiempoSistema[5] = segundo;
 
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
 
 
 
@@ -473,7 +473,10 @@ unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
  return horaRPi;
 
 }
-#line 21 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+unsigned int i, x, y, j;
+
+
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -481,35 +484,42 @@ sbit RP2_Direction at TRISB4_bit;
 sbit TEST at LATB12_bit;
 sbit TEST_Direction at TRISB12_bit;
 
+
+unsigned char buffer;
+unsigned char banLec, banEsc, banCiclo, banInicio;
+unsigned char banMuestrear, banLeer, banConf;
+unsigned char banOperacion, tipoOperacion;
+
+
+unsigned int i_gps;
+unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
+unsigned char banSetGPS;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned short tiempo[6];
-unsigned short tiempoRPI[6];
+
+
+unsigned char tiempo[6];
+unsigned char tiempoRPI[6];
+unsigned char banSetReloj;
+unsigned char fuenteReloj;
+unsigned long horaSistema, fechaSistema;
+
+
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];
 unsigned char tramaCompleta[2506];
 unsigned char tramaSalida[2506];
-unsigned short numFIFO, numSetsFIFO;
-unsigned short contTimer1;
-
-unsigned int i, x, y, i_gps, j;
-unsigned short buffer;
-unsigned short contMuestras;
-unsigned short contCiclos;
+unsigned char numFIFO, numSetsFIFO;
+unsigned char contTimer1;
+unsigned char contMuestras;
+unsigned char contCiclos;
 unsigned int contFIFO;
-short tasaMuestreo;
-short numTMR1;
+unsigned char tasaMuestreo;
+unsigned char numTMR1;
 
-unsigned short banTC, banTI, banTF;
-unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS;
-unsigned short banMuestrear, banLeer, banConf;
-unsigned short banOperacion, tipoOperacion;
 
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
-unsigned short fuenteReloj;
-short confGPS[2];
-unsigned long horaSistema, fechaSistema;
-
+unsigned char banTC, banTI, banTF;
+char confGPS[2];
 
 
 
@@ -517,7 +527,7 @@ unsigned long horaSistema, fechaSistema;
 
 void ConfiguracionPrincipal();
 void Muestrear();
-void InterrupcionP1(unsigned short operacion);
+void InterrupcionP1(unsigned char operacion);
 
 
 
@@ -532,32 +542,41 @@ void main() {
  ADXL355_init(tasaMuestreo);
  numTMR1 = (tasaMuestreo*10)-1;
 
- banOperacion = 0;
- tipoOperacion = 0;
 
- banTI = 0;
+
+
+ i = 0;
+ j = 0;
+ x = 0;
+ y = 0;
+
+
  banLec = 0;
  banEsc = 0;
  banCiclo = 0;
- banSetReloj = 0;
+ banInicio = 0;
+ banOperacion = 0;
+ tipoOperacion = 0;
+ banMuestrear = 0;
+ banLeer = 0;
+ banConf = 0;
+ SPI1BUF = 0x00;
 
- banSetGPS = 0;
+
+ i_gps = 0;
+ byteGPS = 0;
  banTIGPS = 0;
  banTFGPS = 0;
  banTCGPS = 0;
+ banSetGPS = 0;
  stsGPS = 0;
+
+
+ banSetReloj = 0;
  fuenteReloj = 0;
-
- banMuestrear = 0;
- banInicio = 0;
- banLeer = 0;
- banConf = 0;
-
- i = 0;
- x = 0;
- y = 0;
- i_gps = 0;
  horaSistema = 0;
+ fechaSistema = 0;
+
 
  contMuestras = 0;
  contCiclos = 0;
@@ -566,13 +585,13 @@ void main() {
  numSetsFIFO = 0;
  contTimer1 = 0;
 
- byteGPS = 0;
 
  RP1 = 0;
  RP2 = 0;
  TEST = 1;
 
- SPI1BUF = 0x00;
+
+ banTI = 0;
 
  while(1){
 
@@ -662,13 +681,13 @@ void ConfiguracionPrincipal(){
 
 
 
- void InterrupcionP1(unsigned short operacion){
+ void InterrupcionP1(unsigned char operacion){
 
 
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 221 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 240 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
