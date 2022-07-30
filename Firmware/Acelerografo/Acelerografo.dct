@@ -1290,20 +1290,13 @@ b7
 b8
 b9
 banciclo
-banconf
 banesc
 baninicio
 banlec
-banleer
 banmuestrear
 banoperacion
-bansetgps
 bansetreloj
-bantc
 bantcgps
-bantf
-bantfgps
-banti
 bantigps
 bcd2dec
 bcd2dec16
@@ -2333,7 +2326,6 @@ con_cm1con_bit
 con_cm2con_bit
 con_cm3con_bit
 con_cm4con_bit
-confgps
 configuracionprincipal
 contciclos
 contfifo
@@ -10758,7 +10750,6 @@ stsel
 stsel_bit
 stsel_u1mode_bit
 stsel_u2mode_bit
-stsgps
 swap
 swap
 swap
@@ -11389,7 +11380,6 @@ ton_t5con_bit
 toupper
 tramacompleta
 tramagps
-tramasalida
 trapr
 trapr
 trapr_bit

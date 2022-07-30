@@ -470,13 +470,15 @@ sbit TEST_Direction at TRISB12_bit;
 
 unsigned char buffer;
 unsigned char banLec, banEsc, banCiclo, banInicio;
-unsigned char banMuestrear, banLeer, banConf;
+unsigned char banMuestrear;
+
 unsigned char banOperacion, tipoOperacion;
 
 
 unsigned int i_gps;
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
-unsigned char banSetGPS;
+unsigned char byteGPS, banTIGPS, banTCGPS;
+
+
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
 
@@ -491,7 +493,7 @@ unsigned long horaSistema, fechaSistema;
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];
 unsigned char tramaCompleta[2506];
-unsigned char tramaSalida[2506];
+
 unsigned char numFIFO, numSetsFIFO;
 unsigned char contTimer1;
 unsigned char contMuestras;
@@ -501,8 +503,8 @@ unsigned char tasaMuestreo;
 unsigned char numTMR1;
 
 
-unsigned char banTC, banTI, banTF;
-char confGPS[2];
+
+
 
 
 
@@ -541,18 +543,18 @@ void main() {
  banOperacion = 0;
  tipoOperacion = 0;
  banMuestrear = 0;
- banLeer = 0;
- banConf = 0;
+
+
  SPI1BUF = 0x00;
 
 
  i_gps = 0;
  byteGPS = 0;
  banTIGPS = 0;
- banTFGPS = 0;
+
  banTCGPS = 0;
- banSetGPS = 0;
- stsGPS = 0;
+
+
 
 
  banSetReloj = 0;
@@ -574,7 +576,7 @@ void main() {
  TEST = 1;
 
 
- banTI = 0;
+
 
  while(1){
 
@@ -670,7 +672,7 @@ void ConfiguracionPrincipal(){
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 240 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 242 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -783,16 +785,16 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  banInicio = 0;
  banMuestrear = 0;
 
- banTI = 0;
+
  banLec = 0;
  banEsc = 0;
  banSetReloj = 0;
- banSetGPS = 0;
+
  banTIGPS = 0;
- banTFGPS = 0;
+
  banTCGPS = 0;
- banLeer = 0;
- banConf = 0;
+
+
  i = 0;
  x = 0;
  y = 0;

@@ -31,13 +31,15 @@ sbit TEST_Direction at TRISB12_bit;
 //Variables para la comunicacion SPI:
 unsigned char buffer;
 unsigned char banLec, banEsc, banCiclo, banInicio;
-unsigned char banMuestrear, banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
+unsigned char banMuestrear; 
+//unsigned char banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
 unsigned char banOperacion, tipoOperacion;
 
 //Variables para manejo del GPS:
 unsigned int i_gps;
-unsigned char byteGPS, banTIGPS, banTFGPS, banTCGPS, stsGPS;
-unsigned char banSetGPS;
+unsigned char byteGPS, banTIGPS, banTCGPS;
+//unsigned char banTFGPS, stsGPS;
+//unsigned char banSetGPS;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
 
@@ -52,7 +54,7 @@ unsigned long horaSistema, fechaSistema;
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];                                                   //Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 unsigned char tramaCompleta[2506];                                              //Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
-unsigned char tramaSalida[2506];  //Declarado pero nunca utilizado
+//unsigned char tramaSalida[2506];  //Declarado pero nunca utilizado
 unsigned char numFIFO, numSetsFIFO;                                            //Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
 unsigned char contTimer1;                                                      //Variable para contar el numero de veces que entra a la interrupcion por Timer 1
 unsigned char contMuestras;
@@ -62,8 +64,8 @@ unsigned char tasaMuestreo; //Cambio minimo: se agrego unsigned
 unsigned char numTMR1;  //Cambio minimo: se agrego unsigned
 
 //Variables sin usar:
-unsigned char banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
-char confGPS[2];
+//unsigned char banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
+//char confGPS[2];
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -102,18 +104,18 @@ void main() {
      banOperacion = 0;
      tipoOperacion = 0;
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
-     banLeer = 0;
-     banConf = 0;
+     //banLeer = 0;
+     //banConf = 0;
      SPI1BUF = 0x00;
 
      //GPS:
      i_gps = 0;
      byteGPS = 0;
      banTIGPS = 0;
-     banTFGPS = 0;   //Sin usar
+     //banTFGPS = 0;   //Sin usar
      banTCGPS = 0;
-     banSetGPS = 0;
-     stsGPS = 0;   //Sin usar
+     //banSetGPS = 0;
+     //stsGPS = 0;   //Sin usar
 
      //Tiempo:
      banSetReloj = 0;
@@ -135,7 +137,7 @@ void main() {
      TEST = 1;
 
      //Variables sin usar:
-     banTI = 0;
+     //banTI = 0;
 
      while(1){
 
@@ -349,16 +351,16 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         banInicio = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
         banMuestrear = 0;                                                       //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
            
-        banTI = 0;
+        //banTI = 0;
         banLec = 0;
         banEsc = 0;
         banSetReloj = 0;
-        banSetGPS = 0;
+        //banSetGPS = 0;
         banTIGPS = 0;
-        banTFGPS = 0;
+        //banTFGPS = 0;
         banTCGPS = 0;
-        banLeer = 0;
-        banConf = 0;
+        //banLeer = 0;
+        //banConf = 0;
         i = 0;
         x = 0;
         y = 0;
