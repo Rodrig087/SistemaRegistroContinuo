@@ -98,7 +98,7 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
 
 
 
-void GPS_init(short conf,short NMA);
+void GPS_init();
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
@@ -106,7 +106,7 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 
 
-void GPS_init(short conf,short NMA){
+void GPS_init(){
  UART1_Write_Text("$PMTK605*31\r\n");
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
  UART1_Write_Text("$PMTK251,115200*1F\r\n");
@@ -476,16 +476,16 @@ unsigned char banOperacion, tipoOperacion;
 
 
 unsigned int i_gps;
-unsigned char byteGPS, banTIGPS, banTCGPS;
-
-
+unsigned char byteGPS, banGPSI, banGPSC;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
 
 
+
+
 unsigned char tiempo[6];
 unsigned char tiempoRPI[6];
-unsigned char banSetReloj;
+unsigned char banSetReloj, banSyncReloj;
 unsigned char fuenteReloj;
 unsigned long horaSistema, fechaSistema;
 
@@ -521,7 +521,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
  ConfiguracionPrincipal();
-
+ GPS_init();
  DS3234_init();
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -543,21 +543,22 @@ void main() {
  banOperacion = 0;
  tipoOperacion = 0;
  banMuestrear = 0;
-
-
  SPI1BUF = 0x00;
+
+
 
 
  i_gps = 0;
  byteGPS = 0;
- banTIGPS = 0;
+ banGPSI = 0;
+ banGPSC = 0;
 
- banTCGPS = 0;
 
 
 
 
  banSetReloj = 0;
+ banSyncReloj = 0;
  fuenteReloj = 0;
  horaSistema = 0;
  fechaSistema = 0;
@@ -619,11 +620,11 @@ void ConfiguracionPrincipal(){
 
  RPINR18bits.U1RXR = 0x22;
  RPOR0bits.RP35R = 0x01;
- U1RXIE_bit = 0;
+ U1RXIE_bit = 1;
  U1RXIF_bit = 0;
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
- UART1_Init(115200);
+ UART1_Init(9600);
 
 
  SPI1STAT.SPIEN = 1;
@@ -672,7 +673,7 @@ void ConfiguracionPrincipal(){
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 242 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 243 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -790,9 +791,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  banEsc = 0;
  banSetReloj = 0;
 
- banTIGPS = 0;
+ banGPSI = 0;
 
- banTCGPS = 0;
+ banGPSC = 0;
 
 
  i = 0;
@@ -868,13 +869,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
 
  if ((banSetReloj==0)&&(buffer==0xA6)){
- banTIGPS = 0;
- banTCGPS = 0;
- i_gps = 0;
-
- if (U1RXIE_bit==0){
- U1RXIE_bit = 1;
- }
+ banGPSI = 1;
+ banGPSC = 0;
+ U1MODE.UARTEN = 1;
  }
 
 
@@ -909,6 +906,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
  }
 
 }
+
 
 
 
@@ -952,79 +950,99 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
 
 
+
 void urx_1() org IVT_ADDR_U1RXINTERRUPT {
 
+
  U1RXIF_bit = 0;
-
  byteGPS = U1RXREG;
- OERR_bit = 0;
+ U1STA.OERR = 0;
 
- if (banTIGPS==0){
 
- if (byteGPS==0x24){
- banTIGPS = 1;
- i_gps = 0;
- } else {
+ if (banGPSI==3){
+ if (byteGPS!=0x2A){
+ tramaGPS[i_gps] = byteGPS;
  i_gps++;
+ } else {
+ banGPSI = 0;
+ banGPSC = 1;
+ }
  }
 
- if (i_gps>90){
+
+ if ((banGPSI==1)){
+ if (byteGPS==0x24){
+ banGPSI = 2;
+ i_gps = 0;
+ }
+ }
+ if ((banGPSI==2)&&(i_gps<6)){
+ tramaGPS[i_gps] = byteGPS;
+ i_gps++;
+ }
+ if ((banGPSI==2)&&(i_gps==6)){
+
+ T2CON.TON = 0;
+ TMR2 = 0;
+
+ if (tramaGPS[1]=='G'&&tramaGPS[2]=='P'&&tramaGPS[3]=='R'&&tramaGPS[4]=='M'&&tramaGPS[5]=='C'){
+ banGPSI = 3;
+ i_gps = 0;
+ } else {
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
 
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 0;
+ fuenteReloj = 4;
  banSetReloj = 1;
- InterrupcionP1(0XB2);
- U1RXIE_bit = 0;
- }
- }
-
- if (banTIGPS==1){
-
- if (byteGPS!=0x2A){
- tramaGPS[i_gps] = byteGPS;
- if ((i_gps==1)&&(tramaGPS[1]!=0x47)){
+ InterrupcionP1(0xB2);
+ banGPSI = 0;
+ banGPSC = 0;
  i_gps = 0;
- banTIGPS = 0;
- banTCGPS = 0;
- }
- i_gps++;
- } else {
- tramaGPS[i_gps] = byteGPS;
- banTIGPS = 2;
- banTCGPS = 1;
+ U1MODE.UARTEN = 0;
  }
  }
 
- if (banTCGPS==1){
- if (tramaGPS[18]==0x41) {
+
+ if (banGPSC==1){
+
  for (x=0;x<6;x++){
- datosGPS[x] = tramaGPS[7+x];
+ datosGPS[x] = tramaGPS[x+1];
  }
- for (x=50;x<60;x++){
+
+ for (x=44;x<54;x++){
  if (tramaGPS[x]==0x2C){
  for (y=0;y<6;y++){
  datosGPS[6+y] = tramaGPS[x+y+1];
  }
- break;
  }
  }
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
- DS3234_setDate(horaSistema, fechaSistema);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+#line 606 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ if (tramaGPS[12]==0x41) {
  fuenteReloj = 1;
- } else {
-
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 0;
- }
+ banSyncReloj = 1;
  banSetReloj = 1;
- InterrupcionP1(0XB2);
- U1RXIE_bit = 0;
+
+ InterrupcionP1(0xB2);
+
+ } else {
+ fuenteReloj = 3;
+ banSyncReloj = 1;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
+ }
+
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+ U1MODE.UARTEN = 0;
+
  }
 
 }

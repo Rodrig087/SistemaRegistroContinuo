@@ -2,7 +2,7 @@
 
 /////////////////////////////////////////// Definicion de funciones ///////////////////////////////////////////
 
-void GPS_init(short conf,short NMA);
+void GPS_init();
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
@@ -10,7 +10,7 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 ///////////////////////////////////////////        Funciones        ///////////////////////////////////////////
 
 //Funcion para configurar el GPS
-void GPS_init(short conf,short NMA){
+void GPS_init(){
      UART1_Write_Text("$PMTK605*31\r\n");
      UART1_Write_Text("$PMTK220,1000*1F\r\n");
      UART1_Write_Text("$PMTK251,115200*1F\r\n");

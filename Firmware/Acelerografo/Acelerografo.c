@@ -37,16 +37,16 @@ unsigned char banOperacion, tipoOperacion;
 
 //Variables para manejo del GPS:
 unsigned int i_gps;
-unsigned char byteGPS, banTIGPS, banTCGPS;
-//unsigned char banTFGPS, stsGPS;
-//unsigned char banSetGPS;
+unsigned char byteGPS, banGPSI, banGPSC;
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
+//unsigned char banTFGPS, stsGPS;
+//unsigned char banSetGPS;
 
 //Variables para manejo del tiempo:
 unsigned char tiempo[6];                                                       //Vector de datos de tiempo del sistema
 unsigned char tiempoRPI[6];                                                    //Vector para recuperar el tiempo enviado desde la RPi
-unsigned char banSetReloj;
+unsigned char banSetReloj, banSyncReloj;
 unsigned char fuenteReloj; 
 unsigned long horaSistema, fechaSistema;
 
@@ -82,7 +82,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
      ConfiguracionPrincipal();
-     //GPS_init(1,1);                                                             //Inicializa el GPS en modo configuracion y tipo de trama GPRMC
+     GPS_init();                                                                //Inicializa el GPS en modo configuracion y tipo de trama GPRMC
      DS3234_init();                                                             //inicializa el RTC
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
@@ -104,21 +104,22 @@ void main() {
      banOperacion = 0;
      tipoOperacion = 0;
      banMuestrear = 0;                                                          //Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
+     SPI1BUF = 0x00;
      //banLeer = 0;
      //banConf = 0;
-     SPI1BUF = 0x00;
-
+     
      //GPS:
      i_gps = 0;
      byteGPS = 0;
-     banTIGPS = 0;
+     banGPSI = 0;
+     banGPSC = 0;
      //banTFGPS = 0;   //Sin usar
-     banTCGPS = 0;
      //banSetGPS = 0;
      //stsGPS = 0;   //Sin usar
 
      //Tiempo:
      banSetReloj = 0;
+     banSyncReloj = 0;
      fuenteReloj = 0;
      horaSistema = 0;
      fechaSistema = 0;
@@ -180,11 +181,11 @@ void ConfiguracionPrincipal(){
      //Configuracion del puerto UART1
      RPINR18bits.U1RXR = 0x22;                                                  //Configura el pin RB2/RPI34 como Rx1 *
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
-     U1RXIE_bit = 0;                                                            //Habilita la interrupcion por UART1 RX *
+     U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
      U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
      U1STAbits.URXISEL = 0x00;
-     UART1_Init(115200);                                                        //Inicializa el UART1 con una velocidad de 115200 baudios
+     UART1_Init(9600);                                                          //Inicializa el UART1 con una velocidad de 9600 baudios
 
      //Configuracion del puerto SPI1 en modo Esclavo
      SPI1STAT.SPIEN = 1;                                                        //Habilita el SPI1 *
@@ -206,7 +207,7 @@ void ConfiguracionPrincipal(){
      ADXL355_write_byte(POWER_CTL, DRDY_OFF|STANDBY);                           //Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
 
      //Configuracion de la interrupcion externa INT1
-     //RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46 (PPS)
+     //RPINR0 = 0x2E00;                                                         //Asigna INT1 al RB14/RPI46 (PPS)
      RPINR0 = 0x2F00;                                                           //Asigna INT1 al RB15/RPI47 (SQW)
      INT1IE_bit = 0;                                                            //Habilita la interrupcion externa INT1
      INT1IF_bit = 0;                                                            //Limpia la bandera de interrupcion externa INT1
@@ -215,7 +216,7 @@ void ConfiguracionPrincipal(){
      //Configuracion del TMR1 con un tiempo de 100ms
      T1CON = 0x0020;
      T1CON.TON = 0;                                                             //Apaga el Timer1
-     T1IE_bit = 1;                                                              //Habilita la interrupci�n de desbordamiento TMR1
+     T1IE_bit = 1;                                                              //Habilita la interrupcion de desbordamiento TMR1
      T1IF_bit = 0;                                                              //Limpia la bandera de interrupcion del TMR1
      PR1 = 62500;                                                               //Car ga el preload para un tiempo de 100ms
      IPC0bits.T1IP = 0x02;                                                      //Prioridad de la interrupcion por desbordamiento del TMR1
@@ -356,9 +357,9 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
         banEsc = 0;
         banSetReloj = 0;
         //banSetGPS = 0;
-        banTIGPS = 0;
+        banGPSI = 0;
         //banTFGPS = 0;
-        banTCGPS = 0;
+        banGPSC = 0;
         //banLeer = 0;
         //banConf = 0;
         i = 0;
@@ -434,13 +435,9 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      
      //Rutina para obtener la hora del GPS(C:0xA6   F:0xF6):
      if ((banSetReloj==0)&&(buffer==0xA6)){
-        banTIGPS = 0;                                                           //Limpia la bandera de inicio de trama  del GPS
-        banTCGPS = 0;                                                           //Limpia la bandera de trama completa
-        i_gps = 0;                                                              //Limpia el subindice de la trama GPS
-        //Habilita interrupcion por UART1Rx si esta desabilitada:
-        if (U1RXIE_bit==0){
-           U1RXIE_bit = 1;
-        }
+        banGPSI = 1;                                                            //Inicia la bandera de inicio de trama  del GPS
+        banGPSC = 0;                                                            //Limpia la bandera de trama completa
+        U1MODE.UARTEN = 1;                                                      //Inicializa el UART1
      }
 
      //Rutina para obtener la hora del RTC (C:0xA7   F:0xF7):
@@ -454,9 +451,9 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
      //************************************************************************************************************************************
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//************************************************************************************************************************************
 //Interrupcion INT1
 void int_1() org IVT_ADDR_INT1INTERRUPT {
      
@@ -475,8 +472,9 @@ void int_1() org IVT_ADDR_INT1INTERRUPT {
      }
      
 }
+//************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//************************************************************************************************************************************
 //Interrupcion por desbordamiento del Timer1
 void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      
@@ -515,83 +513,129 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
      }
 
 }
+//************************************************************************************************************************************
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************************************************************************
 //Interrupcion UART1
 void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
+     //Recupera el byte recibido en cada interrupcion:
      U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART
-
      byteGPS = U1RXREG;                                                         //Lee el byte de la trama enviada por el GPS
-     OERR_bit = 0;                                                              //Limpia este bit para limpiar el FIFO UART
+     U1STA.OERR = 0;                                                            //Limpia este bit para limpiar el FIFO UART1
 
-    if (banTIGPS==0){
-        //Espera hasta recibir el simbolo "$" para empezar a grabar la trama GPS>
-        if (byteGPS==0x24){
-           banTIGPS = 1;                                                        //Activa la bandera de inicio de trama
+     //Recupera el pyload de la trama GPS:                                      //Aqui deberia entrar despues de recuperar la cabecera de trama
+     if (banGPSI==3){
+        if (byteGPS!=0x2A){
+           tramaGPS[i_gps] = byteGPS;                                           //LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS
+           i_gps++;
+        } else {
+           banGPSI = 0;                                                         //Limpia la bandera de inicio de trama
+           banGPSC = 1;                                                         //Activa la bandera de trama completa
+        }
+     }
+
+     //Recupera la cabecera de la trama GPS:                                    //Aqui deberia entrar primero cada vez que se recibe una trama nueva
+     if ((banGPSI==1)){
+        if (byteGPS==0x24){                                                     //Verifica si el primer byte recibido sea la cabecera de trama "$"
+           banGPSI = 2;
+           i_gps = 0;
+        }
+     }
+     if ((banGPSI==2)&&(i_gps<6)){
+        tramaGPS[i_gps] = byteGPS;                                              //Recupera los datos de cabecera de la trama GPS: ["$", "G", "P", "R", "M", "C"]
+        i_gps++;
+     }
+     if ((banGPSI==2)&&(i_gps==6)){
+        //Detiene el Timeout 1:
+        T2CON.TON = 0;
+        TMR2 = 0;
+        //Comprueba la cabecera GPRMC:
+        if (tramaGPS[1]=='G'&&tramaGPS[2]=='P'&&tramaGPS[3]=='R'&&tramaGPS[4]=='M'&&tramaGPS[5]=='C'){
+           banGPSI = 3;
            i_gps = 0;
         } else {
-           i_gps++;
-        }
-        //Espera que lleguen hasta 90 caracteres incorrectos del GPS para abortar la operacion y utilizar la hora/fecha del RTC:
-        if (i_gps>90){
+           banGPSI = 0;
+           banGPSC = 0;
+           i_gps = 0;
            //Recupera la hora del RTC:
            horaSistema = RecuperarHoraRTC();                                    //Recupera la hora del RTC
            fechaSistema = RecuperarFechaRTC();                                  //Recupera la fecha del RTC
            AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
-           fuenteReloj = 0;                                                     //Indica que la fuente de reloj es el RTC
-           banSetReloj = 1;                                                     //Activa la bandera para hacer uso de la hora 
-           InterrupcionP1(0XB2);
-           U1RXIE_bit = 0;  
+           fuenteReloj = 4;                                                     //Fuente reloj: RTC/E4
+           banSetReloj = 1;
+           InterrupcionP1(0xB2);                                                //Envia la hora local a la RPi y a los nodos                                                   //Envia la hora local a la RPi
+           banGPSI = 0;
+           banGPSC = 0;
+           i_gps = 0;
+           U1MODE.UARTEN = 0;                                                   //Desactiva el UART1
         }
      }
 
-     if (banTIGPS==1){
-        //LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS:
-        if (byteGPS!=0x2A){                                                     //0x2A = "*"
-           tramaGPS[i_gps] = byteGPS;                                             
-           if ((i_gps==1)&&(tramaGPS[1]!=0x47)){                                //Verifica si el segundo elemento guardado es diferente de "G"
-              i_gps = 0;                                                        //Limpia el subindice para almacenar la trama desde el principio
-              banTIGPS = 0;                                                     //Limpia la bandera de inicio de trama
-              banTCGPS = 0;                                                     //Limpia la bandera de trama completa
-           }
-           i_gps++;
-        } else {
-           tramaGPS[i_gps] = byteGPS;
-           banTIGPS = 2;                                                        //Cambia el estado de la bandera de inicio de trama para no permitir que se almacene mas datos en la trama
-           banTCGPS = 1;                                                        //Activa la bandera de trama completa
+     //Realiza el procesamiento de la informacion del  pyload:                  //Aqui se realiza cualquier accion con el pyload recuperado
+     if (banGPSC==1){
+        //Extrae los datos de la trama GPS:
+        for (x=0;x<6;x++){
+            datosGPS[x] = tramaGPS[x+1];                                    //Guarda los datos de hhmmss
         }
-     }
-
-     if (banTCGPS==1){
-        if (tramaGPS[18]==0x41) {                                               //Verifica que el caracter 18 sea igual a "A" lo cual comprueba que los datos son validos
-           for (x=0;x<6;x++){
-               datosGPS[x] = tramaGPS[7+x];                                     //Guarda los datos de hhmmss
-           }
-           for (x=50;x<60;x++){
-               if (tramaGPS[x]==0x2C){                                          //Busca el simbolo "," a partir de la posicion 50
-                   for (y=0;y<6;y++){
-                       datosGPS[6+y] = tramaGPS[x+y+1];                         //Guarda los datos de DDMMAA en la trama datosGPS
-                   }
-                                   break;
+        //Busca el simbolo "," a partir de la posicion 44
+        for (x=44;x<54;x++){
+            if (tramaGPS[x]==0x2C){
+               for (y=0;y<6;y++){
+                   datosGPS[6+y] = tramaGPS[x+y+1];                             //Guarda los datos de DDMMAA en la trama datosGPS
                }
-           }
-           horaSistema = RecuperarHoraGPS(datosGPS);                            //Recupera la hora del GPS
-           fechaSistema = RecuperarFechaGPS(datosGPS);                          //Recupera la fecha del GPS
-           DS3234_setDate(horaSistema, fechaSistema);                           //Configura la hora en el RTC con la hora recuperada de la RPi
-           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
-           fuenteReloj = 1;                                                     //Indica que la fuente de reloj es el GPS
-        } else {
-           //Recupera la hora del RTC:
-           horaSistema = RecuperarHoraRTC();                                    //Recupera la hora del RTC
-           fechaSistema = RecuperarFechaRTC();                                  //Recupera la fecha del RTC
-           AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);             //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
-           fuenteReloj = 0;                                                     //Indica que la fuente de reloj es el RTC
+            }
         }
-        banSetReloj = 1;                                                        //Activa la bandera para hacer uso de la hora GPS
-        InterrupcionP1(0XB2);
-        U1RXIE_bit = 0;
-     }
+        horaSistema = RecuperarHoraGPS(datosGPS);                               //Recupera la hora del GPS
+        fechaSistema = RecuperarFechaGPS(datosGPS);                             //Recupera la fecha del GPS
+        AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
+        
+        /*
+        //Prueba
+         //Recupera la hora del RTC:
+         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
+         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
+         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+         fuenteReloj = 4;                                                        //Fuente reloj: RTC/E5
+         banSetReloj = 1;
+         InterrupcionP1(0XB2);
+        //Fin prueba
+        */
+
+        //Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
+        if (tramaGPS[12]==0x41) {
+           fuenteReloj = 1;                                                     //Fuente reloj: GPS
+           banSyncReloj = 1;
+           banSetReloj = 1;
+           //Prueba
+           InterrupcionP1(0xB2);
+           //Fin prueba
+        } else {
+            fuenteReloj = 3;                                                    //Fuente reloj: GPS/E3
+            banSyncReloj = 1;
+            banSetReloj = 1;
+            InterrupcionP1(0xB2);                                               //Envia la hora local a la RPi
+        }
+
+        banGPSI = 0;
+        banGPSC = 0;
+        i_gps = 0;
+        U1MODE.UARTEN = 0;                                                      //Desactiva el UART1
+
+     }    
 
 }
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//*****************************************************************************************************************************************
+
+//Fuentes de reloj V1:
+//0 -> RTC 
+//1 -> GPS 
+
+
+//Fuentes de reloj V2: 
+//0 -> GPS 
+//1 -> RTC 
+//2 -> RPi
+//3 -> Error 3: Problemas al recuperar la trama GPRMC del GPS
+//4 -> Error 4: La hora del GPS es invalida
+//5 -> Error 5: El GPS tarda en responder

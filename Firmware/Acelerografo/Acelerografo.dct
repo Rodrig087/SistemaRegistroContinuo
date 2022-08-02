@@ -1291,13 +1291,14 @@ b8
 b9
 banciclo
 banesc
+bangpsc
+bangpsi
 baninicio
 banlec
 banmuestrear
 banoperacion
 bansetreloj
-bantcgps
-bantigps
+bansyncreloj
 bcd2dec
 bcd2dec16
 bch
