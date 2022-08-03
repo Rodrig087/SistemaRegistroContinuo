@@ -521,7 +521,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
  ConfiguracionPrincipal();
- GPS_init();
+
  DS3234_init();
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -580,7 +580,7 @@ void main() {
 
 
  while(1){
-
+ Delay_ms(100);
  }
 
 }
@@ -621,7 +621,7 @@ void ConfiguracionPrincipal(){
  RPINR18bits.U1RXR = 0x22;
  RPOR0bits.RP35R = 0x01;
  U1RXIE_bit = 1;
- U1RXIF_bit = 0;
+
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
  UART1_Init(9600);
@@ -944,105 +944,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  T1CON.TON = 0;
  banCiclo = 1;
  contTimer1 = 0;
- }
-
-}
-
-
-
-
-void urx_1() org IVT_ADDR_U1RXINTERRUPT {
-
-
- U1RXIF_bit = 0;
- byteGPS = U1RXREG;
- U1STA.OERR = 0;
-
-
- if (banGPSI==3){
- if (byteGPS!=0x2A){
- tramaGPS[i_gps] = byteGPS;
- i_gps++;
- } else {
- banGPSI = 0;
- banGPSC = 1;
- }
- }
-
-
- if ((banGPSI==1)){
- if (byteGPS==0x24){
- banGPSI = 2;
- i_gps = 0;
- }
- }
- if ((banGPSI==2)&&(i_gps<6)){
- tramaGPS[i_gps] = byteGPS;
- i_gps++;
- }
- if ((banGPSI==2)&&(i_gps==6)){
-
- T2CON.TON = 0;
- TMR2 = 0;
-
- if (tramaGPS[1]=='G'&&tramaGPS[2]=='P'&&tramaGPS[3]=='R'&&tramaGPS[4]=='M'&&tramaGPS[5]=='C'){
- banGPSI = 3;
- i_gps = 0;
- } else {
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
-
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 4;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
- U1MODE.UARTEN = 0;
- }
- }
-
-
- if (banGPSC==1){
-
- for (x=0;x<6;x++){
- datosGPS[x] = tramaGPS[x+1];
- }
-
- for (x=44;x<54;x++){
- if (tramaGPS[x]==0x2C){
- for (y=0;y<6;y++){
- datosGPS[6+y] = tramaGPS[x+y+1];
- }
- }
- }
- horaSistema = RecuperarHoraGPS(datosGPS);
- fechaSistema = RecuperarFechaGPS(datosGPS);
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 606 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
- if (tramaGPS[12]==0x41) {
- fuenteReloj = 1;
- banSyncReloj = 1;
- banSetReloj = 1;
-
- InterrupcionP1(0xB2);
-
- } else {
- fuenteReloj = 3;
- banSyncReloj = 1;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- }
-
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
- U1MODE.UARTEN = 0;
-
  }
 
 }

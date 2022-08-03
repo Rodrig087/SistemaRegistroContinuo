@@ -82,7 +82,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
      ConfiguracionPrincipal();
-     GPS_init();                                                                //Inicializa el GPS en modo configuracion y tipo de trama GPRMC
+     //GPS_init();                                                                //Inicializa el GPS
      DS3234_init();                                                             //inicializa el RTC
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
@@ -141,7 +141,7 @@ void main() {
      //banTI = 0;
 
      while(1){
-
+               Delay_ms(100);
      }
 
 }
@@ -182,7 +182,7 @@ void ConfiguracionPrincipal(){
      RPINR18bits.U1RXR = 0x22;                                                  //Configura el pin RB2/RPI34 como Rx1 *
      RPOR0bits.RP35R = 0x01;                                                    //Configura el Tx1 en el pin RB3/RP35 *
      U1RXIE_bit = 1;                                                            //Habilita la interrupcion por UART1 RX *
-     U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
+     //U1RXIF_bit = 0;                                                            //Limpia la bandera de interrupcion por UART1 RX *
      IPC2bits.U1RXIP = 0x04;                                                    //Prioridad de la interrupcion UART1 RX
      U1STAbits.URXISEL = 0x00;
      UART1_Init(9600);                                                          //Inicializa el UART1 con una velocidad de 9600 baudios
@@ -514,7 +514,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
 }
 //************************************************************************************************************************************
-
+/*
 //*****************************************************************************************************************************************
 //Interrupcion UART1
 void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
@@ -590,7 +590,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
         fechaSistema = RecuperarFechaGPS(datosGPS);                             //Recupera la fecha del GPS
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
         
-        /*
+
         //Prueba
          //Recupera la hora del RTC:
          horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
@@ -600,7 +600,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
          banSetReloj = 1;
          InterrupcionP1(0XB2);
         //Fin prueba
-        */
+
 
         //Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
         if (tramaGPS[12]==0x41) {
@@ -626,7 +626,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
 }
 //*****************************************************************************************************************************************
-
+*/
 //Fuentes de reloj V1:
 //0 -> RTC 
 //1 -> GPS 
