@@ -82,7 +82,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
      ConfiguracionPrincipal();
-     //GPS_init();                                                                //Inicializa el GPS
+     GPS_init();                                                                //Inicializa el GPS
      DS3234_init();                                                             //inicializa el RTC
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
@@ -514,7 +514,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
 
 }
 //************************************************************************************************************************************
-/*
+
 //*****************************************************************************************************************************************
 //Interrupcion UART1
 void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
@@ -590,7 +590,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
         fechaSistema = RecuperarFechaGPS(datosGPS);                             //Recupera la fecha del GPS
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
         
-
+        /*
         //Prueba
          //Recupera la hora del RTC:
          horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
@@ -600,7 +600,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
          banSetReloj = 1;
          InterrupcionP1(0XB2);
         //Fin prueba
-
+        */
 
         //Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
         if (tramaGPS[12]==0x41) {
@@ -626,7 +626,7 @@ void urx_1() org  IVT_ADDR_U1RXINTERRUPT {
 
 }
 //*****************************************************************************************************************************************
-*/
+
 //Fuentes de reloj V1:
 //0 -> RTC 
 //1 -> GPS 

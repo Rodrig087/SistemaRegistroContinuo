@@ -1,6 +1,6 @@
-#line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
-#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -93,7 +93,7 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 
 
 
@@ -107,17 +107,15 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 
 void GPS_init(){
- UART1_Write_Text("$PMTK605*31\r\n");
+#line 31 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
- UART1_Write_Text("$PMTK251,115200*1F\r\n");
  Delay_ms(1000);
- UART1_Init(115200);
- UART1_Write_Text("$PMTK313,1*2E\r\n");
+
+
+
  UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- UART1_Write_Text("$PMTK319,1*24\r\n");
- UART1_Write_Text("$PMTK413*34\r\n");
- UART1_Write_Text("$PMTK513,1*28\r\n");
  Delay_ms(1000);
+
  U1MODE.UARTEN = 0;
 }
 
@@ -183,8 +181,8 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
  return horaGPS;
 
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
-#line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 37 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 sbit CS_DS3234 at LATA2_bit;
 
 
@@ -426,7 +424,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
  tramaTiempoSistema[5] = segundo;
 
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
+#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
 
 
 
@@ -456,7 +454,7 @@ unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
  return horaRPi;
 
 }
-#line 21 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 unsigned int i, x, y, j;
 
 
@@ -521,7 +519,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
  ConfiguracionPrincipal();
-
+ GPS_init();
  DS3234_init();
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -673,7 +671,7 @@ void ConfiguracionPrincipal(){
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 243 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 243 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -944,6 +942,105 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT{
  T1CON.TON = 0;
  banCiclo = 1;
  contTimer1 = 0;
+ }
+
+}
+
+
+
+
+void urx_1() org IVT_ADDR_U1RXINTERRUPT {
+
+
+ U1RXIF_bit = 0;
+ byteGPS = U1RXREG;
+ U1STA.OERR = 0;
+
+
+ if (banGPSI==3){
+ if (byteGPS!=0x2A){
+ tramaGPS[i_gps] = byteGPS;
+ i_gps++;
+ } else {
+ banGPSI = 0;
+ banGPSC = 1;
+ }
+ }
+
+
+ if ((banGPSI==1)){
+ if (byteGPS==0x24){
+ banGPSI = 2;
+ i_gps = 0;
+ }
+ }
+ if ((banGPSI==2)&&(i_gps<6)){
+ tramaGPS[i_gps] = byteGPS;
+ i_gps++;
+ }
+ if ((banGPSI==2)&&(i_gps==6)){
+
+ T2CON.TON = 0;
+ TMR2 = 0;
+
+ if (tramaGPS[1]=='G'&&tramaGPS[2]=='P'&&tramaGPS[3]=='R'&&tramaGPS[4]=='M'&&tramaGPS[5]=='C'){
+ banGPSI = 3;
+ i_gps = 0;
+ } else {
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ fuenteReloj = 4;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+ U1MODE.UARTEN = 0;
+ }
+ }
+
+
+ if (banGPSC==1){
+
+ for (x=0;x<6;x++){
+ datosGPS[x] = tramaGPS[x+1];
+ }
+
+ for (x=44;x<54;x++){
+ if (tramaGPS[x]==0x2C){
+ for (y=0;y<6;y++){
+ datosGPS[6+y] = tramaGPS[x+y+1];
+ }
+ }
+ }
+ horaSistema = RecuperarHoraGPS(datosGPS);
+ fechaSistema = RecuperarFechaGPS(datosGPS);
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+#line 606 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ if (tramaGPS[12]==0x41) {
+ fuenteReloj = 1;
+ banSyncReloj = 1;
+ banSetReloj = 1;
+
+ InterrupcionP1(0xB2);
+
+ } else {
+ fuenteReloj = 3;
+ banSyncReloj = 1;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
+ }
+
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+ U1MODE.UARTEN = 0;
+
  }
 
 }

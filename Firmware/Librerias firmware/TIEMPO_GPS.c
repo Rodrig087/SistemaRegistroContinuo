@@ -11,6 +11,7 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 //Funcion para configurar el GPS
 void GPS_init(){
+     /*
      UART1_Write_Text("$PMTK605*31\r\n");
      UART1_Write_Text("$PMTK220,1000*1F\r\n");
      UART1_Write_Text("$PMTK251,115200*1F\r\n");
@@ -21,7 +22,20 @@ void GPS_init(){
      UART1_Write_Text("$PMTK319,1*24\r\n");
      UART1_Write_Text("$PMTK413*34\r\n");
      UART1_Write_Text("$PMTK513,1*28\r\n");
+     */
+
+     // Con el codigo 220 establece la tasa de actualizacion del tiempo, en ms
+     // En este caso cada segundo la interrupcion del UART y la actualizacion del
+     // tiempo. El valor de 1F es el check sum, enlace para calcularlo
+     // http://www.hhhh.org/wiml/proj/nmeaxor.html
+     UART1_Write_Text("$PMTK220,1000*1F\r\n");
      Delay_ms(1000);
+     // Configuracion del GPS, se habilita solamnte la trama RMC (Recommended
+     // Minimun Specific GNSS Sentence), solo esta en 1, el resto en 0. Contiene
+     // datos de hora, fecha, posicionamiento, entre otros.
+     UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+     Delay_ms(1000);
+
      U1MODE.UARTEN = 0;                                                         //Desactiva el UART1
 }
 //* Estructura comandos PMTK: |Preamble ($)|Talker ID (PMTK)|Pkt Type,Data Field|*|Checksum (just an XOR of all the bytes between the $ and the *)|CR LF|
