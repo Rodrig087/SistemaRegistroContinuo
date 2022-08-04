@@ -29,11 +29,12 @@ sbit TEST at LATB12_bit;                                                        
 sbit TEST_Direction at TRISB12_bit;
 
 //Variables para la comunicacion SPI:
-unsigned char buffer;
+unsigned char bufferSPI;
 unsigned char banLec, banEsc, banCiclo, banInicio;
 unsigned char banMuestrear; 
 //unsigned char banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
 unsigned char banOperacion, tipoOperacion;
+unsigned short banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
 //Variables para manejo del GPS:
 unsigned int i_gps;
@@ -82,7 +83,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
      ConfiguracionPrincipal();
-     GPS_init();                                                                //Inicializa el GPS
+     //GPS_init();                                                                //Inicializa el GPS
      DS3234_init();                                                             //inicializa el RTC
      tasaMuestreo = 1;                                                          //1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
      ADXL355_init(tasaMuestreo);                                                //Inicializa el modulo ADXL con la tasa de muestreo requerida:
@@ -97,6 +98,7 @@ void main() {
      y = 0;
 
      //Comunicacion SPI:
+     bufferSPI = 0; //**
      banLec = 0;
      banEsc = 0;
      banCiclo = 0;
@@ -107,7 +109,18 @@ void main() {
      SPI1BUF = 0x00;
      //banLeer = 0;
      //banConf = 0;
-     
+     banSPI0 = 0;
+     banSPI1 = 0;
+     banSPI2 = 0;
+     banSPI3 = 0;
+     banSPI4 = 0;
+     banSPI5 = 0;
+     banSPI6 = 0;
+     banSPI7 = 0;
+     banSPI8 = 0;
+     banSPI9 = 0;
+     banSPIA = 0;
+
      //GPS:
      i_gps = 0;
      byteGPS = 0;
@@ -249,6 +262,68 @@ void ConfiguracionPrincipal(){
 }
 //*****************************************************************************************************************************************
 
+//*****************************************************************************************************************************************
+//Funcion para cambiar el estado de las banderas:
+void CambiarEstadoBandera(unsigned short bandera, unsigned short estado){
+
+     if (estado==1){
+         //Cambia el estado de todas las baderas para evitar posibles interferencias
+         banSPI0 = 3;
+         banSPI1 = 3;
+         banSPI2 = 3;
+         banSPI4 = 3;
+         banSPI5 = 3;
+         banSPI6 = 3;
+         banSPI7 = 3;
+         banSPI8 = 3;
+         banSPIA = 3;
+         //Activa la bandera requerida:
+         switch (bandera){
+                case 0:
+                     banSPI0 = 1;
+                     break;
+                case 1:
+                     banSPI1 = 1;
+                     break;
+                case 2:
+                     banSPI2 = 1;
+                     break;
+                case 4:
+                     banSPI4 = 1;
+                     break;
+                case 5:
+                     banSPI5 = 1;
+                     break;
+                case 6:
+                     banSPI6 = 1;
+                     break;
+                case 7:
+                     banSPI7 = 1;
+                     break;
+                case 8:
+                     banSPI8 = 1;
+                     break;
+                case 0x0A:
+                     banSPIA = 1;
+                     break;
+         }
+     }
+
+     //Limpia todas las banderas de comunicacion SPI:
+     if (estado==0){
+         banSPI0 = 0;
+         banSPI1 = 0;
+         banSPI2 = 0;
+         banSPI4 = 0;
+         banSPI5 = 0;
+         banSPI6 = 0;
+         banSPI7 = 0;
+         banSPI8 = 0;
+         banSPIA = 0;
+     }
+}
+//*****************************************************************************************************************************************
+
 //****************************************************************************************************************************************
 //Funcion para relizar el muesteo
 void Muestrear(){
@@ -316,24 +391,26 @@ void Muestrear(){
 void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 
      SPI1IF_bit = 0;                                                            //Limpia la bandera de interrupcion por SPI
-     buffer = SPI1BUF;                                                          //Guarda el contenido del bufeer (lectura)
+     bufferSPI = SPI1BUF;                                                       //Guarda el contenido del bufeer (lectura)
 
      //************************************************************************************************************************************
      //Rutina para enviar la peticion de operacion a la RPi  (C:0xA0   F:0xF0)
-     if ((banOperacion==0)&&(buffer==0xA0)) {
-        banOperacion = 1;                                                       //Activa la bandera para enviar el tipo de operacion requerido a la RPi
+     if ((banSPI0==0)&&(bufferSPI==0xA0)) {
+        //banOperacion = 1;                                                     //Activa la bandera para enviar el tipo de operacion requerido a la RPi
+        CambiarEstadoBandera(0,1); 
         SPI1BUF = tipoOperacion;                                                //Carga en el buffer el tipo de operacion requerido
      }
-     if ((banOperacion==1)&&(buffer==0xF0)){
-        banOperacion = 0;                                                       //Limpia la bandera
+     if ((banSPI0==1)&&(bufferSPI!=0xA0)&&(bufferSPI==0xF0)){
+        CambiarEstadoBandera(0,0);                                              //Limpia la bandera
         tipoOperacion = 0;                                                      //Limpia la variable de tipo de operacion
      }
      //************************************************************************************************************************************
      
      //************************************************************************************************************************************
      //Rutina para inicio del muestreo (C:0xA1   F:0xF1):
-     if ((banMuestrear==0)&&(buffer==0xA1)){
-        banMuestrear = 1;                                                       //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+     if ((banSPI1==0)&&(bufferSPI==0xA1)){
+        //banMuestrear = 1;                                                       //Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+        CambiarEstadoBandera(1,1);
         banCiclo = 0;
         contMuestras = 0;
         contCiclos = 0;
@@ -346,9 +423,13 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            INT1IE_bit = 1;
         }
      }
+     if ((banSPI1==1)&&(bufferSPI==0xF1)){
+        CambiarEstadoBandera(1,0);
+     }
      
+     /*
      //Rutina para detener el muestreo (C:0xA2   F:0xF2):
-     if ((banMuestrear==1)&&(buffer==0xA2)){
+     if ((banMuestrear==1)&&(bufferSPI==0xA2)){
         banInicio = 0;                                                          //Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
         banMuestrear = 0;                                                       //Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
            
@@ -379,18 +460,19 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
            T1CON.TON = 0;
         }
      }
+     */
      
      //Rutina de lectura de los datos del acelerometro (C:0xA3   F:0xF3):
-     if ((banLec==1)&&(buffer==0xA3)){                                          //Verifica si la bandera de inicio de trama esta activa
+     if ((banLec==1)&&(bufferSPI==0xA3)){                                          //Verifica si la bandera de inicio de trama esta activa
         banLec = 2;                                                             //Activa la bandera de lectura
         i = 0;
         SPI1BUF = tramaCompleta[i];
      }
-     if ((banLec==2)&&(buffer!=0xF3)){
+     if ((banLec==2)&&(bufferSPI!=0xF3)){
         SPI1BUF = tramaCompleta[i];
         i++;
      }
-     if ((banLec==2)&&(buffer==0xF3)){                                          //Si detecta el delimitador de final de trama:
+     if ((banLec==2)&&(bufferSPI==0xF3)){                                          //Si detecta el delimitador de final de trama:
         banLec = 0;                                                             //Limpia la bandera de lectura                        ****AQUI Me QUEDE
         SPI1BUF = 0xFF;
      }
@@ -398,15 +480,15 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
 
      //************************************************************************************************************************************
      //Rutina para obtener la hora de la RPi (C:0xA4   F:0xF4):
-     if ((banSetReloj==0)&&(buffer==0xA4)){
+     if ((banSetReloj==0)&&(bufferSPI==0xA4)){
          banEsc = 1;
          j = 0;
      }
-     if ((banEsc==1)&&(buffer!=0xA4)&&(buffer!=0xF4)){
-        tiempoRPI[j] = buffer;
+     if ((banEsc==1)&&(bufferSPI!=0xA4)&&(bufferSPI!=0xF4)){
+        tiempoRPI[j] = bufferSPI;
         j++;
      }
-     if ((banEsc==1)&&(buffer==0xF4)){
+     if ((banEsc==1)&&(bufferSPI==0xF4)){
         horaSistema = RecuperarHoraRPI(tiempoRPI);                              //Recupera la hora de la RPi
         fechaSistema = RecuperarFechaRPI(tiempoRPI);                            //Recupera la fecha de la RPi
         DS3234_setDate(horaSistema, fechaSistema);                              //Configura la hora en el RTC
@@ -419,29 +501,29 @@ void spi_1() org  IVT_ADDR_SPI1INTERRUPT {
      }
      
      //Rutina para enviar la hora local a la RPi (C:0xA5   F:0xF5):
-     if ((banSetReloj==1)&&(buffer==0xA5)){
+     if ((banSetReloj==1)&&(bufferSPI==0xA5)){
         banSetReloj = 2;
         j = 0;
         SPI1BUF = fuenteReloj;                                                  //Envia el indicador de fuente de reloj (0:RTC, 1:GPS)
      }
-     if ((banSetReloj==2)&&(buffer!=0xA5)&&(buffer!=0xF5)){
+     if ((banSetReloj==2)&&(bufferSPI!=0xA5)&&(bufferSPI!=0xF5)){
         SPI1BUF = tiempo[j];
         j++;
      }
-     if ((banSetReloj==2)&&(buffer==0xF5)){                                     //Si detecta el delimitador de final de trama:
+     if ((banSetReloj==2)&&(bufferSPI==0xF5)){                                     //Si detecta el delimitador de final de trama:
         banSetReloj = 0;                                                        //Limpia la bandera de lectura
         SPI1BUF = 0xFF;
      }
      
      //Rutina para obtener la hora del GPS(C:0xA6   F:0xF6):
-     if ((banSetReloj==0)&&(buffer==0xA6)){
+     if ((banSetReloj==0)&&(bufferSPI==0xA6)){
         banGPSI = 1;                                                            //Inicia la bandera de inicio de trama  del GPS
         banGPSC = 0;                                                            //Limpia la bandera de trama completa
         U1MODE.UARTEN = 1;                                                      //Inicializa el UART1
      }
 
      //Rutina para obtener la hora del RTC (C:0xA7   F:0xF7):
-     if ((banSetReloj==0)&&(buffer==0xA7)){
+     if ((banSetReloj==0)&&(bufferSPI==0xA7)){
         horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
         fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
         AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas

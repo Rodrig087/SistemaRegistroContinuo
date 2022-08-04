@@ -1298,6 +1298,17 @@ banlec
 banmuestrear
 banoperacion
 bansetreloj
+banspi0
+banspi1
+banspi2
+banspi3
+banspi4
+banspi5
+banspi6
+banspi7
+banspi8
+banspi9
+banspia
 bansyncreloj
 bcd2dec
 bcd2dec16
@@ -1464,7 +1475,7 @@ brgh
 brgh_bit
 brgh_u1mode_bit
 brgh_u2mode_bit
-buffer
+bufferspi
 bufm
 bufm
 bufm_bit
@@ -1544,6 +1555,7 @@ cam_bit
 cam_pwmcon1_bit
 cam_pwmcon2_bit
 cam_pwmcon3_bit
+cambiarestadobandera
 cch
 cch
 cch

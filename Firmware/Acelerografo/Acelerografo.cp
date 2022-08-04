@@ -1,6 +1,6 @@
-#line 1 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
-#line 96 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -93,7 +93,7 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 
 
 
@@ -107,7 +107,7 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 
 void GPS_init(){
-#line 31 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 31 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
  Delay_ms(1000);
 
@@ -181,8 +181,8 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
  return horaGPS;
 
 }
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
-#line 37 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 sbit CS_DS3234 at LATA2_bit;
 
 
@@ -424,7 +424,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
  tramaTiempoSistema[5] = segundo;
 
 }
-#line 1 "c:/users/ivan/desktop/milton muñoz/proyectos/git/sistemaregistrocontinuo/sistemaregistrocontinuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
 
 
 
@@ -454,7 +454,7 @@ unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
  return horaRPi;
 
 }
-#line 21 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 21 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 unsigned int i, x, y, j;
 
 
@@ -466,11 +466,12 @@ sbit TEST at LATB12_bit;
 sbit TEST_Direction at TRISB12_bit;
 
 
-unsigned char buffer;
+unsigned char bufferSPI;
 unsigned char banLec, banEsc, banCiclo, banInicio;
 unsigned char banMuestrear;
 
 unsigned char banOperacion, tipoOperacion;
+unsigned short banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
 
 unsigned int i_gps;
@@ -519,7 +520,7 @@ void InterrupcionP1(unsigned char operacion);
 void main() {
 
  ConfiguracionPrincipal();
- GPS_init();
+
  DS3234_init();
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -534,6 +535,7 @@ void main() {
  y = 0;
 
 
+ bufferSPI = 0;
  banLec = 0;
  banEsc = 0;
  banCiclo = 0;
@@ -544,6 +546,17 @@ void main() {
  SPI1BUF = 0x00;
 
 
+ banSPI0 = 0;
+ banSPI1 = 0;
+ banSPI2 = 0;
+ banSPI3 = 0;
+ banSPI4 = 0;
+ banSPI5 = 0;
+ banSPI6 = 0;
+ banSPI7 = 0;
+ banSPI8 = 0;
+ banSPI9 = 0;
+ banSPIA = 0;
 
 
  i_gps = 0;
@@ -671,13 +684,75 @@ void ConfiguracionPrincipal(){
  if (INT1IE_bit==0){
  INT1IE_bit = 1;
  }
-#line 243 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 256 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
  RP1 = 1;
  Delay_us(20);
  RP1 = 0;
+}
+
+
+
+
+void CambiarEstadoBandera(unsigned short bandera, unsigned short estado){
+
+ if (estado==1){
+
+ banSPI0 = 3;
+ banSPI1 = 3;
+ banSPI2 = 3;
+ banSPI4 = 3;
+ banSPI5 = 3;
+ banSPI6 = 3;
+ banSPI7 = 3;
+ banSPI8 = 3;
+ banSPIA = 3;
+
+ switch (bandera){
+ case 0:
+ banSPI0 = 1;
+ break;
+ case 1:
+ banSPI1 = 1;
+ break;
+ case 2:
+ banSPI2 = 1;
+ break;
+ case 4:
+ banSPI4 = 1;
+ break;
+ case 5:
+ banSPI5 = 1;
+ break;
+ case 6:
+ banSPI6 = 1;
+ break;
+ case 7:
+ banSPI7 = 1;
+ break;
+ case 8:
+ banSPI8 = 1;
+ break;
+ case 0x0A:
+ banSPIA = 1;
+ break;
+ }
+ }
+
+
+ if (estado==0){
+ banSPI0 = 0;
+ banSPI1 = 0;
+ banSPI2 = 0;
+ banSPI4 = 0;
+ banSPI5 = 0;
+ banSPI6 = 0;
+ banSPI7 = 0;
+ banSPI8 = 0;
+ banSPIA = 0;
+ }
 }
 
 
@@ -748,24 +823,26 @@ void Muestrear(){
 void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
  SPI1IF_bit = 0;
- buffer = SPI1BUF;
+ bufferSPI = SPI1BUF;
 
 
 
- if ((banOperacion==0)&&(buffer==0xA0)) {
- banOperacion = 1;
+ if ((banSPI0==0)&&(bufferSPI==0xA0)) {
+
+ CambiarEstadoBandera(0,1);
  SPI1BUF = tipoOperacion;
  }
- if ((banOperacion==1)&&(buffer==0xF0)){
- banOperacion = 0;
+ if ((banSPI0==1)&&(bufferSPI!=0xA0)&&(bufferSPI==0xF0)){
+ CambiarEstadoBandera(0,0);
  tipoOperacion = 0;
  }
 
 
 
 
- if ((banMuestrear==0)&&(buffer==0xA1)){
- banMuestrear = 1;
+ if ((banSPI1==0)&&(bufferSPI==0xA1)){
+
+ CambiarEstadoBandera(1,1);
  banCiclo = 0;
  contMuestras = 0;
  contCiclos = 0;
@@ -778,51 +855,20 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  INT1IE_bit = 1;
  }
  }
-
-
- if ((banMuestrear==1)&&(buffer==0xA2)){
- banInicio = 0;
- banMuestrear = 0;
-
-
- banLec = 0;
- banEsc = 0;
- banSetReloj = 0;
-
- banGPSI = 0;
-
- banGPSC = 0;
-
-
- i = 0;
- x = 0;
- y = 0;
- i_gps = 0;
- contTimer1 = 0;
- byteGPS = 0;
-
- ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
-
- if (INT1IE_bit==1){
- INT1IE_bit = 0;
+ if ((banSPI1==1)&&(bufferSPI==0xF1)){
+ CambiarEstadoBandera(1,0);
  }
-
- if (T1CON.TON==1){
- T1CON.TON = 0;
- }
- }
-
-
- if ((banLec==1)&&(buffer==0xA3)){
+#line 466 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ if ((banLec==1)&&(bufferSPI==0xA3)){
  banLec = 2;
  i = 0;
  SPI1BUF = tramaCompleta[i];
  }
- if ((banLec==2)&&(buffer!=0xF3)){
+ if ((banLec==2)&&(bufferSPI!=0xF3)){
  SPI1BUF = tramaCompleta[i];
  i++;
  }
- if ((banLec==2)&&(buffer==0xF3)){
+ if ((banLec==2)&&(bufferSPI==0xF3)){
  banLec = 0;
  SPI1BUF = 0xFF;
  }
@@ -830,15 +876,15 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
 
 
 
- if ((banSetReloj==0)&&(buffer==0xA4)){
+ if ((banSetReloj==0)&&(bufferSPI==0xA4)){
  banEsc = 1;
  j = 0;
  }
- if ((banEsc==1)&&(buffer!=0xA4)&&(buffer!=0xF4)){
- tiempoRPI[j] = buffer;
+ if ((banEsc==1)&&(bufferSPI!=0xA4)&&(bufferSPI!=0xF4)){
+ tiempoRPI[j] = bufferSPI;
  j++;
  }
- if ((banEsc==1)&&(buffer==0xF4)){
+ if ((banEsc==1)&&(bufferSPI==0xF4)){
  horaSistema = RecuperarHoraRPI(tiempoRPI);
  fechaSistema = RecuperarFechaRPI(tiempoRPI);
  DS3234_setDate(horaSistema, fechaSistema);
@@ -851,29 +897,29 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT {
  }
 
 
- if ((banSetReloj==1)&&(buffer==0xA5)){
+ if ((banSetReloj==1)&&(bufferSPI==0xA5)){
  banSetReloj = 2;
  j = 0;
  SPI1BUF = fuenteReloj;
  }
- if ((banSetReloj==2)&&(buffer!=0xA5)&&(buffer!=0xF5)){
+ if ((banSetReloj==2)&&(bufferSPI!=0xA5)&&(bufferSPI!=0xF5)){
  SPI1BUF = tiempo[j];
  j++;
  }
- if ((banSetReloj==2)&&(buffer==0xF5)){
+ if ((banSetReloj==2)&&(bufferSPI==0xF5)){
  banSetReloj = 0;
  SPI1BUF = 0xFF;
  }
 
 
- if ((banSetReloj==0)&&(buffer==0xA6)){
+ if ((banSetReloj==0)&&(bufferSPI==0xA6)){
  banGPSI = 1;
  banGPSC = 0;
  U1MODE.UARTEN = 1;
  }
 
 
- if ((banSetReloj==0)&&(buffer==0xA7)){
+ if ((banSetReloj==0)&&(bufferSPI==0xA7)){
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
@@ -1021,7 +1067,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT {
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 606 "C:/Users/Ivan/Desktop/Milton Muñoz/Proyectos/Git/SistemaRegistroContinuo/SistemaRegistroContinuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 688 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if (tramaGPS[12]==0x41) {
  fuenteReloj = 1;
  banSyncReloj = 1;
