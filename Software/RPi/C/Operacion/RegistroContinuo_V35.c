@@ -1,5 +1,5 @@
-//Compilar:
-//gcc /home/rsa/Programas/RegistroContinuo_V35.c -o /home/rsa/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm
+// Compilar:
+// gcc /home/rsa/Programas/RegistroContinuo_V35.c -o /home/rsa/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,10 +13,10 @@
 #include <math.h>
 #include <stdbool.h>
 
-//Declaracion de constantes
+// Declaracion de constantes
 #define P2 2
 #define P1 0
-#define MCLR 28 //Pin 38 GPIO
+#define MCLR 28 // Pin 38 GPIO
 #define TEST 26
 #define NUM_MUESTRAS 199
 #define NUM_ELEMENTOS 2506
@@ -71,9 +71,9 @@ double coeficientes[FILTER_LEN] = {
 // Variable con la ruta y el nombre del archivo temporal para guardar la informacion de cada evento detectado
 // Se guarda solo la fecha long, la hora en segundos del inicio del evento y su duracion
 // Con cada evento nuevo se sobreescribe la informacion, antes se debe leer en el programa de Python
-//static char *fileNameEventosDetectados = "/home/rsa/TMP/EventosDetectados.tmp";
+// static char *fileNameEventosDetectados = "/home/rsa/TMP/EventosDetectados.tmp";
 
-//Declaracion de variables
+// Declaracion de variables
 unsigned short i;
 unsigned int x;
 unsigned short buffer;
@@ -85,7 +85,7 @@ unsigned char tiempoPIC[8];
 unsigned char tiempoLocal[8];
 unsigned char tramaDatos[NUM_ELEMENTOS];
 
-//Variables para crear los archivos de datos:
+// Variables para crear los archivos de datos:
 char filenameArchivoRegistroContinuo[100];
 char filenameTemporalRegistroContinuo[100];
 char filenameEventosDetectados[100];
@@ -93,15 +93,15 @@ char filenameActualRegistroContinuo[100];
 
 char comando[40];
 char dateGPS[22];
-unsigned int timeNewFile[2] = {0, 0}; //Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)
-unsigned short confGPS[2] = {0, 1};   //Parametros que se pasan para configurar el GPS (conf, NMA) cuando conf=1 realiza la configuracion del GPS y se realiza una sola vez la primera vez que es utilizado
+unsigned int timeNewFile[2] = {0, 0}; // Variable para configurar la hora a la que se desea generar un archivo nuevo (hh, mm)
+unsigned short confGPS[2] = {0, 1};   // Parametros que se pasan para configurar el GPS (conf, NMA) cuando conf=1 realiza la configuracion del GPS y se realiza una sola vez la primera vez que es utilizado
 unsigned short banNewFile;
 
 unsigned short contCiclos;
 unsigned short contador;
 short fuenteTiempoPic;
 
-//Variables para extraer los datos de configuracion:
+// Variables para extraer los datos de configuracion:
 char idEstacion[10];
 char pathRegistroContinuo[60];
 char pathEventosDetectados[60];
@@ -112,7 +112,7 @@ char extTmp[5];
 char nombreActualARC[25];
 char nombreAnteriorARC[26];
 
-//Variables para crear los archivos de datos:
+// Variables para crear los archivos de datos:
 char archivoRegistroContinuo[35];
 char temporalRegistroContinuo[35];
 char archivoEventoDetectado[35];
@@ -124,19 +124,19 @@ FILE *fTramaTmp;
 FILE *ficheroDatosConfiguracion;
 FILE *obj_fp;
 
-//Metodos para la comunicacion con el dsPIC
+// Metodos para la comunicacion con el dsPIC
 int ConfiguracionPrincipal();
 void LeerArchivoConfiguracion();
 void CrearArchivos();
 void GuardarVector(unsigned char *tramaD);
-void ObtenerOperacion();  //C:0xA0    F:0xF0
-void IniciarMuestreo();   //C:0xA1	F:0xF1
-void DetenerMuestreo();   //C:0xA2	F:0xF2
-void NuevoCiclo();        //C:0xA3	F:0xF3
-void EnviarTiempoLocal(); //C:0xA4	F:0xF4
-void ObtenerTiempoPIC();  //C:0xA5	F:0xF5
-void ObtenerTiempoGPS();  //C:0xA6	F:0xF6
-void ObtenerTiempoRTC();  //C:0xA7	F:0xF7
+void ObtenerOperacion();  // C:0xA0    F:0xF0
+void IniciarMuestreo();   // C:0xA1	F:0xF1
+void DetenerMuestreo();   // C:0xA2	F:0xF2
+void NuevoCiclo();        // C:0xA3	F:0xF3
+void EnviarTiempoLocal(); // C:0xA4	F:0xF4
+void ObtenerTiempoPIC();  // C:0xA5	F:0xF5
+void ObtenerTiempoGPS();  // C:0xA6	F:0xF6
+void ObtenerTiempoRTC();  // C:0xA7	F:0xF7
 void SetRelojLocal(unsigned char *tramaTiempo);
 
 // Metodos para detectar automaticamente los eventos sismicos:
@@ -155,7 +155,7 @@ int main(void)
 
     printf("Iniciando...\n");
 
-    //Inicializa las variables:
+    // Inicializa las variables:
     i = 0;
     x = 0;
     contMuestras = 0;
@@ -169,16 +169,14 @@ int main(void)
     CrearArchivos();
 
     sleep(1);
-    //ObtenerTiempoGPS();
-    //ObtenerTiempoRTC();
+    // ObtenerTiempoGPS();
+    // ObtenerTiempoRTC();
     EnviarTiempoLocal();
-    
 
     // Llama al metodo para inicializar el filtro FIR
     firFloatInit();
 
     sleep(5);
-
 
     while (1)
     {
@@ -193,12 +191,12 @@ int main(void)
 int ConfiguracionPrincipal()
 {
 
-    //Reinicia el modulo SPI
+    // Reinicia el modulo SPI
     system("sudo rmmod  spi_bcm2835");
     bcm2835_delayMicroseconds(500);
     system("sudo modprobe spi_bcm2835");
 
-    //Configuracion libreria bcm2835:
+    // Configuracion libreria bcm2835:
     if (!bcm2835_init())
     {
         printf("bcm2835_init fallo. Ejecuto el programa como root?\n");
@@ -212,151 +210,147 @@ int ConfiguracionPrincipal()
 
     bcm2835_spi_setBitOrder(BCM2835_SPI_BIT_ORDER_MSBFIRST);
     bcm2835_spi_setDataMode(BCM2835_SPI_MODE3);
-    //bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2
-    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64); //Clock divider RPi 3
+    // bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_32);					//Clock divider RPi 2
+    bcm2835_spi_setClockDivider(BCM2835_SPI_CLOCK_DIVIDER_64); // Clock divider RPi 3
     bcm2835_spi_set_speed_hz(FreqSPI);
     bcm2835_spi_chipSelect(BCM2835_SPI_CS0);
     bcm2835_spi_setChipSelectPolarity(BCM2835_SPI_CS0, LOW);
 
-    //Configuracion libreria WiringPi:
+    // Configuracion libreria WiringPi:
     wiringPiSetup();
     pinMode(P1, INPUT);
     pinMode(MCLR, OUTPUT);
     pinMode(TEST, OUTPUT);
     wiringPiISR(P1, INT_EDGE_RISING, ObtenerOperacion);
 
-    //Enciende el pin TEST
+    // Enciende el pin TEST
     digitalWrite(TEST, HIGH);
 
-    //Genera un pulso para resetear el dsPIC:
+    // Genera un pulso para resetear el dsPIC:
     digitalWrite(MCLR, HIGH);
     delay(100);
     digitalWrite(MCLR, LOW);
     delay(100);
-    digitalWrite(MCLR, HIGH);  
+    digitalWrite(MCLR, HIGH);
 
     printf("Configuracion completa\n");
-
 }
 
-
 void CrearArchivos()
-{    
-    //Se leen los datos de configuracion:
+{
+    // Se leen los datos de configuracion:
     printf("\nLeyendo archivo de configuracion...\n");
 
-    //Abre el fichero de datos de configuracion:
+    // Abre el fichero de datos de configuracion:
     ficheroDatosConfiguracion = fopen("/home/rsa/Configuracion/DatosConfiguracion.txt", "r");
-    //Recupera el contenido del archivo en la variable arg1 hasta que encuentra el carácter de fin de línea (\n):
-    //fgets(idEstacion, 10, ficheroDatosConfiguracion); //La funcion fgets lee el archivo linea por linea, esta parte es necesaria para saltar el encabezado del archivo
+    // Recupera el contenido del archivo en la variable arg1 hasta que encuentra el carácter de fin de línea (\n):
+    // fgets(idEstacion, 10, ficheroDatosConfiguracion); //La funcion fgets lee el archivo linea por linea, esta parte es necesaria para saltar el encabezado del archivo
     fgets(idEstacion, 10, ficheroDatosConfiguracion);
     fgets(pathTMP, 60, ficheroDatosConfiguracion);
     fgets(pathRegistroContinuo, 60, ficheroDatosConfiguracion);
     fgets(pathEventosDetectados, 60, ficheroDatosConfiguracion);
-    //Cierra el fichero de informacion:
+    // Cierra el fichero de informacion:
     fclose(ficheroDatosConfiguracion);
 
-    //Elimina el caracter de fin de linea (\n):
+    // Elimina el caracter de fin de linea (\n):
     strtok(idEstacion, "\n");
     strtok(pathRegistroContinuo, "\n");
     strtok(pathEventosDetectados, "\n");
     strtok(pathTMP, "\n");
-    //Elimina el caracter de retorno de carro (\r):
+    // Elimina el caracter de retorno de carro (\r):
     strtok(idEstacion, "\r");
     strtok(pathRegistroContinuo, "\r");
     strtok(pathEventosDetectados, "\r");
     strtok(pathTMP, "\r");
 
-    //Asigna el texto correspondiente a los array de carateres:
+    // Asigna el texto correspondiente a los array de carateres:
     strcpy(extBin, ".dat");
     strcpy(extTxt, ".txt");
     strcpy(extTmp, ".tmp");
 
-    //Se crean los archivos necesarios para almacenar los datos:
+    // Se crean los archivos necesarios para almacenar los datos:
     printf("\nSe crearon los archivos:\n");
 
-    //Obtiene la hora y la fecha del sistema:
+    // Obtiene la hora y la fecha del sistema:
     time_t t;
     struct tm *tm;
     t = time(NULL);
     tm = localtime(&t);
 
-	//*****************************************************************************
-    //Crea el archivo binario para los datos de registro continuo:
-    //Establece la fecha y hora actual como nombre que tendra el archivo binario
-    strftime(archivoRegistroContinuo, 20, "%y%m%d-%H%M%S", tm);  
-    //Realiza la concatenacion de array de caracteres
+    //*****************************************************************************
+    // Crea el archivo binario para los datos de registro continuo:
+    // Establece la fecha y hora actual como nombre que tendra el archivo binario
+    strftime(archivoRegistroContinuo, 20, "%y%m%d-%H%M%S", tm);
+    // Realiza la concatenacion de array de caracteres
     strcat(filenameArchivoRegistroContinuo, pathRegistroContinuo);
     strcat(filenameArchivoRegistroContinuo, idEstacion);
     strcat(filenameArchivoRegistroContinuo, archivoRegistroContinuo);
     strcat(filenameArchivoRegistroContinuo, extBin);
-    printf("   %s\n",filenameArchivoRegistroContinuo);
-    //Crea el archivo binario en modo append
+    printf("   %s\n", filenameArchivoRegistroContinuo);
+    // Crea el archivo binario en modo append
     fp = fopen(filenameArchivoRegistroContinuo, "ab+");
-	//*****************************************************************************
-	
-	//*****************************************************************************
-    //Crea el archivo temporal para los datos de registro continuo:
+    //*****************************************************************************
+
+    //*****************************************************************************
+    // Crea el archivo temporal para los datos de registro continuo:
     strcpy(temporalRegistroContinuo, "TramaTemporal");
-	strcat(filenameTemporalRegistroContinuo, pathTMP);
+    strcat(filenameTemporalRegistroContinuo, pathTMP);
     strcat(filenameTemporalRegistroContinuo, temporalRegistroContinuo);
     strcat(filenameTemporalRegistroContinuo, extTmp);
-	//Crea el archivo de texto en modo sobrescritura
-    //fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
-	//printf("   %s\n",filenameTemporalRegistroContinuo);
-	//*******************************************
-	//*****************************************************************************
-	
-	//*****************************************************************************
-	//Crea el archivo de texto para guardar los eventos detectados
+    // Crea el archivo de texto en modo sobrescritura
+    // fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+    // printf("   %s\n",filenameTemporalRegistroContinuo);
+    //*******************************************
+    //*****************************************************************************
+
+    //*****************************************************************************
+    // Crea el archivo de texto para guardar los eventos detectados
     strcpy(archivoEventoDetectado, "EventosDetectados");
     strcat(filenameEventosDetectados, pathEventosDetectados);
     strcat(filenameEventosDetectados, idEstacion);
     strcat(filenameEventosDetectados, archivoEventoDetectado);
     strcat(filenameEventosDetectados, extTxt);
-	//Crea el archivo de texto en modo append
+    // Crea el archivo de texto en modo append
     obj_fp = fopen(filenameEventosDetectados, "a");
-	printf("   %s\n",filenameEventosDetectados);
-	//*****************************************************************************
+    printf("   %s\n", filenameEventosDetectados);
+    //*****************************************************************************
 
-	//*****************************************************************************
-    //Crea el archivo temporal para guardar los nombres actual y anterior de los archivos RC 
-	//Establece el nombre del archivo temporal:
+    //*****************************************************************************
+    // Crea el archivo temporal para guardar los nombres actual y anterior de los archivos RC
+    // Establece el nombre del archivo temporal:
     strcpy(archivoActualRegistroContinuo, "NombreArchivoRegistroContinuo");
     strcat(filenameActualRegistroContinuo, pathTMP);
     strcat(filenameActualRegistroContinuo, archivoActualRegistroContinuo);
     strcat(filenameActualRegistroContinuo, extTmp);
-	//Abre el archivo temporal en modo lectura (El archivo debe existir):
-	ftmp = fopen(filenameActualRegistroContinuo, "rt");
-	//Recupera el nombre del archivo anterior (Lee solo la primera fila del archivo temporal):
-	fgets(nombreAnteriorARC, 26, ftmp);
-	//Cierra el archivo temporal:
-	fclose(ftmp);
-			
-	//Abre el archivo temporal en modo escritura:
-	ftmp = fopen(filenameActualRegistroContinuo, "w+");
-	//printf("   %s\n",filenameActualRegistroContinuo);
-		
-	//Establece el nombre del archivo RC actual (es el mismo nombre sin el path):
-	strcat(nombreActualARC, idEstacion);
+    // Abre el archivo temporal en modo lectura (El archivo debe existir):
+    ftmp = fopen(filenameActualRegistroContinuo, "rt");
+    // Recupera el nombre del archivo anterior (Lee solo la primera fila del archivo temporal):
+    fgets(nombreAnteriorARC, 26, ftmp);
+    // Cierra el archivo temporal:
+    fclose(ftmp);
+
+    // Abre el archivo temporal en modo escritura:
+    ftmp = fopen(filenameActualRegistroContinuo, "w+");
+    // printf("   %s\n",filenameActualRegistroContinuo);
+
+    // Establece el nombre del archivo RC actual (es el mismo nombre sin el path):
+    strcat(nombreActualARC, idEstacion);
     strcat(nombreActualARC, archivoRegistroContinuo);
     strcat(nombreActualARC, extBin);
-	strcat(nombreActualARC, "\n");
-		
-    //Escribe el nombre del archivo RC actual en el archivo temporal:
-	fwrite(nombreActualARC, sizeof(char), 24, ftmp);
-	//Escribe el nombre del archivo RC anterior en el archivo temporal:
-	fwrite(nombreAnteriorARC, sizeof(char), 24, ftmp);
-	
-	printf("\nArchivo RC Actual: %s",nombreActualARC);
-	printf("Archivo RC Anterior: %s\n\n",nombreAnteriorARC);
-	
-	//Cierra el archivo temporal:
-	fclose(ftmp);
-	//*****************************************************************************
-    
-}
+    strcat(nombreActualARC, "\n");
 
+    // Escribe el nombre del archivo RC actual en el archivo temporal:
+    fwrite(nombreActualARC, sizeof(char), 24, ftmp);
+    // Escribe el nombre del archivo RC anterior en el archivo temporal:
+    fwrite(nombreAnteriorARC, sizeof(char), 24, ftmp);
+
+    printf("\nArchivo RC Actual: %s", nombreActualARC);
+    printf("Archivo RC Anterior: %s\n\n", nombreAnteriorARC);
+
+    // Cierra el archivo temporal:
+    fclose(ftmp);
+    //*****************************************************************************
+}
 
 void ObtenerOperacion()
 {
@@ -367,10 +361,10 @@ void ObtenerOperacion()
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     bcm2835_spi_transfer(0xF0);
 
-    //Aqui se selecciona el tipo de operacion que se va a ejecutar
+    // Aqui se selecciona el tipo de operacion que se va a ejecutar
     if (buffer == 0xB1)
     {
-        //printf("Recupero 0xB1\n");
+        // printf("Recupero 0xB1\n");
         NuevoCiclo();
     }
     if (buffer == 0xB2)
@@ -380,7 +374,6 @@ void ObtenerOperacion()
     }
 }
 
-
 void IniciarMuestreo()
 {
     printf("Iniciando el muestreo...\n");
@@ -388,7 +381,6 @@ void IniciarMuestreo()
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     bcm2835_spi_transfer(0xF1);
 }
-
 
 void DetenerMuestreo()
 {
@@ -398,83 +390,80 @@ void DetenerMuestreo()
     bcm2835_spi_transfer(0xF2);
 }
 
-
 void NuevoCiclo()
 {
 
-    //printf("Nuevo ciclo\n");
-    bcm2835_spi_transfer(0xA3); //Envia el delimitador de inicio de trama
+    // printf("Nuevo ciclo\n");
+    bcm2835_spi_transfer(0xA3); // Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
     for (i = 0; i < 2506; i++)
     {
-        buffer = bcm2835_spi_transfer(0x00); //Envia 2506 dummy bytes para recuperar los datos de la trama enviada desde el dsPIC
-        tramaDatos[i] = buffer;              //Guarda los datos en el vector tramaDatos
+        buffer = bcm2835_spi_transfer(0x00); // Envia 2506 dummy bytes para recuperar los datos de la trama enviada desde el dsPIC
+        tramaDatos[i] = buffer;              // Guarda los datos en el vector tramaDatos
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
 
-    bcm2835_spi_transfer(0xF3); //Envia el delimitador de final de trama
+    bcm2835_spi_transfer(0xF3); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
-    GuardarVector(tramaDatos); //Guarda la el vector tramaDatos en el archivo binario
-    //CrearArchivos();           //Crea un archivo nuevo si se cumplen las condiciones
+    GuardarVector(tramaDatos); // Guarda la el vector tramaDatos en el archivo binario
+    // CrearArchivos();           //Crea un archivo nuevo si se cumplen las condiciones
 
     // Llama al metodo para determinar si existe o no un evento sismico:
     DetectarEvento(tramaDatos);
 }
 
-
 void EnviarTiempoLocal()
 {
 
-    //Obtiene la hora y la fecha del sistema:
+    // Obtiene la hora y la fecha del sistema:
     printf("Hora local: ");
     time_t t;
     struct tm *tm;
     t = time(NULL);
     tm = localtime(&t);
-    tiempoLocal[0] = tm->tm_mday;       //Dia del mes (0-31)
-    tiempoLocal[1] = tm->tm_mon + 1;    //Mes desde Enero (0-11)
-    tiempoLocal[2] = tm->tm_year - 100; //Anio (contado desde 1900)
-    tiempoLocal[3] = tm->tm_hour;       //Hora
-    tiempoLocal[4] = tm->tm_min;        //Minuto
-    tiempoLocal[5] = tm->tm_sec;        //Segundo
+    tiempoLocal[0] = tm->tm_mday;       // Dia del mes (0-31)
+    tiempoLocal[1] = tm->tm_mon + 1;    // Mes desde Enero (0-11)
+    tiempoLocal[2] = tm->tm_year - 100; // Anio (contado desde 1900)
+    tiempoLocal[3] = tm->tm_hour;       // Hora
+    tiempoLocal[4] = tm->tm_min;        // Minuto
+    tiempoLocal[5] = tm->tm_sec;        // Segundo
     for (i = 0; i < 6; i++)
     {
         printf("%0.2d ", tiempoLocal[i]);
     }
     printf("\n");
 
-    bcm2835_spi_transfer(0xA4); //Envia el delimitador de inicio de trama
+    bcm2835_spi_transfer(0xA4); // Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     for (i = 0; i < 6; i++)
     {
-        bcm2835_spi_transfer(tiempoLocal[i]); //Envia los 6 datos de la trama tiempoLocal al dsPIC
+        bcm2835_spi_transfer(tiempoLocal[i]); // Envia los 6 datos de la trama tiempoLocal al dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
-    bcm2835_spi_transfer(0xF4); //Envia el delimitador de final de trama
+    bcm2835_spi_transfer(0xF4); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 }
-
 
 void ObtenerTiempoPIC()
 {
 
     printf("Hora dsPIC: ");
-    bcm2835_spi_transfer(0xA5); //Envia el delimitador de final de trama
+    bcm2835_spi_transfer(0xA5); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
-    fuenteTiempoPic = bcm2835_spi_transfer(0x00); //Recibe el byte que indica la fuente de tiempo del PIC
+    fuenteTiempoPic = bcm2835_spi_transfer(0x00); // Recibe el byte que indica la fuente de tiempo del PIC
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
     for (i = 0; i < 6; i++)
     {
         buffer = bcm2835_spi_transfer(0x00);
-        tiempoPIC[i] = buffer; //Guarda la hora y fecha devuelta por el dsPIC
+        tiempoPIC[i] = buffer; // Guarda la hora y fecha devuelta por el dsPIC
         bcm2835_delayMicroseconds(TIEMPO_SPI);
     }
 
-    bcm2835_spi_transfer(0xF5); //Envia el delimitador de final de trama
+    bcm2835_spi_transfer(0xF5); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
     if (fuenteTiempoPic == 0)
@@ -485,18 +474,21 @@ void ObtenerTiempoPIC()
     {
         printf("GPS ");
     }
+    if (fuenteTiempoPic == 2)
+    {
+        printf("RPi ");
+    }
 
-    printf("%0.2d:", tiempoPIC[3]);  //hh
-    printf("%0.2d:", tiempoPIC[4]);  //mm
-    printf("%0.2d ", tiempoPIC[5]);  //ss
-    printf("%0.2d/", tiempoPIC[0]);  //dd
-    printf("%0.2d/", tiempoPIC[1]);  //MM
-    printf("%0.2d\n", tiempoPIC[2]); //aa
+    printf("%0.2d:", tiempoPIC[3]);  // hh
+    printf("%0.2d:", tiempoPIC[4]);  // mm
+    printf("%0.2d ", tiempoPIC[5]);  // ss
+    printf("%0.2d/", tiempoPIC[0]);  // dd
+    printf("%0.2d/", tiempoPIC[1]);  // MM
+    printf("%0.2d\n", tiempoPIC[2]); // aa
 
     SetRelojLocal(tiempoPIC);
-    IniciarMuestreo();
+    // IniciarMuestreo();
 }
-
 
 void ObtenerTiempoGPS()
 {
@@ -506,7 +498,6 @@ void ObtenerTiempoGPS()
     bcm2835_spi_transfer(0xF6);
 }
 
-
 void ObtenerTiempoRTC()
 {
     printf("Obteniendo hora del RTC...\n");
@@ -515,75 +506,71 @@ void ObtenerTiempoRTC()
     bcm2835_spi_transfer(0xF7);
 }
 
-
-//Esta funcion sirve para guardar en el archivo binario las tramas de 1 segundo recibidas
+// Esta funcion sirve para guardar en el archivo binario las tramas de 1 segundo recibidas
 void GuardarVector(unsigned char *tramaD)
 {
     unsigned int outFwrite;
-	unsigned int tmpFwrite;
+    unsigned int tmpFwrite;
 
-    //Guarda la trama en el archivo de registro continuo
-	if (fp != NULL)
+    // Guarda la trama en el archivo de registro continuo
+    if (fp != NULL)
     {
         do
         {
-            //Guarda la trama en el archivo binario:
+            // Guarda la trama en el archivo binario:
             outFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fp);
-            //Guarda la trama en el archivo temporal:
-            //fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
-			//tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);      
-			//fclose(fTramaTmp); */
-            //Ejecuta el script de python:
-            //system("python /home/rsa/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
+            // Guarda la trama en el archivo temporal:
+            // fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+            // tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
+            // fclose(fTramaTmp); */
+            // Ejecuta el script de python:
+            // system("python /home/rsa/Programas/RegistroContinuo/V3/BinarioToMiniSeed_V12.py");
         } while (outFwrite != NUM_ELEMENTOS);
         fflush(fp);
     }
-	
-	//Guarda la trama en el archivo temporal
-	
-	fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
-	if (fTramaTmp != NULL)
+
+    // Guarda la trama en el archivo temporal
+
+    fTramaTmp = fopen(filenameTemporalRegistroContinuo, "wb");
+    if (fTramaTmp != NULL)
     {
         do
         {
-			tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);      
-			
-        } while (tmpFwrite != NUM_ELEMENTOS);
-        
-		fflush(fTramaTmp);
-		fclose(fTramaTmp);
-    }
-	
-	
-}
+            tmpFwrite = fwrite(tramaD, sizeof(char), NUM_ELEMENTOS, fTramaTmp);
 
+        } while (tmpFwrite != NUM_ELEMENTOS);
+
+        fflush(fTramaTmp);
+        fclose(fTramaTmp);
+    }
+}
 
 void SetRelojLocal(unsigned char *tramaTiempo)
 {
 
     char datePIC[22];
-    //Configura el reloj interno de la RPi con la hora recuperada del PIC:
-    strcpy(comando, "sudo date --set "); //strcpy( <variable_destino>, <cadena_fuente> )
-    //Ejemplo: '2019-09-13 17:45:00':
+    // Configura el reloj interno de la RPi con la hora recuperada del PIC:
+    strcpy(comando, "sudo date --set "); // strcpy( <variable_destino>, <cadena_fuente> )
+    // Ejemplo: '2019-09-13 17:45:00':
     datePIC[0] = 0x27; //'
     datePIC[1] = '2';
     datePIC[2] = '0';
-    datePIC[3] = (tramaTiempo[0] / 10) + 48; //dd
+    datePIC[3] = (tramaTiempo[0] / 10) + 48; // dd
     datePIC[4] = (tramaTiempo[0] % 10) + 48;
     datePIC[5] = '-';
-    datePIC[6] = (tramaTiempo[1] / 10) + 48; //MM
+    datePIC[6] = (tramaTiempo[1] / 10) + 48; // MM
     datePIC[7] = (tramaTiempo[1] % 10) + 48;
     datePIC[8] = '-';
-    datePIC[9] = (tramaTiempo[2] / 10) + 48;  //aa: (19/10)+48 = 49 = '1'
+    datePIC[9] = (tramaTiempo[2] / 10) + 48;  // aa: (19/10)+48 = 49 = '1'
     datePIC[10] = (tramaTiempo[2] % 10) + 48; //    (19%10)+48 = 57 = '9'
     datePIC[11] = ' ';
-    datePIC[12] = (tramaTiempo[3] / 10) + 48; //hh
+    datePIC[12] = (tramaTiempo[3] / 10) + 48; // hh
     datePIC[13] = (tramaTiempo[3] % 10) + 48;
     datePIC[14] = ':';
-    datePIC[15] = (tramaTiempo[4] / 10) + 48; //mm
+    datePIC[15] = (tramaTiempo[4] / 10) + 48; // mm
     datePIC[16] = (tramaTiempo[4] % 10) + 48;
     datePIC[17] = ':';
-    datePIC[18] = (tramaTiempo[5] / 10) + 48; //ss
+    datePIC[18] = (tramaTiempo[5] / 10) + 48; // ss
     datePIC[19] = (tramaTiempo[5] % 10) + 48;
     datePIC[20] = 0x27;
     datePIC[21] = '\0';
@@ -722,7 +709,7 @@ void DetectarEvento(unsigned char *tramaD)
 
                 printf("Enviado solicitud Evt Inicio %lu %lu Duracion %lu HoraActual %lu \n", fechaInitEvtAnt, tiempoInitEvtAnt, duracionEvtAnt, horaLong);
 
-                //Extrae el evento:
+                // Extrae el evento:
                 ExtraerEvento(filenameArchivoRegistroContinuo, tiempoInitEvtAnt, duracionEvtAnt);
             }
 
