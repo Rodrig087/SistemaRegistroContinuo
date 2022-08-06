@@ -65,21 +65,21 @@ L_ADXL355_init7:
 ;adxl355_spi.c,124 :: 		}
 L_ADXL355_init2:
 	CP.B	W10, #1
-	BRA NZ	L__ADXL355_init248
+	BRA NZ	L__ADXL355_init208
 	GOTO	L_ADXL355_init4
-L__ADXL355_init248:
+L__ADXL355_init208:
 	CP.B	W10, #2
-	BRA NZ	L__ADXL355_init249
+	BRA NZ	L__ADXL355_init209
 	GOTO	L_ADXL355_init5
-L__ADXL355_init249:
+L__ADXL355_init209:
 	CP.B	W10, #4
-	BRA NZ	L__ADXL355_init250
+	BRA NZ	L__ADXL355_init210
 	GOTO	L_ADXL355_init6
-L__ADXL355_init250:
+L__ADXL355_init210:
 	CP.B	W10, #8
-	BRA NZ	L__ADXL355_init251
+	BRA NZ	L__ADXL355_init211
 	GOTO	L_ADXL355_init7
-L__ADXL355_init251:
+L__ADXL355_init211:
 L_ADXL355_init3:
 ;adxl355_spi.c,125 :: 		}
 L_end_ADXL355_init:
@@ -154,9 +154,9 @@ _ADXL355_read_data:
 	ZE	W0, W0
 	AND	W0, #1, W0
 	CP	W0, #1
-	BRA Z	L__ADXL355_read_data255
+	BRA Z	L__ADXL355_read_data215
 	GOTO	L_ADXL355_read_data8
-L__ADXL355_read_data255:
+L__ADXL355_read_data215:
 ;adxl355_spi.c,152 :: 		CS_ADXL355=0;
 	BCLR	LATA3_bit, BitPos(LATA3_bit+0)
 ;adxl355_spi.c,153 :: 		for (j=0;j<9;j++){
@@ -166,9 +166,9 @@ L__ADXL355_read_data255:
 L_ADXL355_read_data9:
 ; j start address is: 4 (W2)
 	CP.B	W2, #9
-	BRA LTU	L__ADXL355_read_data256
+	BRA LTU	L__ADXL355_read_data216
 	GOTO	L_ADXL355_read_data10
-L__ADXL355_read_data256:
+L__ADXL355_read_data216:
 ;adxl355_spi.c,154 :: 		muestra = ADXL355_read_byte(axisAddresses[j]);
 	ZE	W2, W1
 	MOV	#lo_addr(_axisAddresses), W0
@@ -199,9 +199,9 @@ L_ADXL355_read_data8:
 L_ADXL355_read_data13:
 ; j start address is: 4 (W2)
 	CP.B	W2, #9
-	BRA LTU	L__ADXL355_read_data257
+	BRA LTU	L__ADXL355_read_data217
 	GOTO	L_ADXL355_read_data14
-L__ADXL355_read_data257:
+L__ADXL355_read_data217:
 ;adxl355_spi.c,160 :: 		vectorMuestra[j] = 0;
 	ZE	W2, W0
 	ADD	W10, W0, W1
@@ -332,12 +332,19 @@ L_end_ADXL355_read_FIFO:
 
 _GPS_init:
 
-;tiempo_gps.c,13 :: 		void GPS_init(){
-;tiempo_gps.c,31 :: 		UART1_Write_Text("$PMTK220,1000*1F\r\n");
+;tiempo_gps.c,12 :: 		void GPS_init()
+;tiempo_gps.c,16 :: 		UART1_Write_Text("$PMTK605*31\r\n");
 	PUSH	W10
+	PUSH	W11
 	MOV	#lo_addr(?lstr1_Acelerografo), W10
 	CALL	_UART1_Write_Text
-;tiempo_gps.c,32 :: 		Delay_ms(1000);
+;tiempo_gps.c,17 :: 		UART1_Write_Text("$PMTK220,1000*1F\r\n");
+	MOV	#lo_addr(?lstr2_Acelerografo), W10
+	CALL	_UART1_Write_Text
+;tiempo_gps.c,18 :: 		UART1_Write_Text("$PMTK251,115200*1F\r\n");
+	MOV	#lo_addr(?lstr3_Acelerografo), W10
+	CALL	_UART1_Write_Text
+;tiempo_gps.c,19 :: 		Delay_ms(1000); // Tiempo necesario para que se de efecto el cambio de configuracion
 	MOV	#123, W8
 	MOV	#4681, W7
 L_GPS_init18:
@@ -345,10 +352,26 @@ L_GPS_init18:
 	BRA NZ	L_GPS_init18
 	DEC	W8
 	BRA NZ	L_GPS_init18
-;tiempo_gps.c,36 :: 		UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
-	MOV	#lo_addr(?lstr2_Acelerografo), W10
+;tiempo_gps.c,20 :: 		UART1_Init(115200);
+	MOV	#49664, W10
+	MOV	#1, W11
+	CALL	_UART1_Init
+;tiempo_gps.c,21 :: 		UART1_Write_Text("$PMTK313,1*2E\r\n");
+	MOV	#lo_addr(?lstr4_Acelerografo), W10
 	CALL	_UART1_Write_Text
-;tiempo_gps.c,37 :: 		Delay_ms(1000);
+;tiempo_gps.c,22 :: 		UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+	MOV	#lo_addr(?lstr5_Acelerografo), W10
+	CALL	_UART1_Write_Text
+;tiempo_gps.c,23 :: 		UART1_Write_Text("$PMTK319,1*24\r\n");
+	MOV	#lo_addr(?lstr6_Acelerografo), W10
+	CALL	_UART1_Write_Text
+;tiempo_gps.c,24 :: 		UART1_Write_Text("$PMTK413*34\r\n");
+	MOV	#lo_addr(?lstr7_Acelerografo), W10
+	CALL	_UART1_Write_Text
+;tiempo_gps.c,25 :: 		UART1_Write_Text("$PMTK513,1*28\r\n");
+	MOV	#lo_addr(?lstr8_Acelerografo), W10
+	CALL	_UART1_Write_Text
+;tiempo_gps.c,26 :: 		Delay_ms(1000);
 	MOV	#123, W8
 	MOV	#4681, W7
 L_GPS_init20:
@@ -356,10 +379,11 @@ L_GPS_init20:
 	BRA NZ	L_GPS_init20
 	DEC	W8
 	BRA NZ	L_GPS_init20
-;tiempo_gps.c,39 :: 		U1MODE.UARTEN = 0;                                                         //Desactiva el UART1
+;tiempo_gps.c,27 :: 		U1MODE.UARTEN = 0; // Desactiva el UART1
 	BCLR	U1MODE, #15
-;tiempo_gps.c,40 :: 		}
+;tiempo_gps.c,43 :: 		}
 L_end_GPS_init:
+	POP	W11
 	POP	W10
 	RETURN
 ; end of _GPS_init
@@ -367,32 +391,32 @@ L_end_GPS_init:
 _RecuperarFechaGPS:
 	LNK	#28
 
-;tiempo_gps.c,45 :: 		unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
-;tiempo_gps.c,50 :: 		char *ptrDatoStringF = &datoStringF;
+;tiempo_gps.c,48 :: 		unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
+;tiempo_gps.c,54 :: 		char *ptrDatoStringF = &datoStringF;
 	PUSH	W10
 	ADD	W14, #16, W4
 	MOV	W4, [W14+26]
 ; ptrDatoStringF start address is: 12 (W6)
 	MOV	W4, W6
-;tiempo_gps.c,51 :: 		datoStringF[2] = '\0';
+;tiempo_gps.c,55 :: 		datoStringF[2] = '\0';
 	ADD	W4, #2, W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;tiempo_gps.c,52 :: 		tramaFecha[3] = '\0';
+;tiempo_gps.c,56 :: 		tramaFecha[3] = '\0';
 	ADD	W14, #0, W3
 	MOV	W3, [W14+24]
 	ADD	W3, #12, W2
 	CLR	W0
 	CLR	W1
 	MOV.D	W0, [W2]
-;tiempo_gps.c,55 :: 		datoStringF[0] = tramaDatosGPS[10];
+;tiempo_gps.c,59 :: 		datoStringF[0] = tramaDatosGPS[10];
 	ADD	W10, #10, W0
 	MOV.B	[W0], [W4]
-;tiempo_gps.c,56 :: 		datoStringF[1] = tramaDatosGPS[11];
+;tiempo_gps.c,60 :: 		datoStringF[1] = tramaDatosGPS[11];
 	ADD	W4, #1, W1
 	ADD	W10, #11, W0
 	MOV.B	[W0], [W1]
-;tiempo_gps.c,57 :: 		tramaFecha[0] = atoi(ptrDatoStringF);
+;tiempo_gps.c,61 :: 		tramaFecha[0] = atoi(ptrDatoStringF);
 	MOV	W3, W0
 	MOV	W0, [W14+20]
 	PUSH	W10
@@ -404,15 +428,15 @@ _RecuperarFechaGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,60 :: 		datoStringF[0] = tramaDatosGPS[8];
+;tiempo_gps.c,64 :: 		datoStringF[0] = tramaDatosGPS[8];
 	ADD	W10, #8, W1
 	MOV	[W14+26], W0
 	MOV.B	[W1], [W0]
-;tiempo_gps.c,61 :: 		datoStringF[1] = tramaDatosGPS[9];
+;tiempo_gps.c,65 :: 		datoStringF[1] = tramaDatosGPS[9];
 	ADD	W0, #1, W1
 	ADD	W10, #9, W0
 	MOV.B	[W0], [W1]
-;tiempo_gps.c,62 :: 		tramaFecha[1] = atoi(ptrDatoStringF);
+;tiempo_gps.c,66 :: 		tramaFecha[1] = atoi(ptrDatoStringF);
 	MOV	[W14+24], W0
 	ADD	W0, #4, W0
 	MOV	W0, [W14+20]
@@ -425,15 +449,15 @@ _RecuperarFechaGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,65 :: 		datoStringF[0] = tramaDatosGPS[6];
+;tiempo_gps.c,69 :: 		datoStringF[0] = tramaDatosGPS[6];
 	ADD	W10, #6, W1
 	MOV	[W14+26], W0
 	MOV.B	[W1], [W0]
-;tiempo_gps.c,66 :: 		datoStringF[1] = tramaDatosGPS[7];
+;tiempo_gps.c,70 :: 		datoStringF[1] = tramaDatosGPS[7];
 	ADD	W0, #1, W1
 	ADD	W10, #7, W0
 	MOV.B	[W0], [W1]
-;tiempo_gps.c,67 :: 		tramaFecha[2] =  atoi(ptrDatoStringF);
+;tiempo_gps.c,71 :: 		tramaFecha[2] = atoi(ptrDatoStringF);
 	MOV	[W14+24], W0
 	ADD	W0, #8, W0
 	MOV	W0, [W14+20]
@@ -445,7 +469,7 @@ _RecuperarFechaGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,69 :: 		fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);      //10000*aa + 100*mm + dd
+;tiempo_gps.c,73 :: 		fechaGPS = (tramaFecha[0] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[2]); // 10000*aa + 100*mm + dd
 	MOV	[W14+24], W2
 	MOV.D	[W2], W0
 	MOV	#10000, W2
@@ -467,10 +491,10 @@ _RecuperarFechaGPS:
 	ADD	W0, #8, W2
 	ADD	W4, [W2++], W0
 	ADDC	W5, [W2--], W1
-;tiempo_gps.c,71 :: 		return fechaGPS;
-;tiempo_gps.c,73 :: 		}
-;tiempo_gps.c,71 :: 		return fechaGPS;
-;tiempo_gps.c,73 :: 		}
+;tiempo_gps.c,75 :: 		return fechaGPS;
+;tiempo_gps.c,76 :: 		}
+;tiempo_gps.c,75 :: 		return fechaGPS;
+;tiempo_gps.c,76 :: 		}
 L_end_RecuperarFechaGPS:
 	POP	W10
 	ULNK
@@ -480,31 +504,31 @@ L_end_RecuperarFechaGPS:
 _RecuperarHoraGPS:
 	LNK	#28
 
-;tiempo_gps.c,76 :: 		unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
-;tiempo_gps.c,81 :: 		char *ptrDatoString = &datoString;
+;tiempo_gps.c,79 :: 		unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS)
+;tiempo_gps.c,85 :: 		char *ptrDatoString = &datoString;
 	PUSH	W10
 	ADD	W14, #16, W4
 	MOV	W4, [W14+26]
 ; ptrDatoString start address is: 12 (W6)
 	MOV	W4, W6
-;tiempo_gps.c,82 :: 		datoString[2] = '\0';
+;tiempo_gps.c,86 :: 		datoString[2] = '\0';
 	ADD	W4, #2, W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;tiempo_gps.c,83 :: 		tramaTiempo[3] = '\0';
+;tiempo_gps.c,87 :: 		tramaTiempo[3] = '\0';
 	ADD	W14, #0, W3
 	MOV	W3, [W14+24]
 	ADD	W3, #12, W2
 	CLR	W0
 	CLR	W1
 	MOV.D	W0, [W2]
-;tiempo_gps.c,86 :: 		datoString[0] = tramaDatosGPS[0];
+;tiempo_gps.c,90 :: 		datoString[0] = tramaDatosGPS[0];
 	MOV.B	[W10], [W4]
-;tiempo_gps.c,87 :: 		datoString[1] = tramaDatosGPS[1];
+;tiempo_gps.c,91 :: 		datoString[1] = tramaDatosGPS[1];
 	ADD	W4, #1, W1
 	ADD	W10, #1, W0
 	MOV.B	[W0], [W1]
-;tiempo_gps.c,88 :: 		tramaTiempo[0] = atoi(ptrDatoString);
+;tiempo_gps.c,92 :: 		tramaTiempo[0] = atoi(ptrDatoString);
 	MOV	W3, W0
 	MOV	W0, [W14+20]
 	PUSH	W10
@@ -516,15 +540,15 @@ _RecuperarHoraGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,91 :: 		datoString[0] = tramaDatosGPS[2];
+;tiempo_gps.c,95 :: 		datoString[0] = tramaDatosGPS[2];
 	ADD	W10, #2, W1
 	MOV	[W14+26], W0
 	MOV.B	[W1], [W0]
-;tiempo_gps.c,92 :: 		datoString[1] = tramaDatosGPS[3];
+;tiempo_gps.c,96 :: 		datoString[1] = tramaDatosGPS[3];
 	ADD	W0, #1, W1
 	ADD	W10, #3, W0
 	MOV.B	[W0], [W1]
-;tiempo_gps.c,93 :: 		tramaTiempo[1] = atoi(ptrDatoString);
+;tiempo_gps.c,97 :: 		tramaTiempo[1] = atoi(ptrDatoString);
 	MOV	[W14+24], W0
 	ADD	W0, #4, W0
 	MOV	W0, [W14+20]
@@ -537,15 +561,15 @@ _RecuperarHoraGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,96 :: 		datoString[0] = tramaDatosGPS[4];
+;tiempo_gps.c,100 :: 		datoString[0] = tramaDatosGPS[4];
 	ADD	W10, #4, W1
 	MOV	[W14+26], W0
 	MOV.B	[W1], [W0]
-;tiempo_gps.c,97 :: 		datoString[1] = tramaDatosGPS[5];
+;tiempo_gps.c,101 :: 		datoString[1] = tramaDatosGPS[5];
 	ADD	W0, #1, W1
 	ADD	W10, #5, W0
 	MOV.B	[W0], [W1]
-;tiempo_gps.c,98 :: 		tramaTiempo[2] = atoi(ptrDatoString);
+;tiempo_gps.c,102 :: 		tramaTiempo[2] = atoi(ptrDatoString);
 	MOV	[W14+24], W0
 	ADD	W0, #8, W0
 	MOV	W0, [W14+20]
@@ -557,7 +581,7 @@ _RecuperarHoraGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,100 :: 		horaGPS = (tramaTiempo[0]*3600)+(tramaTiempo[1]*60)+(tramaTiempo[2]);      //Calcula el segundo actual = hh*3600 + mm*60 + ss
+;tiempo_gps.c,104 :: 		horaGPS = (tramaTiempo[0] * 3600) + (tramaTiempo[1] * 60) + (tramaTiempo[2]); // Calcula el segundo actual = hh*3600 + mm*60 + ss
 	MOV	[W14+24], W2
 	MOV.D	[W2], W0
 	MOV	#3600, W2
@@ -579,10 +603,10 @@ _RecuperarHoraGPS:
 	ADD	W0, #8, W2
 	ADD	W4, [W2++], W0
 	ADDC	W5, [W2--], W1
-;tiempo_gps.c,101 :: 		return horaGPS;
-;tiempo_gps.c,103 :: 		}
-;tiempo_gps.c,101 :: 		return horaGPS;
-;tiempo_gps.c,103 :: 		}
+;tiempo_gps.c,105 :: 		return horaGPS;
+;tiempo_gps.c,106 :: 		}
+;tiempo_gps.c,105 :: 		return horaGPS;
+;tiempo_gps.c,106 :: 		}
 L_end_RecuperarHoraGPS:
 	POP	W10
 	ULNK
@@ -1047,9 +1071,9 @@ _IncrementarFecha:
 ;tiempo_rtc.c,197 :: 		if (dia<28){
 	CP	W0, #28
 	CPB	W1, #0
-	BRA LTU	L__IncrementarFecha269
+	BRA LTU	L__IncrementarFecha229
 	GOTO	L_IncrementarFecha22
-L__IncrementarFecha269:
+L__IncrementarFecha229:
 ;tiempo_rtc.c,198 :: 		dia++;
 ; dia start address is: 16 (W8)
 	ADD	W6, #1, W8
@@ -1064,9 +1088,9 @@ L_IncrementarFecha22:
 ; dia start address is: 12 (W6)
 	CP	W4, #2
 	CPB	W5, #0
-	BRA Z	L__IncrementarFecha270
+	BRA Z	L__IncrementarFecha230
 	GOTO	L_IncrementarFecha24
-L__IncrementarFecha270:
+L__IncrementarFecha230:
 ;tiempo_rtc.c,202 :: 		if (((anio-16)%4)==0){
 	SUB	W2, #16, W0
 	SUBB	W3, #0, W1
@@ -1074,15 +1098,15 @@ L__IncrementarFecha270:
 	AND	W1, #0, W1
 	CP	W0, #0
 	CPB	W1, #0
-	BRA Z	L__IncrementarFecha271
+	BRA Z	L__IncrementarFecha231
 	GOTO	L_IncrementarFecha25
-L__IncrementarFecha271:
+L__IncrementarFecha231:
 ;tiempo_rtc.c,203 :: 		if (dia==29){
 	CP	W6, #29
 	CPB	W7, #0
-	BRA Z	L__IncrementarFecha272
+	BRA Z	L__IncrementarFecha232
 	GOTO	L_IncrementarFecha26
-L__IncrementarFecha272:
+L__IncrementarFecha232:
 ; dia end address is: 12 (W6)
 ;tiempo_rtc.c,204 :: 		dia = 1;
 ; dia start address is: 0 (W0)
@@ -1138,9 +1162,9 @@ L_IncrementarFecha24:
 ; dia start address is: 12 (W6)
 	CP	W6, #30
 	CPB	W7, #0
-	BRA LTU	L__IncrementarFecha273
+	BRA LTU	L__IncrementarFecha233
 	GOTO	L_IncrementarFecha30
-L__IncrementarFecha273:
+L__IncrementarFecha233:
 ;tiempo_rtc.c,215 :: 		dia++;
 ; dia start address is: 0 (W0)
 	ADD	W6, #1, W0
@@ -1158,37 +1182,37 @@ L_IncrementarFecha30:
 ; dia start address is: 12 (W6)
 	CP	W4, #4
 	CPB	W5, #0
-	BRA NZ	L__IncrementarFecha274
-	GOTO	L__IncrementarFecha177
-L__IncrementarFecha274:
+	BRA NZ	L__IncrementarFecha234
+	GOTO	L__IncrementarFecha149
+L__IncrementarFecha234:
 	CP	W4, #6
 	CPB	W5, #0
-	BRA NZ	L__IncrementarFecha275
-	GOTO	L__IncrementarFecha176
-L__IncrementarFecha275:
+	BRA NZ	L__IncrementarFecha235
+	GOTO	L__IncrementarFecha148
+L__IncrementarFecha235:
 	CP	W4, #9
 	CPB	W5, #0
-	BRA NZ	L__IncrementarFecha276
-	GOTO	L__IncrementarFecha175
-L__IncrementarFecha276:
+	BRA NZ	L__IncrementarFecha236
+	GOTO	L__IncrementarFecha147
+L__IncrementarFecha236:
 	CP	W4, #11
 	CPB	W5, #0
-	BRA NZ	L__IncrementarFecha277
-	GOTO	L__IncrementarFecha174
-L__IncrementarFecha277:
+	BRA NZ	L__IncrementarFecha237
+	GOTO	L__IncrementarFecha146
+L__IncrementarFecha237:
 	MOV.D	W4, W0
 	MOV.D	W6, W4
 	GOTO	L_IncrementarFecha34
-L__IncrementarFecha177:
-L__IncrementarFecha176:
-L__IncrementarFecha175:
-L__IncrementarFecha174:
+L__IncrementarFecha149:
+L__IncrementarFecha148:
+L__IncrementarFecha147:
+L__IncrementarFecha146:
 ;tiempo_rtc.c,218 :: 		if (dia==30){
 	CP	W6, #30
 	CPB	W7, #0
-	BRA Z	L__IncrementarFecha278
+	BRA Z	L__IncrementarFecha238
 	GOTO	L_IncrementarFecha35
-L__IncrementarFecha278:
+L__IncrementarFecha238:
 ; dia end address is: 12 (W6)
 ;tiempo_rtc.c,219 :: 		dia = 1;
 ; dia start address is: 0 (W0)
@@ -1228,53 +1252,53 @@ L_IncrementarFecha34:
 ; dia start address is: 8 (W4)
 	CP	W4, #1
 	CPB	W5, #0
-	BRA NZ	L__IncrementarFecha279
-	GOTO	L__IncrementarFecha187
-L__IncrementarFecha279:
+	BRA NZ	L__IncrementarFecha239
+	GOTO	L__IncrementarFecha159
+L__IncrementarFecha239:
 	CP	W0, #1
 	CPB	W1, #0
-	BRA NZ	L__IncrementarFecha280
-	GOTO	L__IncrementarFecha183
-L__IncrementarFecha280:
+	BRA NZ	L__IncrementarFecha240
+	GOTO	L__IncrementarFecha155
+L__IncrementarFecha240:
 	CP	W0, #3
 	CPB	W1, #0
-	BRA NZ	L__IncrementarFecha281
-	GOTO	L__IncrementarFecha182
-L__IncrementarFecha281:
+	BRA NZ	L__IncrementarFecha241
+	GOTO	L__IncrementarFecha154
+L__IncrementarFecha241:
 	CP	W0, #5
 	CPB	W1, #0
-	BRA NZ	L__IncrementarFecha282
-	GOTO	L__IncrementarFecha181
-L__IncrementarFecha282:
+	BRA NZ	L__IncrementarFecha242
+	GOTO	L__IncrementarFecha153
+L__IncrementarFecha242:
 	CP	W0, #7
 	CPB	W1, #0
-	BRA NZ	L__IncrementarFecha283
-	GOTO	L__IncrementarFecha180
-L__IncrementarFecha283:
+	BRA NZ	L__IncrementarFecha243
+	GOTO	L__IncrementarFecha152
+L__IncrementarFecha243:
 	CP	W0, #8
 	CPB	W1, #0
-	BRA NZ	L__IncrementarFecha284
-	GOTO	L__IncrementarFecha179
-L__IncrementarFecha284:
+	BRA NZ	L__IncrementarFecha244
+	GOTO	L__IncrementarFecha151
+L__IncrementarFecha244:
 	CP	W0, #10
 	CPB	W1, #0
-	BRA NZ	L__IncrementarFecha285
-	GOTO	L__IncrementarFecha178
-L__IncrementarFecha285:
+	BRA NZ	L__IncrementarFecha245
+	GOTO	L__IncrementarFecha150
+L__IncrementarFecha245:
 	GOTO	L_IncrementarFecha41
-L__IncrementarFecha183:
-L__IncrementarFecha182:
-L__IncrementarFecha181:
-L__IncrementarFecha180:
-L__IncrementarFecha179:
-L__IncrementarFecha178:
-L__IncrementarFecha171:
+L__IncrementarFecha155:
+L__IncrementarFecha154:
+L__IncrementarFecha153:
+L__IncrementarFecha152:
+L__IncrementarFecha151:
+L__IncrementarFecha150:
+L__IncrementarFecha143:
 ;tiempo_rtc.c,226 :: 		if (dia==31){
 	CP	W4, #31
 	CPB	W5, #0
-	BRA Z	L__IncrementarFecha286
+	BRA Z	L__IncrementarFecha246
 	GOTO	L_IncrementarFecha42
-L__IncrementarFecha286:
+L__IncrementarFecha246:
 ;tiempo_rtc.c,227 :: 		dia = 1;
 	MOV	#1, W4
 	MOV	#0, W5
@@ -1302,29 +1326,29 @@ L_IncrementarFecha41:
 ; dia start address is: 8 (W4)
 ; dia end address is: 8 (W4)
 ; mes end address is: 0 (W0)
-	GOTO	L__IncrementarFecha184
-L__IncrementarFecha187:
-L__IncrementarFecha184:
+	GOTO	L__IncrementarFecha156
+L__IncrementarFecha159:
+L__IncrementarFecha156:
 ;tiempo_rtc.c,233 :: 		if ((dia!=1)&&(mes==12)){
 ; dia start address is: 8 (W4)
 ; mes start address is: 0 (W0)
 	CP	W4, #1
 	CPB	W5, #0
-	BRA NZ	L__IncrementarFecha287
-	GOTO	L__IncrementarFecha188
-L__IncrementarFecha287:
+	BRA NZ	L__IncrementarFecha247
+	GOTO	L__IncrementarFecha160
+L__IncrementarFecha247:
 	CP	W0, #12
 	CPB	W1, #0
-	BRA Z	L__IncrementarFecha288
-	GOTO	L__IncrementarFecha189
-L__IncrementarFecha288:
-L__IncrementarFecha170:
+	BRA Z	L__IncrementarFecha248
+	GOTO	L__IncrementarFecha161
+L__IncrementarFecha248:
+L__IncrementarFecha142:
 ;tiempo_rtc.c,234 :: 		if (dia==31){
 	CP	W4, #31
 	CPB	W5, #0
-	BRA Z	L__IncrementarFecha289
+	BRA Z	L__IncrementarFecha249
 	GOTO	L_IncrementarFecha47
-L__IncrementarFecha289:
+L__IncrementarFecha249:
 ; mes end address is: 0 (W0)
 ;tiempo_rtc.c,235 :: 		dia = 1;
 	MOV	#1, W4
@@ -1354,18 +1378,18 @@ L_IncrementarFecha48:
 ; dia end address is: 8 (W4)
 ; mes end address is: 0 (W0)
 ; anio end address is: 4 (W2)
-	GOTO	L__IncrementarFecha186
-L__IncrementarFecha188:
-L__IncrementarFecha186:
+	GOTO	L__IncrementarFecha158
+L__IncrementarFecha160:
+L__IncrementarFecha158:
 ; mes start address is: 0 (W0)
 ; anio start address is: 4 (W2)
 ; dia start address is: 8 (W4)
 ; dia end address is: 8 (W4)
 ; mes end address is: 0 (W0)
 ; anio end address is: 4 (W2)
-	GOTO	L__IncrementarFecha185
-L__IncrementarFecha189:
-L__IncrementarFecha185:
+	GOTO	L__IncrementarFecha157
+L__IncrementarFecha161:
+L__IncrementarFecha157:
 ;tiempo_rtc.c,242 :: 		}
 ; dia start address is: 8 (W4)
 ; anio start address is: 4 (W2)
@@ -1611,6 +1635,8 @@ _main:
 ;Acelerografo.c,81 :: 		ConfiguracionPrincipal();
 	PUSH	W10
 	CALL	_ConfiguracionPrincipal
+;Acelerografo.c,82 :: 		GPS_init();                        // Inicializa el GPS
+	CALL	_GPS_init
 ;Acelerografo.c,83 :: 		DS3234_init();                     // inicializa el RTC
 	CALL	_DS3234_init
 ;Acelerografo.c,84 :: 		tasaMuestreo = 1;                  // 1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
@@ -1911,9 +1937,9 @@ _ConfiguracionPrincipal:
 	MOV	#9600, W10
 	MOV	#0, W11
 	CALL	_UART1_Init
-;Acelerografo.c,199 :: 		SPI1STAT.SPIEN = 1;                                                                                                                                                 // Habilita el SPI1 *
+;Acelerografo.c,208 :: 		SPI1STAT.SPIEN = 1;                                                                                                                                                 // Habilita el SPI1 *
 	BSET	SPI1STAT, #15
-;Acelerografo.c,200 :: 		SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE); //*
+;Acelerografo.c,209 :: 		SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE); //*
 	MOV	#3, W13
 	MOV	#28, W12
 	CLR	W11
@@ -1928,11 +1954,11 @@ _ConfiguracionPrincipal:
 	PUSH	W0
 	CALL	_SPI1_Init_Advanced
 	SUB	#8, W15
-;Acelerografo.c,201 :: 		SPI1IE_bit = 1;                                                                                                                                                     // Habilita la interrupcion por SPI1  *
+;Acelerografo.c,210 :: 		SPI1IE_bit = 1;                                                                                                                                                     // Habilita la interrupcion por SPI1  *
 	BSET	SPI1IE_bit, BitPos(SPI1IE_bit+0)
-;Acelerografo.c,202 :: 		SPI1IF_bit = 0;                                                                                                                                                     // Limpia la bandera de interrupcion por SPI *
+;Acelerografo.c,211 :: 		SPI1IF_bit = 0;                                                                                                                                                     // Limpia la bandera de interrupcion por SPI *
 	BCLR	SPI1IF_bit, BitPos(SPI1IF_bit+0)
-;Acelerografo.c,203 :: 		IPC2bits.SPI1IP = 0x03;                                                                                                                                             // Prioridad de la interrupcion SPI1
+;Acelerografo.c,212 :: 		IPC2bits.SPI1IP = 0x03;                                                                                                                                             // Prioridad de la interrupcion SPI1
 	MOV	#768, W0
 	MOV	W0, W1
 	MOV	#lo_addr(IPC2bits), W0
@@ -1942,7 +1968,7 @@ _ConfiguracionPrincipal:
 	MOV	#lo_addr(IPC2bits), W0
 	XOR	W1, [W0], W1
 	MOV	W1, IPC2bits
-;Acelerografo.c,206 :: 		RPINR22bits.SDI2R = 0x21; // Configura el pin RB1/RPI33 como SDI2 *
+;Acelerografo.c,215 :: 		RPINR22bits.SDI2R = 0x21; // Configura el pin RB1/RPI33 como SDI2 *
 	MOV.B	#33, W0
 	MOV.B	W0, W1
 	MOV	#lo_addr(RPINR22bits), W0
@@ -1953,7 +1979,7 @@ _ConfiguracionPrincipal:
 	XOR.B	W1, [W0], W1
 	MOV	#lo_addr(RPINR22bits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,207 :: 		RPOR2bits.RP38R = 0x08;   // Configura el SDO2 en el pin RB6/RP38 *
+;Acelerografo.c,216 :: 		RPOR2bits.RP38R = 0x08;   // Configura el SDO2 en el pin RB6/RP38 *
 	MOV.B	#8, W0
 	MOV.B	W0, W1
 	MOV	#lo_addr(RPOR2bits), W0
@@ -1964,7 +1990,7 @@ _ConfiguracionPrincipal:
 	XOR.B	W1, [W0], W1
 	MOV	#lo_addr(RPOR2bits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,208 :: 		RPOR1bits.RP37R = 0x09;   // Configura el SCK2 en el pin RB5/RP37 *
+;Acelerografo.c,217 :: 		RPOR1bits.RP37R = 0x09;   // Configura el SCK2 en el pin RB5/RP37 *
 	MOV	#2304, W0
 	MOV	W0, W1
 	MOV	#lo_addr(RPOR1bits), W0
@@ -1974,26 +2000,26 @@ _ConfiguracionPrincipal:
 	MOV	#lo_addr(RPOR1bits), W0
 	XOR	W1, [W0], W1
 	MOV	W1, RPOR1bits
-;Acelerografo.c,209 :: 		SPI2STAT.SPIEN = 1;       // Habilita el SPI2 *
+;Acelerografo.c,218 :: 		SPI2STAT.SPIEN = 1;       // Habilita el SPI2 *
 	BSET	SPI2STAT, #15
-;Acelerografo.c,210 :: 		SPI2_Init();              // Inicializa el modulo SPI2
+;Acelerografo.c,219 :: 		SPI2_Init();              // Inicializa el modulo SPI2
 	CALL	_SPI2_Init
-;Acelerografo.c,211 :: 		CS_DS3234 = 1;            // Pone en alto el CS del RTC
+;Acelerografo.c,220 :: 		CS_DS3234 = 1;            // Pone en alto el CS del RTC
 	BSET	LATA2_bit, BitPos(LATA2_bit+0)
-;Acelerografo.c,212 :: 		CS_ADXL355 = 1;           // Pone en alto el CS del acelerometro
+;Acelerografo.c,221 :: 		CS_ADXL355 = 1;           // Pone en alto el CS del acelerometro
 	BSET	LATA3_bit, BitPos(LATA3_bit+0)
-;Acelerografo.c,215 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+;Acelerografo.c,224 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
 	MOV.B	#5, W11
 	MOV.B	#45, W10
 	CALL	_ADXL355_write_byte
-;Acelerografo.c,219 :: 		RPINR0 = 0x2F00;        // Asigna INT1 al RB15/RPI47 (SQW)
+;Acelerografo.c,228 :: 		RPINR0 = 0x2F00;        // Asigna INT1 al RB15/RPI47 (SQW)
 	MOV	#12032, W0
 	MOV	WREG, RPINR0
-;Acelerografo.c,220 :: 		INT1IE_bit = 1;         // Habilita la interrupcion externa INT1
+;Acelerografo.c,229 :: 		INT1IE_bit = 1;         // Habilita la interrupcion externa INT1
 	BSET	INT1IE_bit, BitPos(INT1IE_bit+0)
-;Acelerografo.c,221 :: 		INT1IF_bit = 0;         // Limpia la bandera de interrupcion externa INT1
+;Acelerografo.c,230 :: 		INT1IF_bit = 0;         // Limpia la bandera de interrupcion externa INT1
 	BCLR	INT1IF_bit, BitPos(INT1IF_bit+0)
-;Acelerografo.c,222 :: 		IPC5bits.INT1IP = 0x01; // Prioridad en la interrupocion externa 1
+;Acelerografo.c,231 :: 		IPC5bits.INT1IP = 0x01; // Prioridad en la interrupocion externa 1
 	MOV.B	#1, W0
 	MOV.B	W0, W1
 	MOV	#lo_addr(IPC5bits), W0
@@ -2003,19 +2029,19 @@ _ConfiguracionPrincipal:
 	XOR.B	W1, [W0], W1
 	MOV	#lo_addr(IPC5bits), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,225 :: 		T1CON = 0x0020;
+;Acelerografo.c,234 :: 		T1CON = 0x0020;
 	MOV	#32, W0
 	MOV	WREG, T1CON
-;Acelerografo.c,226 :: 		T1CON.TON = 0;        // Apaga el Timer1
+;Acelerografo.c,235 :: 		T1CON.TON = 0;        // Apaga el Timer1
 	BCLR	T1CON, #15
-;Acelerografo.c,227 :: 		T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
+;Acelerografo.c,236 :: 		T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
 	BSET	T1IE_bit, BitPos(T1IE_bit+0)
-;Acelerografo.c,228 :: 		T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
+;Acelerografo.c,237 :: 		T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
 	BCLR	T1IF_bit, BitPos(T1IF_bit+0)
-;Acelerografo.c,229 :: 		PR1 = 62500;          // Car ga el preload para un tiempo de 100ms
+;Acelerografo.c,238 :: 		PR1 = 62500;          // Car ga el preload para un tiempo de 100ms
 	MOV	#62500, W0
 	MOV	WREG, PR1
-;Acelerografo.c,230 :: 		IPC0bits.T1IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR1
+;Acelerografo.c,239 :: 		IPC0bits.T1IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR1
 	MOV	#8192, W0
 	MOV	W0, W1
 	MOV	#lo_addr(IPC0bits), W0
@@ -2025,7 +2051,7 @@ _ConfiguracionPrincipal:
 	MOV	#lo_addr(IPC0bits), W0
 	XOR	W1, [W0], W1
 	MOV	W1, IPC0bits
-;Acelerografo.c,232 :: 		Delay_ms(200); // Espera hasta que se estabilicen los cambios
+;Acelerografo.c,241 :: 		Delay_ms(200); // Espera hasta que se estabilicen los cambios
 	MOV	#25, W8
 	MOV	#27150, W7
 L_ConfiguracionPrincipal53:
@@ -2034,7 +2060,7 @@ L_ConfiguracionPrincipal53:
 	DEC	W8
 	BRA NZ	L_ConfiguracionPrincipal53
 	NOP
-;Acelerografo.c,233 :: 		}
+;Acelerografo.c,242 :: 		}
 L_end_ConfiguracionPrincipal:
 	POP	W13
 	POP	W12
@@ -2045,29 +2071,29 @@ L_end_ConfiguracionPrincipal:
 
 _InterrupcionP1:
 
-;Acelerografo.c,238 :: 		void InterrupcionP1(char operacion)
-;Acelerografo.c,241 :: 		CambiarEstadoBandera(0, 0); // Limpia la bandera banSPI0 para permitir una nueva peticion de operacion
+;Acelerografo.c,247 :: 		void InterrupcionP1(char operacion)
+;Acelerografo.c,250 :: 		CambiarEstadoBandera(0, 0); // Limpia la bandera banSPI0 para permitir una nueva peticion de operacion
 	PUSH	W11
 	PUSH	W10
 	CLR	W11
 	CLR	W10
 	CALL	_CambiarEstadoBandera
 	POP	W10
-;Acelerografo.c,242 :: 		tipoOperacion = operacion;  // Carga en la variable el tipo de operacion requerido
+;Acelerografo.c,251 :: 		tipoOperacion = operacion;  // Carga en la variable el tipo de operacion requerido
 	MOV	#lo_addr(_tipoOperacion), W0
 	MOV.B	W10, [W0]
-;Acelerografo.c,244 :: 		RP1 = 1;
+;Acelerografo.c,253 :: 		RP1 = 1;
 	BSET	LATA4_bit, BitPos(LATA4_bit+0)
-;Acelerografo.c,245 :: 		Delay_us(50);
+;Acelerografo.c,254 :: 		Delay_us(50);
 	MOV	#400, W7
 L_InterrupcionP155:
 	DEC	W7
 	BRA NZ	L_InterrupcionP155
 	NOP
 	NOP
-;Acelerografo.c,246 :: 		RP1 = 0;
+;Acelerografo.c,255 :: 		RP1 = 0;
 	BCLR	LATA4_bit, BitPos(LATA4_bit+0)
-;Acelerografo.c,247 :: 		}
+;Acelerografo.c,256 :: 		}
 L_end_InterrupcionP1:
 	POP	W11
 	RETURN
@@ -2075,215 +2101,215 @@ L_end_InterrupcionP1:
 
 _CambiarEstadoBandera:
 
-;Acelerografo.c,252 :: 		void CambiarEstadoBandera(char bandera, char estado)
-;Acelerografo.c,254 :: 		if (estado == 1)
+;Acelerografo.c,261 :: 		void CambiarEstadoBandera(char bandera, char estado)
+;Acelerografo.c,263 :: 		if (estado == 1)
 	CP.B	W11, #1
-	BRA Z	L__CambiarEstadoBandera298
+	BRA Z	L__CambiarEstadoBandera258
 	GOTO	L_CambiarEstadoBandera57
-L__CambiarEstadoBandera298:
-;Acelerografo.c,257 :: 		banSPI0 = 3;
+L__CambiarEstadoBandera258:
+;Acelerografo.c,266 :: 		banSPI0 = 3;
 	MOV	#lo_addr(_banSPI0), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,258 :: 		banSPI1 = 3;
+;Acelerografo.c,267 :: 		banSPI1 = 3;
 	MOV	#lo_addr(_banSPI1), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,259 :: 		banSPI2 = 3;
+;Acelerografo.c,268 :: 		banSPI2 = 3;
 	MOV	#lo_addr(_banSPI2), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,260 :: 		banSPI4 = 3;
+;Acelerografo.c,269 :: 		banSPI4 = 3;
 	MOV	#lo_addr(_banSPI4), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,261 :: 		banSPI5 = 3;
+;Acelerografo.c,270 :: 		banSPI5 = 3;
 	MOV	#lo_addr(_banSPI5), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,262 :: 		banSPI6 = 3;
+;Acelerografo.c,271 :: 		banSPI6 = 3;
 	MOV	#lo_addr(_banSPI6), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,263 :: 		banSPI7 = 3;
+;Acelerografo.c,272 :: 		banSPI7 = 3;
 	MOV	#lo_addr(_banSPI7), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,264 :: 		banSPI8 = 3;
+;Acelerografo.c,273 :: 		banSPI8 = 3;
 	MOV	#lo_addr(_banSPI8), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,265 :: 		banSPIA = 3;
+;Acelerografo.c,274 :: 		banSPIA = 3;
 	MOV	#lo_addr(_banSPIA), W1
 	MOV.B	#3, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,267 :: 		switch (bandera)
+;Acelerografo.c,276 :: 		switch (bandera)
 	GOTO	L_CambiarEstadoBandera58
-;Acelerografo.c,269 :: 		case 0:
+;Acelerografo.c,278 :: 		case 0:
 L_CambiarEstadoBandera60:
-;Acelerografo.c,270 :: 		banSPI0 = 1;
+;Acelerografo.c,279 :: 		banSPI0 = 1;
 	MOV	#lo_addr(_banSPI0), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,271 :: 		break;
-	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,272 :: 		case 1:
-L_CambiarEstadoBandera61:
-;Acelerografo.c,273 :: 		banSPI1 = 1;
-	MOV	#lo_addr(_banSPI1), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,274 :: 		break;
-	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,275 :: 		case 2:
-L_CambiarEstadoBandera62:
-;Acelerografo.c,276 :: 		banSPI2 = 1;
-	MOV	#lo_addr(_banSPI2), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,277 :: 		break;
-	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,278 :: 		case 4:
-L_CambiarEstadoBandera63:
-;Acelerografo.c,279 :: 		banSPI4 = 1;
-	MOV	#lo_addr(_banSPI4), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
 ;Acelerografo.c,280 :: 		break;
 	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,281 :: 		case 5:
-L_CambiarEstadoBandera64:
-;Acelerografo.c,282 :: 		banSPI5 = 1;
-	MOV	#lo_addr(_banSPI5), W1
+;Acelerografo.c,281 :: 		case 1:
+L_CambiarEstadoBandera61:
+;Acelerografo.c,282 :: 		banSPI1 = 1;
+	MOV	#lo_addr(_banSPI1), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
 ;Acelerografo.c,283 :: 		break;
 	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,284 :: 		case 6:
-L_CambiarEstadoBandera65:
-;Acelerografo.c,285 :: 		banSPI6 = 1;
-	MOV	#lo_addr(_banSPI6), W1
+;Acelerografo.c,284 :: 		case 2:
+L_CambiarEstadoBandera62:
+;Acelerografo.c,285 :: 		banSPI2 = 1;
+	MOV	#lo_addr(_banSPI2), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
 ;Acelerografo.c,286 :: 		break;
 	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,287 :: 		case 7:
-L_CambiarEstadoBandera66:
-;Acelerografo.c,288 :: 		banSPI7 = 1;
-	MOV	#lo_addr(_banSPI7), W1
+;Acelerografo.c,287 :: 		case 4:
+L_CambiarEstadoBandera63:
+;Acelerografo.c,288 :: 		banSPI4 = 1;
+	MOV	#lo_addr(_banSPI4), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
 ;Acelerografo.c,289 :: 		break;
 	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,290 :: 		case 8:
-L_CambiarEstadoBandera67:
-;Acelerografo.c,291 :: 		banSPI8 = 1;
-	MOV	#lo_addr(_banSPI8), W1
+;Acelerografo.c,290 :: 		case 5:
+L_CambiarEstadoBandera64:
+;Acelerografo.c,291 :: 		banSPI5 = 1;
+	MOV	#lo_addr(_banSPI5), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
 ;Acelerografo.c,292 :: 		break;
 	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,293 :: 		case 0x0A:
-L_CambiarEstadoBandera68:
-;Acelerografo.c,294 :: 		banSPIA = 1;
-	MOV	#lo_addr(_banSPIA), W1
+;Acelerografo.c,293 :: 		case 6:
+L_CambiarEstadoBandera65:
+;Acelerografo.c,294 :: 		banSPI6 = 1;
+	MOV	#lo_addr(_banSPI6), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
 ;Acelerografo.c,295 :: 		break;
 	GOTO	L_CambiarEstadoBandera59
-;Acelerografo.c,296 :: 		}
+;Acelerografo.c,296 :: 		case 7:
+L_CambiarEstadoBandera66:
+;Acelerografo.c,297 :: 		banSPI7 = 1;
+	MOV	#lo_addr(_banSPI7), W1
+	MOV.B	#1, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,298 :: 		break;
+	GOTO	L_CambiarEstadoBandera59
+;Acelerografo.c,299 :: 		case 8:
+L_CambiarEstadoBandera67:
+;Acelerografo.c,300 :: 		banSPI8 = 1;
+	MOV	#lo_addr(_banSPI8), W1
+	MOV.B	#1, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,301 :: 		break;
+	GOTO	L_CambiarEstadoBandera59
+;Acelerografo.c,302 :: 		case 0x0A:
+L_CambiarEstadoBandera68:
+;Acelerografo.c,303 :: 		banSPIA = 1;
+	MOV	#lo_addr(_banSPIA), W1
+	MOV.B	#1, W0
+	MOV.B	W0, [W1]
+;Acelerografo.c,304 :: 		break;
+	GOTO	L_CambiarEstadoBandera59
+;Acelerografo.c,305 :: 		}
 L_CambiarEstadoBandera58:
 	CP.B	W10, #0
-	BRA NZ	L__CambiarEstadoBandera299
+	BRA NZ	L__CambiarEstadoBandera259
 	GOTO	L_CambiarEstadoBandera60
-L__CambiarEstadoBandera299:
+L__CambiarEstadoBandera259:
 	CP.B	W10, #1
-	BRA NZ	L__CambiarEstadoBandera300
+	BRA NZ	L__CambiarEstadoBandera260
 	GOTO	L_CambiarEstadoBandera61
-L__CambiarEstadoBandera300:
+L__CambiarEstadoBandera260:
 	CP.B	W10, #2
-	BRA NZ	L__CambiarEstadoBandera301
+	BRA NZ	L__CambiarEstadoBandera261
 	GOTO	L_CambiarEstadoBandera62
-L__CambiarEstadoBandera301:
+L__CambiarEstadoBandera261:
 	CP.B	W10, #4
-	BRA NZ	L__CambiarEstadoBandera302
+	BRA NZ	L__CambiarEstadoBandera262
 	GOTO	L_CambiarEstadoBandera63
-L__CambiarEstadoBandera302:
+L__CambiarEstadoBandera262:
 	CP.B	W10, #5
-	BRA NZ	L__CambiarEstadoBandera303
+	BRA NZ	L__CambiarEstadoBandera263
 	GOTO	L_CambiarEstadoBandera64
-L__CambiarEstadoBandera303:
+L__CambiarEstadoBandera263:
 	CP.B	W10, #6
-	BRA NZ	L__CambiarEstadoBandera304
+	BRA NZ	L__CambiarEstadoBandera264
 	GOTO	L_CambiarEstadoBandera65
-L__CambiarEstadoBandera304:
+L__CambiarEstadoBandera264:
 	CP.B	W10, #7
-	BRA NZ	L__CambiarEstadoBandera305
+	BRA NZ	L__CambiarEstadoBandera265
 	GOTO	L_CambiarEstadoBandera66
-L__CambiarEstadoBandera305:
+L__CambiarEstadoBandera265:
 	CP.B	W10, #8
-	BRA NZ	L__CambiarEstadoBandera306
+	BRA NZ	L__CambiarEstadoBandera266
 	GOTO	L_CambiarEstadoBandera67
-L__CambiarEstadoBandera306:
+L__CambiarEstadoBandera266:
 	CP.B	W10, #10
-	BRA NZ	L__CambiarEstadoBandera307
+	BRA NZ	L__CambiarEstadoBandera267
 	GOTO	L_CambiarEstadoBandera68
-L__CambiarEstadoBandera307:
+L__CambiarEstadoBandera267:
 L_CambiarEstadoBandera59:
-;Acelerografo.c,297 :: 		}
+;Acelerografo.c,306 :: 		}
 L_CambiarEstadoBandera57:
-;Acelerografo.c,300 :: 		if (estado == 0)
+;Acelerografo.c,309 :: 		if (estado == 0)
 	CP.B	W11, #0
-	BRA Z	L__CambiarEstadoBandera308
+	BRA Z	L__CambiarEstadoBandera268
 	GOTO	L_CambiarEstadoBandera69
-L__CambiarEstadoBandera308:
-;Acelerografo.c,302 :: 		banSPI0 = 0;
+L__CambiarEstadoBandera268:
+;Acelerografo.c,311 :: 		banSPI0 = 0;
 	MOV	#lo_addr(_banSPI0), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,303 :: 		banSPI1 = 0;
+;Acelerografo.c,312 :: 		banSPI1 = 0;
 	MOV	#lo_addr(_banSPI1), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,304 :: 		banSPI2 = 0;
+;Acelerografo.c,313 :: 		banSPI2 = 0;
 	MOV	#lo_addr(_banSPI2), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,305 :: 		banSPI4 = 0;
+;Acelerografo.c,314 :: 		banSPI4 = 0;
 	MOV	#lo_addr(_banSPI4), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,306 :: 		banSPI5 = 0;
+;Acelerografo.c,315 :: 		banSPI5 = 0;
 	MOV	#lo_addr(_banSPI5), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,307 :: 		banSPI6 = 0;
+;Acelerografo.c,316 :: 		banSPI6 = 0;
 	MOV	#lo_addr(_banSPI6), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,308 :: 		banSPI7 = 0;
+;Acelerografo.c,317 :: 		banSPI7 = 0;
 	MOV	#lo_addr(_banSPI7), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,309 :: 		banSPI8 = 0;
+;Acelerografo.c,318 :: 		banSPI8 = 0;
 	MOV	#lo_addr(_banSPI8), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,310 :: 		banSPIA = 0;
+;Acelerografo.c,319 :: 		banSPIA = 0;
 	MOV	#lo_addr(_banSPIA), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,311 :: 		}
+;Acelerografo.c,320 :: 		}
 L_CambiarEstadoBandera69:
-;Acelerografo.c,312 :: 		}
+;Acelerografo.c,321 :: 		}
 L_end_CambiarEstadoBandera:
 	RETURN
 ; end of _CambiarEstadoBandera
 
 _Muestrear:
 
-;Acelerografo.c,317 :: 		void Muestrear()
-;Acelerografo.c,319 :: 		if (banCiclo == 0)
+;Acelerografo.c,326 :: 		void Muestrear()
+;Acelerografo.c,328 :: 		if (banCiclo == 0)
 	PUSH	W10
 	PUSH	W11
 	PUSH	W12
@@ -2291,39 +2317,39 @@ _Muestrear:
 	MOV	#lo_addr(_banCiclo), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #0
-	BRA Z	L__Muestrear310
+	BRA Z	L__Muestrear270
 	GOTO	L_Muestrear70
-L__Muestrear310:
-;Acelerografo.c,322 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF | MEASURING); // Coloca el ADXL en modo medicion
+L__Muestrear270:
+;Acelerografo.c,331 :: 		ADXL355_write_byte(POWER_CTL, DRDY_OFF | MEASURING); // Coloca el ADXL en modo medicion
 	MOV.B	#4, W11
 	MOV.B	#45, W10
 	CALL	_ADXL355_write_byte
-;Acelerografo.c,323 :: 		T1CON.TON = 1;                                       // Enciende el Timer1
+;Acelerografo.c,332 :: 		T1CON.TON = 1;                                       // Enciende el Timer1
 	BSET	T1CON, #15
-;Acelerografo.c,324 :: 		}
+;Acelerografo.c,333 :: 		}
 	GOTO	L_Muestrear71
 L_Muestrear70:
-;Acelerografo.c,325 :: 		else if (banCiclo == 1)
+;Acelerografo.c,334 :: 		else if (banCiclo == 1)
 	MOV	#lo_addr(_banCiclo), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__Muestrear311
+	BRA Z	L__Muestrear271
 	GOTO	L_Muestrear72
-L__Muestrear311:
-;Acelerografo.c,328 :: 		banCiclo = 2; // Limpia la bandera de ciclo completo
+L__Muestrear271:
+;Acelerografo.c,337 :: 		banCiclo = 2; // Limpia la bandera de ciclo completo
 	MOV	#lo_addr(_banCiclo), W1
 	MOV.B	#2, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,330 :: 		tramaCompleta[0] = contCiclos; // LLena el primer elemento de la tramaCompleta con el contador de ciclos
+;Acelerografo.c,339 :: 		tramaCompleta[0] = contCiclos; // LLena el primer elemento de la tramaCompleta con el contador de ciclos
 	MOV	#lo_addr(_tramaCompleta), W1
 	MOV	#lo_addr(_contCiclos), W0
 	MOV.B	[W0], [W1]
-;Acelerografo.c,331 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
+;Acelerografo.c,340 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
 	MOV.B	#5, W10
 	CALL	_ADXL355_read_byte
 	MOV	#lo_addr(_numFIFO), W1
 	MOV.B	W0, [W1]
-;Acelerografo.c,332 :: 		numSetsFIFO = (numFIFO) / 3; // Lee el numero de sets disponibles en el FIFO
+;Acelerografo.c,341 :: 		numSetsFIFO = (numFIFO) / 3; // Lee el numero de sets disponibles en el FIFO
 	ZE	W0, W0
 	MOV	#3, W2
 	REPEAT	#17
@@ -2331,7 +2357,7 @@ L__Muestrear311:
 	MOV	W0, W1
 	MOV	#lo_addr(_numSetsFIFO), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,335 :: 		for (x = 0; x < numSetsFIFO; x++)
+;Acelerografo.c,344 :: 		for (x = 0; x < numSetsFIFO; x++)
 	CLR	W0
 	MOV	W0, _x
 L_Muestrear73:
@@ -2339,22 +2365,22 @@ L_Muestrear73:
 	ZE	[W0], W1
 	MOV	#lo_addr(_x), W0
 	CP	W1, [W0]
-	BRA GTU	L__Muestrear312
+	BRA GTU	L__Muestrear272
 	GOTO	L_Muestrear74
-L__Muestrear312:
-;Acelerografo.c,337 :: 		ADXL355_read_FIFO(datosLeidos); // Lee una sola posicion del FIFO
+L__Muestrear272:
+;Acelerografo.c,346 :: 		ADXL355_read_FIFO(datosLeidos); // Lee una sola posicion del FIFO
 	MOV	#lo_addr(_datosLeidos), W10
 	CALL	_ADXL355_read_FIFO
-;Acelerografo.c,338 :: 		for (y = 0; y < 9; y++)
+;Acelerografo.c,347 :: 		for (y = 0; y < 9; y++)
 	CLR	W0
 	MOV	W0, _y
 L_Muestrear76:
 	MOV	_y, W0
 	CP	W0, #9
-	BRA LTU	L__Muestrear313
+	BRA LTU	L__Muestrear273
 	GOTO	L_Muestrear77
-L__Muestrear313:
-;Acelerografo.c,340 :: 		datosFIFO[y + (x * 9)] = datosLeidos[y]; // LLena la trama datosFIFO
+L__Muestrear273:
+;Acelerografo.c,349 :: 		datosFIFO[y + (x * 9)] = datosLeidos[y]; // LLena la trama datosFIFO
 	MOV	_x, W1
 	MOV	#9, W0
 	MUL.UU	W1, W0, W2
@@ -2366,21 +2392,21 @@ L__Muestrear313:
 	MOV	#lo_addr(_y), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,338 :: 		for (y = 0; y < 9; y++)
+;Acelerografo.c,347 :: 		for (y = 0; y < 9; y++)
 	MOV	#1, W1
 	MOV	#lo_addr(_y), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,341 :: 		}
+;Acelerografo.c,350 :: 		}
 	GOTO	L_Muestrear76
 L_Muestrear77:
-;Acelerografo.c,335 :: 		for (x = 0; x < numSetsFIFO; x++)
+;Acelerografo.c,344 :: 		for (x = 0; x < numSetsFIFO; x++)
 	MOV	#1, W1
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,342 :: 		}
+;Acelerografo.c,351 :: 		}
 	GOTO	L_Muestrear73
 L_Muestrear74:
-;Acelerografo.c,345 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
+;Acelerografo.c,354 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
 	CLR	W0
 	MOV	W0, _x
 L_Muestrear79:
@@ -2390,28 +2416,28 @@ L_Muestrear79:
 	MUL.SS	W1, W0, W2
 	MOV	#lo_addr(_x), W0
 	CP	W2, [W0]
-	BRA GTU	L__Muestrear314
+	BRA GTU	L__Muestrear274
 	GOTO	L_Muestrear80
-L__Muestrear314:
-;Acelerografo.c,347 :: 		if ((x == 0) || (x % 9 == 0))
+L__Muestrear274:
+;Acelerografo.c,356 :: 		if ((x == 0) || (x % 9 == 0))
 	MOV	_x, W0
 	CP	W0, #0
-	BRA NZ	L__Muestrear315
-	GOTO	L__Muestrear192
-L__Muestrear315:
+	BRA NZ	L__Muestrear275
+	GOTO	L__Muestrear164
+L__Muestrear275:
 	MOV	_x, W0
 	MOV	#9, W2
 	REPEAT	#17
 	DIV.U	W0, W2
 	MOV	W1, W0
 	CP	W0, #0
-	BRA NZ	L__Muestrear316
-	GOTO	L__Muestrear191
-L__Muestrear316:
+	BRA NZ	L__Muestrear276
+	GOTO	L__Muestrear163
+L__Muestrear276:
 	GOTO	L_Muestrear84
-L__Muestrear192:
-L__Muestrear191:
-;Acelerografo.c,349 :: 		tramaCompleta[contFIFO + contMuestras + x] = contMuestras; // Funciona bien
+L__Muestrear164:
+L__Muestrear163:
+;Acelerografo.c,358 :: 		tramaCompleta[contFIFO + contMuestras + x] = contMuestras; // Funciona bien
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#lo_addr(_contFIFO), W0
@@ -2422,7 +2448,7 @@ L__Muestrear191:
 	ADD	W0, W1, W1
 	MOV	#lo_addr(_contMuestras), W0
 	MOV.B	[W0], [W1]
-;Acelerografo.c,350 :: 		tramaCompleta[contFIFO + contMuestras + x + 1] = datosFIFO[x];
+;Acelerografo.c,359 :: 		tramaCompleta[contFIFO + contMuestras + x + 1] = datosFIFO[x];
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#lo_addr(_contFIFO), W0
@@ -2436,14 +2462,14 @@ L__Muestrear191:
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,351 :: 		contMuestras++;
+;Acelerografo.c,360 :: 		contMuestras++;
 	MOV.B	#1, W1
 	MOV	#lo_addr(_contMuestras), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,352 :: 		}
+;Acelerografo.c,361 :: 		}
 	GOTO	L_Muestrear85
 L_Muestrear84:
-;Acelerografo.c,355 :: 		tramaCompleta[contFIFO + contMuestras + x] = datosFIFO[x];
+;Acelerografo.c,364 :: 		tramaCompleta[contFIFO + contMuestras + x] = datosFIFO[x];
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#lo_addr(_contFIFO), W0
@@ -2456,16 +2482,16 @@ L_Muestrear84:
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,356 :: 		}
+;Acelerografo.c,365 :: 		}
 L_Muestrear85:
-;Acelerografo.c,345 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
+;Acelerografo.c,354 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
 	MOV	#1, W1
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,357 :: 		}
+;Acelerografo.c,366 :: 		}
 	GOTO	L_Muestrear79
 L_Muestrear80:
-;Acelerografo.c,360 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+;Acelerografo.c,369 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
 	MOV	_fechaSistema, W12
 	MOV	_fechaSistema+2, W13
 	MOV	_horaSistema, W10
@@ -2474,16 +2500,16 @@ L_Muestrear80:
 	PUSH	W0
 	CALL	_AjustarTiempoSistema
 	SUB	#2, W15
-;Acelerografo.c,361 :: 		for (x = 0; x < 6; x++)
+;Acelerografo.c,370 :: 		for (x = 0; x < 6; x++)
 	CLR	W0
 	MOV	W0, _x
 L_Muestrear86:
 	MOV	_x, W0
 	CP	W0, #6
-	BRA LTU	L__Muestrear317
+	BRA LTU	L__Muestrear277
 	GOTO	L_Muestrear87
-L__Muestrear317:
-;Acelerografo.c,363 :: 		tramaCompleta[2500 + x] = tiempo[x];
+L__Muestrear277:
+;Acelerografo.c,372 :: 		tramaCompleta[2500 + x] = tiempo[x];
 	MOV	#2500, W1
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], W1
@@ -2493,39 +2519,39 @@ L__Muestrear317:
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,361 :: 		for (x = 0; x < 6; x++)
+;Acelerografo.c,370 :: 		for (x = 0; x < 6; x++)
 	MOV	#1, W1
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,364 :: 		}
+;Acelerografo.c,373 :: 		}
 	GOTO	L_Muestrear86
 L_Muestrear87:
-;Acelerografo.c,366 :: 		contMuestras = 0; // Limpia el contador de muestras
+;Acelerografo.c,375 :: 		contMuestras = 0; // Limpia el contador de muestras
 	MOV	#lo_addr(_contMuestras), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,367 :: 		contFIFO = 0;     // Limpia el contador de FIFOs
+;Acelerografo.c,376 :: 		contFIFO = 0;     // Limpia el contador de FIFOs
 	CLR	W0
 	MOV	W0, _contFIFO
-;Acelerografo.c,368 :: 		T1CON.TON = 1;    // Enciende el Timer1
+;Acelerografo.c,377 :: 		T1CON.TON = 1;    // Enciende el Timer1
 	BSET	T1CON, #15
-;Acelerografo.c,370 :: 		banLec = 1; // Activa la bandera de lectura para enviar la trama
+;Acelerografo.c,379 :: 		banLec = 1; // Activa la bandera de lectura para enviar la trama
 	MOV	#lo_addr(_banLec), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,371 :: 		InterrupcionP1(0XB1);
+;Acelerografo.c,380 :: 		InterrupcionP1(0XB1);
 	MOV.B	#177, W10
 	CALL	_InterrupcionP1
-;Acelerografo.c,373 :: 		TEST = 0;
+;Acelerografo.c,382 :: 		TEST = 0;
 	BCLR	LATB12_bit, BitPos(LATB12_bit+0)
-;Acelerografo.c,374 :: 		}
+;Acelerografo.c,383 :: 		}
 L_Muestrear72:
 L_Muestrear71:
-;Acelerografo.c,376 :: 		contCiclos++; // Incrementa el contador de ciclos
+;Acelerografo.c,385 :: 		contCiclos++; // Incrementa el contador de ciclos
 	MOV.B	#1, W1
 	MOV	#lo_addr(_contCiclos), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,377 :: 		}
+;Acelerografo.c,386 :: 		}
 L_end_Muestrear:
 	POP	W13
 	POP	W12
@@ -2543,260 +2569,260 @@ _spi_1:
 	REPEAT	#12
 	PUSH	[W0++]
 
-;Acelerografo.c,385 :: 		void spi_1() org IVT_ADDR_SPI1INTERRUPT
-;Acelerografo.c,388 :: 		SPI1IF_bit = 0;      // Limpia la bandera de interrupcion por SPI
+;Acelerografo.c,394 :: 		void spi_1() org IVT_ADDR_SPI1INTERRUPT
+;Acelerografo.c,397 :: 		SPI1IF_bit = 0;      // Limpia la bandera de interrupcion por SPI
 	PUSH	W10
 	PUSH	W11
 	PUSH	W12
 	PUSH	W13
 	BCLR	SPI1IF_bit, BitPos(SPI1IF_bit+0)
-;Acelerografo.c,389 :: 		bufferSPI = SPI1BUF; // Guarda el contenido del bufeer (lectura)
+;Acelerografo.c,398 :: 		bufferSPI = SPI1BUF; // Guarda el contenido del bufeer (lectura)
 	MOV	#lo_addr(_bufferSPI), W1
 	MOV.B	SPI1BUF, WREG
 	MOV.B	W0, [W1]
-;Acelerografo.c,393 :: 		if ((banSPI0 == 0) && (bufferSPI == 0xA0))
+;Acelerografo.c,402 :: 		if ((banSPI0 == 0) && (bufferSPI == 0xA0))
 	MOV	#lo_addr(_banSPI0), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #0
-	BRA Z	L__spi_1319
-	GOTO	L__spi_1206
-L__spi_1319:
+	BRA Z	L__spi_1279
+	GOTO	L__spi_1178
+L__spi_1279:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#160, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1320
-	GOTO	L__spi_1205
-L__spi_1320:
-L__spi_1204:
-;Acelerografo.c,396 :: 		CambiarEstadoBandera(0, 1);
+	BRA Z	L__spi_1280
+	GOTO	L__spi_1177
+L__spi_1280:
+L__spi_1176:
+;Acelerografo.c,405 :: 		CambiarEstadoBandera(0, 1);
 	MOV.B	#1, W11
 	CLR	W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,397 :: 		SPI1BUF = tipoOperacion; // Carga en el buffer el tipo de operacion requerido
+;Acelerografo.c,406 :: 		SPI1BUF = tipoOperacion; // Carga en el buffer el tipo de operacion requerido
 	MOV	#lo_addr(_tipoOperacion), W0
 	ZE	[W0], W0
 	MOV	WREG, SPI1BUF
-;Acelerografo.c,393 :: 		if ((banSPI0 == 0) && (bufferSPI == 0xA0))
-L__spi_1206:
-L__spi_1205:
-;Acelerografo.c,399 :: 		if ((banSPI0 == 1) && (bufferSPI != 0xA0) && (bufferSPI == 0xF0))
+;Acelerografo.c,402 :: 		if ((banSPI0 == 0) && (bufferSPI == 0xA0))
+L__spi_1178:
+L__spi_1177:
+;Acelerografo.c,408 :: 		if ((banSPI0 == 1) && (bufferSPI != 0xA0) && (bufferSPI == 0xF0))
 	MOV	#lo_addr(_banSPI0), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1321
-	GOTO	L__spi_1209
-L__spi_1321:
+	BRA Z	L__spi_1281
+	GOTO	L__spi_1181
+L__spi_1281:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#160, W0
 	CP.B	W1, W0
-	BRA NZ	L__spi_1322
-	GOTO	L__spi_1208
-L__spi_1322:
+	BRA NZ	L__spi_1282
+	GOTO	L__spi_1180
+L__spi_1282:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#240, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1323
-	GOTO	L__spi_1207
-L__spi_1323:
-L__spi_1203:
-;Acelerografo.c,401 :: 		CambiarEstadoBandera(0, 0); // Limpia la bandera
+	BRA Z	L__spi_1283
+	GOTO	L__spi_1179
+L__spi_1283:
+L__spi_1175:
+;Acelerografo.c,410 :: 		CambiarEstadoBandera(0, 0); // Limpia la bandera
 	CLR	W11
 	CLR	W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,402 :: 		tipoOperacion = 0;          // Limpia la variable de tipo de operacion
+;Acelerografo.c,411 :: 		tipoOperacion = 0;          // Limpia la variable de tipo de operacion
 	MOV	#lo_addr(_tipoOperacion), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,399 :: 		if ((banSPI0 == 1) && (bufferSPI != 0xA0) && (bufferSPI == 0xF0))
-L__spi_1209:
-L__spi_1208:
-L__spi_1207:
-;Acelerografo.c,410 :: 		if ((banMuestrear == 0) && (bufferSPI == 0xA1))
+;Acelerografo.c,408 :: 		if ((banSPI0 == 1) && (bufferSPI != 0xA0) && (bufferSPI == 0xF0))
+L__spi_1181:
+L__spi_1180:
+L__spi_1179:
+;Acelerografo.c,419 :: 		if ((banMuestrear == 0) && (bufferSPI == 0xA1))
 	MOV	#lo_addr(_banMuestrear), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #0
-	BRA Z	L__spi_1324
-	GOTO	L__spi_1211
-L__spi_1324:
+	BRA Z	L__spi_1284
+	GOTO	L__spi_1183
+L__spi_1284:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#161, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1325
-	GOTO	L__spi_1210
-L__spi_1325:
-L__spi_1202:
-;Acelerografo.c,412 :: 		banMuestrear = 1; // Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+	BRA Z	L__spi_1285
+	GOTO	L__spi_1182
+L__spi_1285:
+L__spi_1174:
+;Acelerografo.c,421 :: 		banMuestrear = 1; // Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
 	MOV	#lo_addr(_banMuestrear), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,413 :: 		CambiarEstadoBandera(1, 1);
+;Acelerografo.c,422 :: 		CambiarEstadoBandera(1, 1);
 	MOV.B	#1, W11
 	MOV.B	#1, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,414 :: 		banCiclo = 0;
+;Acelerografo.c,423 :: 		banCiclo = 0;
 	MOV	#lo_addr(_banCiclo), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,415 :: 		contMuestras = 0;
+;Acelerografo.c,424 :: 		contMuestras = 0;
 	MOV	#lo_addr(_contMuestras), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,416 :: 		contCiclos = 0;
+;Acelerografo.c,425 :: 		contCiclos = 0;
 	MOV	#lo_addr(_contCiclos), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,417 :: 		contFIFO = 0;
+;Acelerografo.c,426 :: 		contFIFO = 0;
 	CLR	W0
 	MOV	W0, _contFIFO
-;Acelerografo.c,418 :: 		numFIFO = 0;
+;Acelerografo.c,427 :: 		numFIFO = 0;
 	MOV	#lo_addr(_numFIFO), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,419 :: 		numSetsFIFO = 0;
+;Acelerografo.c,428 :: 		numSetsFIFO = 0;
 	MOV	#lo_addr(_numSetsFIFO), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,420 :: 		contTimer1 = 0;
+;Acelerografo.c,429 :: 		contTimer1 = 0;
 	MOV	#lo_addr(_contTimer1), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,421 :: 		banInicio = 1; // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+;Acelerografo.c,430 :: 		banInicio = 1; // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
 	MOV	#lo_addr(_banInicio), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,410 :: 		if ((banMuestrear == 0) && (bufferSPI == 0xA1))
-L__spi_1211:
-L__spi_1210:
-;Acelerografo.c,428 :: 		if ((banSPI1 == 1) && (bufferSPI == 0xF1))
+;Acelerografo.c,419 :: 		if ((banMuestrear == 0) && (bufferSPI == 0xA1))
+L__spi_1183:
+L__spi_1182:
+;Acelerografo.c,437 :: 		if ((banSPI1 == 1) && (bufferSPI == 0xF1))
 	MOV	#lo_addr(_banSPI1), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1326
-	GOTO	L__spi_1213
-L__spi_1326:
+	BRA Z	L__spi_1286
+	GOTO	L__spi_1185
+L__spi_1286:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#241, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1327
-	GOTO	L__spi_1212
-L__spi_1327:
-L__spi_1201:
-;Acelerografo.c,430 :: 		CambiarEstadoBandera(1, 0);
+	BRA Z	L__spi_1287
+	GOTO	L__spi_1184
+L__spi_1287:
+L__spi_1173:
+;Acelerografo.c,439 :: 		CambiarEstadoBandera(1, 0);
 	CLR	W11
 	MOV.B	#1, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,428 :: 		if ((banSPI1 == 1) && (bufferSPI == 0xF1))
-L__spi_1213:
-L__spi_1212:
-;Acelerografo.c,460 :: 		if ((banSPI4 == 0) && (bufferSPI == 0xA4))
+;Acelerografo.c,437 :: 		if ((banSPI1 == 1) && (bufferSPI == 0xF1))
+L__spi_1185:
+L__spi_1184:
+;Acelerografo.c,469 :: 		if ((banSPI4 == 0) && (bufferSPI == 0xA4))
 	MOV	#lo_addr(_banSPI4), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #0
-	BRA Z	L__spi_1328
-	GOTO	L__spi_1215
-L__spi_1328:
+	BRA Z	L__spi_1288
+	GOTO	L__spi_1187
+L__spi_1288:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#164, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1329
-	GOTO	L__spi_1214
-L__spi_1329:
-L__spi_1200:
-;Acelerografo.c,462 :: 		CambiarEstadoBandera(4, 1);
+	BRA Z	L__spi_1289
+	GOTO	L__spi_1186
+L__spi_1289:
+L__spi_1172:
+;Acelerografo.c,471 :: 		CambiarEstadoBandera(4, 1);
 	MOV.B	#1, W11
 	MOV.B	#4, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,463 :: 		j = 0;
+;Acelerografo.c,472 :: 		j = 0;
 	CLR	W0
 	MOV	W0, _j
-;Acelerografo.c,460 :: 		if ((banSPI4 == 0) && (bufferSPI == 0xA4))
-L__spi_1215:
-L__spi_1214:
-;Acelerografo.c,465 :: 		if ((banSPI4 == 1) && (bufferSPI != 0xA4) && (bufferSPI != 0xF4))
+;Acelerografo.c,469 :: 		if ((banSPI4 == 0) && (bufferSPI == 0xA4))
+L__spi_1187:
+L__spi_1186:
+;Acelerografo.c,474 :: 		if ((banSPI4 == 1) && (bufferSPI != 0xA4) && (bufferSPI != 0xF4))
 	MOV	#lo_addr(_banSPI4), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1330
-	GOTO	L__spi_1218
-L__spi_1330:
+	BRA Z	L__spi_1290
+	GOTO	L__spi_1190
+L__spi_1290:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#164, W0
 	CP.B	W1, W0
-	BRA NZ	L__spi_1331
-	GOTO	L__spi_1217
-L__spi_1331:
+	BRA NZ	L__spi_1291
+	GOTO	L__spi_1189
+L__spi_1291:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#244, W0
 	CP.B	W1, W0
-	BRA NZ	L__spi_1332
-	GOTO	L__spi_1216
-L__spi_1332:
-L__spi_1199:
-;Acelerografo.c,467 :: 		tiempoRPI[j] = bufferSPI;
+	BRA NZ	L__spi_1292
+	GOTO	L__spi_1188
+L__spi_1292:
+L__spi_1171:
+;Acelerografo.c,476 :: 		tiempoRPI[j] = bufferSPI;
 	MOV	#lo_addr(_tiempoRPI), W1
 	MOV	#lo_addr(_j), W0
 	ADD	W1, [W0], W1
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], [W1]
-;Acelerografo.c,468 :: 		j++;
+;Acelerografo.c,477 :: 		j++;
 	MOV	#1, W1
 	MOV	#lo_addr(_j), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,465 :: 		if ((banSPI4 == 1) && (bufferSPI != 0xA4) && (bufferSPI != 0xF4))
-L__spi_1218:
-L__spi_1217:
-L__spi_1216:
-;Acelerografo.c,470 :: 		if ((banSPI4 == 1) && (bufferSPI == 0xF4))
+;Acelerografo.c,474 :: 		if ((banSPI4 == 1) && (bufferSPI != 0xA4) && (bufferSPI != 0xF4))
+L__spi_1190:
+L__spi_1189:
+L__spi_1188:
+;Acelerografo.c,479 :: 		if ((banSPI4 == 1) && (bufferSPI == 0xF4))
 	MOV	#lo_addr(_banSPI4), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1333
-	GOTO	L__spi_1220
-L__spi_1333:
+	BRA Z	L__spi_1293
+	GOTO	L__spi_1192
+L__spi_1293:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#244, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1334
-	GOTO	L__spi_1219
-L__spi_1334:
-L__spi_1198:
-;Acelerografo.c,472 :: 		CambiarEstadoBandera(4, 0);
+	BRA Z	L__spi_1294
+	GOTO	L__spi_1191
+L__spi_1294:
+L__spi_1170:
+;Acelerografo.c,481 :: 		CambiarEstadoBandera(4, 0);
 	CLR	W11
 	MOV.B	#4, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,473 :: 		horaSistema = RecuperarHoraRPI(tiempoRPI);               // Recupera la hora de la RPi
+;Acelerografo.c,482 :: 		horaSistema = RecuperarHoraRPI(tiempoRPI);               // Recupera la hora de la RPi
 	MOV	#lo_addr(_tiempoRPI), W10
 	CALL	_RecuperarHoraRPI
 	MOV	W0, _horaSistema
 	MOV	W1, _horaSistema+2
-;Acelerografo.c,474 :: 		fechaSistema = RecuperarFechaRPI(tiempoRPI);             // Recupera la fecha de la RPi
+;Acelerografo.c,483 :: 		fechaSistema = RecuperarFechaRPI(tiempoRPI);             // Recupera la fecha de la RPi
 	MOV	#lo_addr(_tiempoRPI), W10
 	CALL	_RecuperarFechaRPI
 	MOV	W0, _fechaSistema
 	MOV	W1, _fechaSistema+2
-;Acelerografo.c,475 :: 		DS3234_setDate(horaSistema, fechaSistema);               // Configura la hora en el RTC
+;Acelerografo.c,484 :: 		DS3234_setDate(horaSistema, fechaSistema);               // Configura la hora en el RTC
 	MOV.D	W0, W12
 	MOV	_horaSistema, W10
 	MOV	_horaSistema+2, W11
 	CALL	_DS3234_setDate
-;Acelerografo.c,476 :: 		horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
+;Acelerografo.c,485 :: 		horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
 	CALL	_RecuperarHoraRTC
 	MOV	W0, _horaSistema
 	MOV	W1, _horaSistema+2
-;Acelerografo.c,477 :: 		fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
+;Acelerografo.c,486 :: 		fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
 	CALL	_RecuperarFechaRTC
 	MOV	W0, _fechaSistema
 	MOV	W1, _fechaSistema+2
-;Acelerografo.c,478 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+;Acelerografo.c,487 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
 	MOV.D	W0, W12
 	MOV	_horaSistema, W10
 	MOV	_horaSistema+2, W11
@@ -2804,158 +2830,158 @@ L__spi_1198:
 	PUSH	W0
 	CALL	_AjustarTiempoSistema
 	SUB	#2, W15
-;Acelerografo.c,479 :: 		fuenteReloj = 2;                                         // Fuente de reloj = RPi
+;Acelerografo.c,488 :: 		fuenteReloj = 2;                                         // Fuente de reloj = RPi
 	MOV	#lo_addr(_fuenteReloj), W1
 	MOV.B	#2, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,480 :: 		banSetReloj = 1;                                         // Activa esta bandera para usar la hora/fecha recuperada
+;Acelerografo.c,489 :: 		banSetReloj = 1;                                         // Activa esta bandera para usar la hora/fecha recuperada
 	MOV	#lo_addr(_banSetReloj), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,481 :: 		InterrupcionP1(0XB2);                                    // Envia la hora local a la RPi
+;Acelerografo.c,490 :: 		InterrupcionP1(0XB2);                                    // Envia la hora local a la RPi
 	MOV.B	#178, W10
 	CALL	_InterrupcionP1
-;Acelerografo.c,470 :: 		if ((banSPI4 == 1) && (bufferSPI == 0xF4))
-L__spi_1220:
-L__spi_1219:
-;Acelerografo.c,486 :: 		if ((banSPI5 == 0) && (bufferSPI == 0xA5))
+;Acelerografo.c,479 :: 		if ((banSPI4 == 1) && (bufferSPI == 0xF4))
+L__spi_1192:
+L__spi_1191:
+;Acelerografo.c,495 :: 		if ((banSPI5 == 0) && (bufferSPI == 0xA5))
 	MOV	#lo_addr(_banSPI5), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #0
-	BRA Z	L__spi_1335
-	GOTO	L__spi_1222
-L__spi_1335:
+	BRA Z	L__spi_1295
+	GOTO	L__spi_1194
+L__spi_1295:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#165, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1336
-	GOTO	L__spi_1221
-L__spi_1336:
-L__spi_1197:
-;Acelerografo.c,488 :: 		CambiarEstadoBandera(5, 1);
+	BRA Z	L__spi_1296
+	GOTO	L__spi_1193
+L__spi_1296:
+L__spi_1169:
+;Acelerografo.c,497 :: 		CambiarEstadoBandera(5, 1);
 	MOV.B	#1, W11
 	MOV.B	#5, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,489 :: 		j = 0;
+;Acelerografo.c,498 :: 		j = 0;
 	CLR	W0
 	MOV	W0, _j
-;Acelerografo.c,490 :: 		SPI1BUF = fuenteReloj; // Envia el indicador de fuente de reloj (0:RTC, 1:GPS)
+;Acelerografo.c,499 :: 		SPI1BUF = fuenteReloj; // Envia el indicador de fuente de reloj (0:RTC, 1:GPS)
 	MOV	#lo_addr(_fuenteReloj), W0
 	ZE	[W0], W0
 	MOV	WREG, SPI1BUF
-;Acelerografo.c,486 :: 		if ((banSPI5 == 0) && (bufferSPI == 0xA5))
-L__spi_1222:
-L__spi_1221:
-;Acelerografo.c,492 :: 		if ((banSPI5 == 1) && (bufferSPI != 0xA5) && (bufferSPI != 0xF5))
+;Acelerografo.c,495 :: 		if ((banSPI5 == 0) && (bufferSPI == 0xA5))
+L__spi_1194:
+L__spi_1193:
+;Acelerografo.c,501 :: 		if ((banSPI5 == 1) && (bufferSPI != 0xA5) && (bufferSPI != 0xF5))
 	MOV	#lo_addr(_banSPI5), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1337
-	GOTO	L__spi_1225
-L__spi_1337:
+	BRA Z	L__spi_1297
+	GOTO	L__spi_1197
+L__spi_1297:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#165, W0
 	CP.B	W1, W0
-	BRA NZ	L__spi_1338
-	GOTO	L__spi_1224
-L__spi_1338:
+	BRA NZ	L__spi_1298
+	GOTO	L__spi_1196
+L__spi_1298:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#245, W0
 	CP.B	W1, W0
-	BRA NZ	L__spi_1339
-	GOTO	L__spi_1223
-L__spi_1339:
-L__spi_1196:
-;Acelerografo.c,494 :: 		SPI1BUF = tiempo[j]; // Envia la trama de tiempo
+	BRA NZ	L__spi_1299
+	GOTO	L__spi_1195
+L__spi_1299:
+L__spi_1168:
+;Acelerografo.c,503 :: 		SPI1BUF = tiempo[j]; // Envia la trama de tiempo
 	MOV	#lo_addr(_tiempo), W1
 	MOV	#lo_addr(_j), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], W0
 	ZE	W0, W0
 	MOV	WREG, SPI1BUF
-;Acelerografo.c,495 :: 		j++;
+;Acelerografo.c,504 :: 		j++;
 	MOV	#1, W1
 	MOV	#lo_addr(_j), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,492 :: 		if ((banSPI5 == 1) && (bufferSPI != 0xA5) && (bufferSPI != 0xF5))
-L__spi_1225:
-L__spi_1224:
-L__spi_1223:
-;Acelerografo.c,497 :: 		if ((banSPI5 == 1) && (bufferSPI == 0xF5))
+;Acelerografo.c,501 :: 		if ((banSPI5 == 1) && (bufferSPI != 0xA5) && (bufferSPI != 0xF5))
+L__spi_1197:
+L__spi_1196:
+L__spi_1195:
+;Acelerografo.c,506 :: 		if ((banSPI5 == 1) && (bufferSPI == 0xF5))
 	MOV	#lo_addr(_banSPI5), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1340
-	GOTO	L__spi_1227
-L__spi_1340:
+	BRA Z	L__spi_1300
+	GOTO	L__spi_1199
+L__spi_1300:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#245, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1341
-	GOTO	L__spi_1226
-L__spi_1341:
-L__spi_1195:
-;Acelerografo.c,499 :: 		CambiarEstadoBandera(5, 0);
+	BRA Z	L__spi_1301
+	GOTO	L__spi_1198
+L__spi_1301:
+L__spi_1167:
+;Acelerografo.c,508 :: 		CambiarEstadoBandera(5, 0);
 	CLR	W11
 	MOV.B	#5, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,497 :: 		if ((banSPI5 == 1) && (bufferSPI == 0xF5))
-L__spi_1227:
-L__spi_1226:
-;Acelerografo.c,515 :: 		if ((banSPI7 == 0) && (bufferSPI == 0xA7))
+;Acelerografo.c,506 :: 		if ((banSPI5 == 1) && (bufferSPI == 0xF5))
+L__spi_1199:
+L__spi_1198:
+;Acelerografo.c,524 :: 		if ((banSPI7 == 0) && (bufferSPI == 0xA7))
 	MOV	#lo_addr(_banSPI7), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #0
-	BRA Z	L__spi_1342
-	GOTO	L__spi_1229
-L__spi_1342:
+	BRA Z	L__spi_1302
+	GOTO	L__spi_1201
+L__spi_1302:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#167, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1343
-	GOTO	L__spi_1228
-L__spi_1343:
-L__spi_1194:
-;Acelerografo.c,517 :: 		CambiarEstadoBandera(7, 1);
+	BRA Z	L__spi_1303
+	GOTO	L__spi_1200
+L__spi_1303:
+L__spi_1166:
+;Acelerografo.c,526 :: 		CambiarEstadoBandera(7, 1);
 	MOV.B	#1, W11
 	MOV.B	#7, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,515 :: 		if ((banSPI7 == 0) && (bufferSPI == 0xA7))
-L__spi_1229:
-L__spi_1228:
-;Acelerografo.c,519 :: 		if ((banSPI7 == 1) && (bufferSPI == 0xF7))
+;Acelerografo.c,524 :: 		if ((banSPI7 == 0) && (bufferSPI == 0xA7))
+L__spi_1201:
+L__spi_1200:
+;Acelerografo.c,528 :: 		if ((banSPI7 == 1) && (bufferSPI == 0xF7))
 	MOV	#lo_addr(_banSPI7), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__spi_1344
-	GOTO	L__spi_1231
-L__spi_1344:
+	BRA Z	L__spi_1304
+	GOTO	L__spi_1203
+L__spi_1304:
 	MOV	#lo_addr(_bufferSPI), W0
 	MOV.B	[W0], W1
 	MOV.B	#247, W0
 	CP.B	W1, W0
-	BRA Z	L__spi_1345
-	GOTO	L__spi_1230
-L__spi_1345:
-L__spi_1193:
-;Acelerografo.c,521 :: 		CambiarEstadoBandera(7, 0);
+	BRA Z	L__spi_1305
+	GOTO	L__spi_1202
+L__spi_1305:
+L__spi_1165:
+;Acelerografo.c,530 :: 		CambiarEstadoBandera(7, 0);
 	CLR	W11
 	MOV.B	#7, W10
 	CALL	_CambiarEstadoBandera
-;Acelerografo.c,522 :: 		horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
+;Acelerografo.c,531 :: 		horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
 	CALL	_RecuperarHoraRTC
 	MOV	W0, _horaSistema
 	MOV	W1, _horaSistema+2
-;Acelerografo.c,523 :: 		fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
+;Acelerografo.c,532 :: 		fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
 	CALL	_RecuperarFechaRTC
 	MOV	W0, _fechaSistema
 	MOV	W1, _fechaSistema+2
-;Acelerografo.c,524 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+;Acelerografo.c,533 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
 	MOV.D	W0, W12
 	MOV	_horaSistema, W10
 	MOV	_horaSistema+2, W11
@@ -2963,21 +2989,21 @@ L__spi_1193:
 	PUSH	W0
 	CALL	_AjustarTiempoSistema
 	SUB	#2, W15
-;Acelerografo.c,525 :: 		fuenteReloj = 0;                                         // Indica que la fuente de reloj es el RTC
+;Acelerografo.c,534 :: 		fuenteReloj = 0;                                         // Indica que la fuente de reloj es el RTC
 	MOV	#lo_addr(_fuenteReloj), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,526 :: 		banSetReloj = 1;                                         // Activa esta bandera para usar la hora/fecha recuperada
+;Acelerografo.c,535 :: 		banSetReloj = 1;                                         // Activa esta bandera para usar la hora/fecha recuperada
 	MOV	#lo_addr(_banSetReloj), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,527 :: 		InterrupcionP1(0XB2);                                    // Envia la hora local a la RPi
+;Acelerografo.c,536 :: 		InterrupcionP1(0XB2);                                    // Envia la hora local a la RPi
 	MOV.B	#178, W10
 	CALL	_InterrupcionP1
-;Acelerografo.c,519 :: 		if ((banSPI7 == 1) && (bufferSPI == 0xF7))
-L__spi_1231:
-L__spi_1230:
-;Acelerografo.c,531 :: 		}
+;Acelerografo.c,528 :: 		if ((banSPI7 == 1) && (bufferSPI == 0xF7))
+L__spi_1203:
+L__spi_1202:
+;Acelerografo.c,540 :: 		}
 L_end_spi_1:
 	POP	W13
 	POP	W12
@@ -3002,53 +3028,53 @@ _int_1:
 	REPEAT	#12
 	PUSH	[W0++]
 
-;Acelerografo.c,536 :: 		void int_1() org IVT_ADDR_INT1INTERRUPT
-;Acelerografo.c,539 :: 		INT1IF_bit = 0; // Limpia la bandera de interrupcion externa INT1
+;Acelerografo.c,545 :: 		void int_1() org IVT_ADDR_INT1INTERRUPT
+;Acelerografo.c,548 :: 		INT1IF_bit = 0; // Limpia la bandera de interrupcion externa INT1
 	BCLR	INT1IF_bit, BitPos(INT1IF_bit+0)
-;Acelerografo.c,542 :: 		if (banSetReloj == 1)
+;Acelerografo.c,551 :: 		if (banSetReloj == 1)
 	MOV	#lo_addr(_banSetReloj), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__int_1347
+	BRA Z	L__int_1307
 	GOTO	L_int_1125
-L__int_1347:
-;Acelerografo.c,544 :: 		TEST = ~TEST;
+L__int_1307:
+;Acelerografo.c,553 :: 		TEST = ~TEST;
 	BTG	LATB12_bit, BitPos(LATB12_bit+0)
-;Acelerografo.c,545 :: 		horaSistema++; // Incrementa el reloj del sistema
+;Acelerografo.c,554 :: 		horaSistema++; // Incrementa el reloj del sistema
 	MOV	#1, W1
 	MOV	#0, W2
 	MOV	#lo_addr(_horaSistema), W0
 	ADD	W1, [W0], [W0++]
 	ADDC	W2, [W0], [W0--]
-;Acelerografo.c,546 :: 		}
+;Acelerografo.c,555 :: 		}
 L_int_1125:
-;Acelerografo.c,549 :: 		if (horaSistema == 86400)
+;Acelerografo.c,558 :: 		if (horaSistema == 86400)
 	MOV	_horaSistema, W2
 	MOV	_horaSistema+2, W3
 	MOV	#20864, W0
 	MOV	#1, W1
 	CP	W2, W0
 	CPB	W3, W1
-	BRA Z	L__int_1348
+	BRA Z	L__int_1308
 	GOTO	L_int_1126
-L__int_1348:
-;Acelerografo.c,551 :: 		horaSistema = 0;
+L__int_1308:
+;Acelerografo.c,560 :: 		horaSistema = 0;
 	CLR	W0
 	CLR	W1
 	MOV	W0, _horaSistema
 	MOV	W1, _horaSistema+2
-;Acelerografo.c,552 :: 		}
+;Acelerografo.c,561 :: 		}
 L_int_1126:
-;Acelerografo.c,555 :: 		if (banInicio == 1)
+;Acelerografo.c,564 :: 		if (banInicio == 1)
 	MOV	#lo_addr(_banInicio), W0
 	MOV.B	[W0], W0
 	CP.B	W0, #1
-	BRA Z	L__int_1349
+	BRA Z	L__int_1309
 	GOTO	L_int_1127
-L__int_1349:
-;Acelerografo.c,559 :: 		}
+L__int_1309:
+;Acelerografo.c,568 :: 		}
 L_int_1127:
-;Acelerografo.c,560 :: 		}
+;Acelerografo.c,569 :: 		}
 L_end_int_1:
 	MOV	#26, W0
 	REPEAT	#12
@@ -3069,16 +3095,16 @@ _Timer1Int:
 	REPEAT	#12
 	PUSH	[W0++]
 
-;Acelerografo.c,565 :: 		void Timer1Int() org IVT_ADDR_T1INTERRUPT
-;Acelerografo.c,568 :: 		T1IF_bit = 0; // Limpia la bandera de interrupcion por desbordamiento del Timer1
+;Acelerografo.c,574 :: 		void Timer1Int() org IVT_ADDR_T1INTERRUPT
+;Acelerografo.c,577 :: 		T1IF_bit = 0; // Limpia la bandera de interrupcion por desbordamiento del Timer1
 	PUSH	W10
 	BCLR	T1IF_bit, BitPos(T1IF_bit+0)
-;Acelerografo.c,570 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES); // 75                            //Lee el numero de muestras disponibles en el FIFO
+;Acelerografo.c,579 :: 		numFIFO = ADXL355_read_byte(FIFO_ENTRIES); // 75                            //Lee el numero de muestras disponibles en el FIFO
 	MOV.B	#5, W10
 	CALL	_ADXL355_read_byte
 	MOV	#lo_addr(_numFIFO), W1
 	MOV.B	W0, [W1]
-;Acelerografo.c,571 :: 		numSetsFIFO = (numFIFO) / 3;               // 25                            //Lee el numero de sets disponibles en el FIFO
+;Acelerografo.c,580 :: 		numSetsFIFO = (numFIFO) / 3;               // 25                            //Lee el numero de sets disponibles en el FIFO
 	ZE	W0, W0
 	MOV	#3, W2
 	REPEAT	#17
@@ -3086,7 +3112,7 @@ _Timer1Int:
 	MOV	W0, W1
 	MOV	#lo_addr(_numSetsFIFO), W0
 	MOV.B	W1, [W0]
-;Acelerografo.c,574 :: 		for (x = 0; x < numSetsFIFO; x++)
+;Acelerografo.c,583 :: 		for (x = 0; x < numSetsFIFO; x++)
 	CLR	W0
 	MOV	W0, _x
 L_Timer1Int128:
@@ -3094,22 +3120,22 @@ L_Timer1Int128:
 	ZE	[W0], W1
 	MOV	#lo_addr(_x), W0
 	CP	W1, [W0]
-	BRA GTU	L__Timer1Int351
+	BRA GTU	L__Timer1Int311
 	GOTO	L_Timer1Int129
-L__Timer1Int351:
-;Acelerografo.c,576 :: 		ADXL355_read_FIFO(datosLeidos); // Lee una sola posicion del FIFO
+L__Timer1Int311:
+;Acelerografo.c,585 :: 		ADXL355_read_FIFO(datosLeidos); // Lee una sola posicion del FIFO
 	MOV	#lo_addr(_datosLeidos), W10
 	CALL	_ADXL355_read_FIFO
-;Acelerografo.c,577 :: 		for (y = 0; y < 9; y++)
+;Acelerografo.c,586 :: 		for (y = 0; y < 9; y++)
 	CLR	W0
 	MOV	W0, _y
 L_Timer1Int131:
 	MOV	_y, W0
 	CP	W0, #9
-	BRA LTU	L__Timer1Int352
+	BRA LTU	L__Timer1Int312
 	GOTO	L_Timer1Int132
-L__Timer1Int352:
-;Acelerografo.c,579 :: 		datosFIFO[y + (x * 9)] = datosLeidos[y]; // LLena la trama datosFIFO
+L__Timer1Int312:
+;Acelerografo.c,588 :: 		datosFIFO[y + (x * 9)] = datosLeidos[y]; // LLena la trama datosFIFO
 	MOV	_x, W1
 	MOV	#9, W0
 	MUL.UU	W1, W0, W2
@@ -3121,21 +3147,21 @@ L__Timer1Int352:
 	MOV	#lo_addr(_y), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,577 :: 		for (y = 0; y < 9; y++)
+;Acelerografo.c,586 :: 		for (y = 0; y < 9; y++)
 	MOV	#1, W1
 	MOV	#lo_addr(_y), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,580 :: 		}
+;Acelerografo.c,589 :: 		}
 	GOTO	L_Timer1Int131
 L_Timer1Int132:
-;Acelerografo.c,574 :: 		for (x = 0; x < numSetsFIFO; x++)
+;Acelerografo.c,583 :: 		for (x = 0; x < numSetsFIFO; x++)
 	MOV	#1, W1
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,581 :: 		}
+;Acelerografo.c,590 :: 		}
 	GOTO	L_Timer1Int128
 L_Timer1Int129:
-;Acelerografo.c,584 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
+;Acelerografo.c,593 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
 	CLR	W0
 	MOV	W0, _x
 L_Timer1Int134:
@@ -3145,28 +3171,28 @@ L_Timer1Int134:
 	MUL.SS	W1, W0, W2
 	MOV	#lo_addr(_x), W0
 	CP	W2, [W0]
-	BRA GTU	L__Timer1Int353
+	BRA GTU	L__Timer1Int313
 	GOTO	L_Timer1Int135
-L__Timer1Int353:
-;Acelerografo.c,586 :: 		if ((x == 0) || (x % 9 == 0))
+L__Timer1Int313:
+;Acelerografo.c,595 :: 		if ((x == 0) || (x % 9 == 0))
 	MOV	_x, W0
 	CP	W0, #0
-	BRA NZ	L__Timer1Int354
-	GOTO	L__Timer1Int234
-L__Timer1Int354:
+	BRA NZ	L__Timer1Int314
+	GOTO	L__Timer1Int206
+L__Timer1Int314:
 	MOV	_x, W0
 	MOV	#9, W2
 	REPEAT	#17
 	DIV.U	W0, W2
 	MOV	W1, W0
 	CP	W0, #0
-	BRA NZ	L__Timer1Int355
-	GOTO	L__Timer1Int233
-L__Timer1Int355:
+	BRA NZ	L__Timer1Int315
+	GOTO	L__Timer1Int205
+L__Timer1Int315:
 	GOTO	L_Timer1Int139
-L__Timer1Int234:
-L__Timer1Int233:
-;Acelerografo.c,588 :: 		tramaCompleta[contFIFO + contMuestras + x] = contMuestras;
+L__Timer1Int206:
+L__Timer1Int205:
+;Acelerografo.c,597 :: 		tramaCompleta[contFIFO + contMuestras + x] = contMuestras;
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#lo_addr(_contFIFO), W0
@@ -3177,7 +3203,7 @@ L__Timer1Int233:
 	ADD	W0, W1, W1
 	MOV	#lo_addr(_contMuestras), W0
 	MOV.B	[W0], [W1]
-;Acelerografo.c,589 :: 		tramaCompleta[contFIFO + contMuestras + x + 1] = datosFIFO[x];
+;Acelerografo.c,598 :: 		tramaCompleta[contFIFO + contMuestras + x + 1] = datosFIFO[x];
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#lo_addr(_contFIFO), W0
@@ -3191,14 +3217,14 @@ L__Timer1Int233:
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,590 :: 		contMuestras++;
+;Acelerografo.c,599 :: 		contMuestras++;
 	MOV.B	#1, W1
 	MOV	#lo_addr(_contMuestras), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,591 :: 		}
+;Acelerografo.c,600 :: 		}
 	GOTO	L_Timer1Int140
 L_Timer1Int139:
-;Acelerografo.c,594 :: 		tramaCompleta[contFIFO + contMuestras + x] = datosFIFO[x];
+;Acelerografo.c,603 :: 		tramaCompleta[contFIFO + contMuestras + x] = datosFIFO[x];
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#lo_addr(_contFIFO), W0
@@ -3211,46 +3237,46 @@ L_Timer1Int139:
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], W0
 	MOV.B	[W0], [W2]
-;Acelerografo.c,595 :: 		}
+;Acelerografo.c,604 :: 		}
 L_Timer1Int140:
-;Acelerografo.c,584 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
+;Acelerografo.c,593 :: 		for (x = 0; x < (numSetsFIFO * 9); x++)
 	MOV	#1, W1
 	MOV	#lo_addr(_x), W0
 	ADD	W1, [W0], [W0]
-;Acelerografo.c,596 :: 		}
+;Acelerografo.c,605 :: 		}
 	GOTO	L_Timer1Int134
 L_Timer1Int135:
-;Acelerografo.c,598 :: 		contFIFO = (contMuestras * 9); // Incrementa el contador de FIFOs
+;Acelerografo.c,607 :: 		contFIFO = (contMuestras * 9); // Incrementa el contador de FIFOs
 	MOV	#lo_addr(_contMuestras), W0
 	ZE	[W0], W1
 	MOV	#9, W0
 	MUL.SS	W1, W0, W0
 	MOV	W0, _contFIFO
-;Acelerografo.c,600 :: 		contTimer1++; // Incrementa una unidad cada vez que entra a la interrupcion por Timer1
+;Acelerografo.c,609 :: 		contTimer1++; // Incrementa una unidad cada vez que entra a la interrupcion por Timer1
 	MOV.B	#1, W1
 	MOV	#lo_addr(_contTimer1), W0
 	ADD.B	W1, [W0], [W0]
-;Acelerografo.c,602 :: 		if (contTimer1 == numTMR1)
+;Acelerografo.c,611 :: 		if (contTimer1 == numTMR1)
 	MOV	#lo_addr(_contTimer1), W0
 	MOV.B	[W0], W1
 	MOV	#lo_addr(_numTMR1), W0
 	CP.B	W1, [W0]
-	BRA Z	L__Timer1Int356
+	BRA Z	L__Timer1Int316
 	GOTO	L_Timer1Int141
-L__Timer1Int356:
-;Acelerografo.c,604 :: 		T1CON.TON = 0;  // Apaga el Timer1
+L__Timer1Int316:
+;Acelerografo.c,613 :: 		T1CON.TON = 0;  // Apaga el Timer1
 	BCLR	T1CON, #15
-;Acelerografo.c,605 :: 		banCiclo = 1;   // Activa la bandera que indica que se completo un ciclo de medicion
+;Acelerografo.c,614 :: 		banCiclo = 1;   // Activa la bandera que indica que se completo un ciclo de medicion
 	MOV	#lo_addr(_banCiclo), W1
 	MOV.B	#1, W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,606 :: 		contTimer1 = 0; // Limpia el contador de interrupciones por Timer1
+;Acelerografo.c,615 :: 		contTimer1 = 0; // Limpia el contador de interrupciones por Timer1
 	MOV	#lo_addr(_contTimer1), W1
 	CLR	W0
 	MOV.B	W0, [W1]
-;Acelerografo.c,607 :: 		}
+;Acelerografo.c,616 :: 		}
 L_Timer1Int141:
-;Acelerografo.c,608 :: 		}
+;Acelerografo.c,617 :: 		}
 L_end_Timer1Int:
 	POP	W10
 	MOV	#26, W0
@@ -3262,423 +3288,3 @@ L_end_Timer1Int:
 	POP	DSWPAG
 	RETFIE
 ; end of _Timer1Int
-
-_urx_1:
-	PUSH	DSWPAG
-	PUSH	50
-	PUSH	RCOUNT
-	PUSH	W0
-	MOV	#2, W0
-	REPEAT	#12
-	PUSH	[W0++]
-
-;Acelerografo.c,613 :: 		void urx_1() org IVT_ADDR_U1RXINTERRUPT
-;Acelerografo.c,617 :: 		U1RXIF_bit = 0;    // Limpia la bandera de interrupcion por UART
-	PUSH	W10
-	PUSH	W11
-	PUSH	W12
-	PUSH	W13
-	BCLR	U1RXIF_bit, BitPos(U1RXIF_bit+0)
-;Acelerografo.c,618 :: 		byteGPS = U1RXREG; // Lee el byte de la trama enviada por el GPS
-	MOV	#lo_addr(_byteGPS), W1
-	MOV.B	U1RXREG, WREG
-	MOV.B	W0, [W1]
-;Acelerografo.c,619 :: 		U1STA.OERR = 0;    // Limpia este bit para limpiar el FIFO UART1
-	BCLR	U1STA, #1
-;Acelerografo.c,622 :: 		if (banGPSI == 3)
-	MOV	#lo_addr(_banGPSI), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #3
-	BRA Z	L__urx_1358
-	GOTO	L_urx_1142
-L__urx_1358:
-;Acelerografo.c,624 :: 		if (byteGPS != 0x2A)
-	MOV	#lo_addr(_byteGPS), W0
-	MOV.B	[W0], W1
-	MOV.B	#42, W0
-	CP.B	W1, W0
-	BRA NZ	L__urx_1359
-	GOTO	L_urx_1143
-L__urx_1359:
-;Acelerografo.c,626 :: 		tramaGPS[i_gps] = byteGPS; // LLena la tramaGPS hasta recibir el ultimo simbolo ("*") de la trama GPS
-	MOV	#lo_addr(_tramaGPS), W1
-	MOV	#lo_addr(_i_gps), W0
-	ADD	W1, [W0], W1
-	MOV	#lo_addr(_byteGPS), W0
-	MOV.B	[W0], [W1]
-;Acelerografo.c,627 :: 		i_gps++;
-	MOV	#1, W1
-	MOV	#lo_addr(_i_gps), W0
-	ADD	W1, [W0], [W0]
-;Acelerografo.c,628 :: 		}
-	GOTO	L_urx_1144
-L_urx_1143:
-;Acelerografo.c,631 :: 		banGPSI = 0; // Limpia la bandera de inicio de trama
-	MOV	#lo_addr(_banGPSI), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,632 :: 		banGPSC = 1; // Activa la bandera de trama completa
-	MOV	#lo_addr(_banGPSC), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,633 :: 		}
-L_urx_1144:
-;Acelerografo.c,634 :: 		}
-L_urx_1142:
-;Acelerografo.c,637 :: 		if ((banGPSI == 1))
-	MOV	#lo_addr(_banGPSI), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #1
-	BRA Z	L__urx_1360
-	GOTO	L_urx_1145
-L__urx_1360:
-;Acelerografo.c,639 :: 		if (byteGPS == 0x24)
-	MOV	#lo_addr(_byteGPS), W0
-	MOV.B	[W0], W1
-	MOV.B	#36, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1361
-	GOTO	L_urx_1146
-L__urx_1361:
-;Acelerografo.c,641 :: 		banGPSI = 2;
-	MOV	#lo_addr(_banGPSI), W1
-	MOV.B	#2, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,642 :: 		i_gps = 0;
-	CLR	W0
-	MOV	W0, _i_gps
-;Acelerografo.c,643 :: 		}
-L_urx_1146:
-;Acelerografo.c,644 :: 		}
-L_urx_1145:
-;Acelerografo.c,645 :: 		if ((banGPSI == 2) && (i_gps < 6))
-	MOV	#lo_addr(_banGPSI), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #2
-	BRA Z	L__urx_1362
-	GOTO	L__urx_1239
-L__urx_1362:
-	MOV	_i_gps, W0
-	CP	W0, #6
-	BRA LTU	L__urx_1363
-	GOTO	L__urx_1238
-L__urx_1363:
-L__urx_1237:
-;Acelerografo.c,647 :: 		tramaGPS[i_gps] = byteGPS; // Recupera los datos de cabecera de la trama GPS: ["$", "G", "P", "R", "M", "C"]
-	MOV	#lo_addr(_tramaGPS), W1
-	MOV	#lo_addr(_i_gps), W0
-	ADD	W1, [W0], W1
-	MOV	#lo_addr(_byteGPS), W0
-	MOV.B	[W0], [W1]
-;Acelerografo.c,648 :: 		i_gps++;
-	MOV	#1, W1
-	MOV	#lo_addr(_i_gps), W0
-	ADD	W1, [W0], [W0]
-;Acelerografo.c,645 :: 		if ((banGPSI == 2) && (i_gps < 6))
-L__urx_1239:
-L__urx_1238:
-;Acelerografo.c,650 :: 		if ((banGPSI == 2) && (i_gps == 6))
-	MOV	#lo_addr(_banGPSI), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #2
-	BRA Z	L__urx_1364
-	GOTO	L__urx_1246
-L__urx_1364:
-	MOV	_i_gps, W0
-	CP	W0, #6
-	BRA Z	L__urx_1365
-	GOTO	L__urx_1245
-L__urx_1365:
-L__urx_1236:
-;Acelerografo.c,653 :: 		T2CON.TON = 0;
-	BCLR	T2CON, #15
-;Acelerografo.c,654 :: 		TMR2 = 0;
-	CLR	TMR2
-;Acelerografo.c,656 :: 		if (tramaGPS[1] == 'G' && tramaGPS[2] == 'P' && tramaGPS[3] == 'R' && tramaGPS[4] == 'M' && tramaGPS[5] == 'C')
-	MOV	#lo_addr(_tramaGPS+1), W0
-	MOV.B	[W0], W1
-	MOV.B	#71, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1366
-	GOTO	L__urx_1244
-L__urx_1366:
-	MOV	#lo_addr(_tramaGPS+2), W0
-	MOV.B	[W0], W1
-	MOV.B	#80, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1367
-	GOTO	L__urx_1243
-L__urx_1367:
-	MOV	#lo_addr(_tramaGPS+3), W0
-	MOV.B	[W0], W1
-	MOV.B	#82, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1368
-	GOTO	L__urx_1242
-L__urx_1368:
-	MOV	#lo_addr(_tramaGPS+4), W0
-	MOV.B	[W0], W1
-	MOV.B	#77, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1369
-	GOTO	L__urx_1241
-L__urx_1369:
-	MOV	#lo_addr(_tramaGPS+5), W0
-	MOV.B	[W0], W1
-	MOV.B	#67, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1370
-	GOTO	L__urx_1240
-L__urx_1370:
-L__urx_1235:
-;Acelerografo.c,658 :: 		banGPSI = 3;
-	MOV	#lo_addr(_banGPSI), W1
-	MOV.B	#3, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,659 :: 		i_gps = 0;
-	CLR	W0
-	MOV	W0, _i_gps
-;Acelerografo.c,660 :: 		}
-	GOTO	L_urx_1156
-;Acelerografo.c,656 :: 		if (tramaGPS[1] == 'G' && tramaGPS[2] == 'P' && tramaGPS[3] == 'R' && tramaGPS[4] == 'M' && tramaGPS[5] == 'C')
-L__urx_1244:
-L__urx_1243:
-L__urx_1242:
-L__urx_1241:
-L__urx_1240:
-;Acelerografo.c,663 :: 		banGPSI = 0;
-	MOV	#lo_addr(_banGPSI), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,664 :: 		banGPSC = 0;
-	MOV	#lo_addr(_banGPSC), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,665 :: 		i_gps = 0;
-	CLR	W0
-	MOV	W0, _i_gps
-;Acelerografo.c,667 :: 		horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
-	CALL	_RecuperarHoraRTC
-	MOV	W0, _horaSistema
-	MOV	W1, _horaSistema+2
-;Acelerografo.c,668 :: 		fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
-	CALL	_RecuperarFechaRTC
-	MOV	W0, _fechaSistema
-	MOV	W1, _fechaSistema+2
-;Acelerografo.c,669 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
-	MOV.D	W0, W12
-	MOV	_horaSistema, W10
-	MOV	_horaSistema+2, W11
-	MOV	#lo_addr(_tiempo), W0
-	PUSH	W0
-	CALL	_AjustarTiempoSistema
-	SUB	#2, W15
-;Acelerografo.c,670 :: 		fuenteReloj = 4;                                         // Fuente reloj: RTC/E4
-	MOV	#lo_addr(_fuenteReloj), W1
-	MOV.B	#4, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,671 :: 		banSetReloj = 1;
-	MOV	#lo_addr(_banSetReloj), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,672 :: 		InterrupcionP1(0xB2); // Envia la hora local a la RPi y a los nodos                                                   //Envia la hora local a la RPi
-	MOV.B	#178, W10
-	CALL	_InterrupcionP1
-;Acelerografo.c,673 :: 		banGPSI = 0;
-	MOV	#lo_addr(_banGPSI), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,674 :: 		banGPSC = 0;
-	MOV	#lo_addr(_banGPSC), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,675 :: 		i_gps = 0;
-	CLR	W0
-	MOV	W0, _i_gps
-;Acelerografo.c,676 :: 		U1MODE.UARTEN = 0; // Desactiva el UART1
-	BCLR	U1MODE, #15
-;Acelerografo.c,677 :: 		}
-L_urx_1156:
-;Acelerografo.c,650 :: 		if ((banGPSI == 2) && (i_gps == 6))
-L__urx_1246:
-L__urx_1245:
-;Acelerografo.c,681 :: 		if (banGPSC == 1)
-	MOV	#lo_addr(_banGPSC), W0
-	MOV.B	[W0], W0
-	CP.B	W0, #1
-	BRA Z	L__urx_1371
-	GOTO	L_urx_1157
-L__urx_1371:
-;Acelerografo.c,684 :: 		for (x = 0; x < 6; x++)
-	CLR	W0
-	MOV	W0, _x
-L_urx_1158:
-	MOV	_x, W0
-	CP	W0, #6
-	BRA LTU	L__urx_1372
-	GOTO	L_urx_1159
-L__urx_1372:
-;Acelerografo.c,686 :: 		datosGPS[x] = tramaGPS[x + 1]; // Guarda los datos de hhmmss
-	MOV	#lo_addr(_datosGPS), W1
-	MOV	#lo_addr(_x), W0
-	ADD	W1, [W0], W2
-	MOV	_x, W0
-	ADD	W0, #1, W1
-	MOV	#lo_addr(_tramaGPS), W0
-	ADD	W0, W1, W0
-	MOV.B	[W0], [W2]
-;Acelerografo.c,684 :: 		for (x = 0; x < 6; x++)
-	MOV	#1, W1
-	MOV	#lo_addr(_x), W0
-	ADD	W1, [W0], [W0]
-;Acelerografo.c,687 :: 		}
-	GOTO	L_urx_1158
-L_urx_1159:
-;Acelerografo.c,689 :: 		for (x = 44; x < 54; x++)
-	MOV	#44, W0
-	MOV	W0, _x
-L_urx_1161:
-	MOV	#54, W1
-	MOV	#lo_addr(_x), W0
-	CP	W1, [W0]
-	BRA GTU	L__urx_1373
-	GOTO	L_urx_1162
-L__urx_1373:
-;Acelerografo.c,691 :: 		if (tramaGPS[x] == 0x2C)
-	MOV	#lo_addr(_tramaGPS), W1
-	MOV	#lo_addr(_x), W0
-	ADD	W1, [W0], W0
-	MOV.B	[W0], W1
-	MOV.B	#44, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1374
-	GOTO	L_urx_1164
-L__urx_1374:
-;Acelerografo.c,693 :: 		for (y = 0; y < 6; y++)
-	CLR	W0
-	MOV	W0, _y
-L_urx_1165:
-	MOV	_y, W0
-	CP	W0, #6
-	BRA LTU	L__urx_1375
-	GOTO	L_urx_1166
-L__urx_1375:
-;Acelerografo.c,695 :: 		datosGPS[6 + y] = tramaGPS[x + y + 1]; // Guarda los datos de DDMMAA en la trama datosGPS
-	MOV	_y, W0
-	ADD	W0, #6, W1
-	MOV	#lo_addr(_datosGPS), W0
-	ADD	W0, W1, W2
-	MOV	_x, W1
-	MOV	#lo_addr(_y), W0
-	ADD	W1, [W0], W0
-	ADD	W0, #1, W1
-	MOV	#lo_addr(_tramaGPS), W0
-	ADD	W0, W1, W0
-	MOV.B	[W0], [W2]
-;Acelerografo.c,693 :: 		for (y = 0; y < 6; y++)
-	MOV	#1, W1
-	MOV	#lo_addr(_y), W0
-	ADD	W1, [W0], [W0]
-;Acelerografo.c,696 :: 		}
-	GOTO	L_urx_1165
-L_urx_1166:
-;Acelerografo.c,697 :: 		}
-L_urx_1164:
-;Acelerografo.c,689 :: 		for (x = 44; x < 54; x++)
-	MOV	#1, W1
-	MOV	#lo_addr(_x), W0
-	ADD	W1, [W0], [W0]
-;Acelerografo.c,698 :: 		}
-	GOTO	L_urx_1161
-L_urx_1162:
-;Acelerografo.c,699 :: 		horaSistema = RecuperarHoraGPS(datosGPS);                // Recupera la hora del GPS
-	MOV	#lo_addr(_datosGPS), W10
-	CALL	_RecuperarHoraGPS
-	MOV	W0, _horaSistema
-	MOV	W1, _horaSistema+2
-;Acelerografo.c,700 :: 		fechaSistema = RecuperarFechaGPS(datosGPS);              // Recupera la fecha del GPS
-	MOV	#lo_addr(_datosGPS), W10
-	CALL	_RecuperarFechaGPS
-	MOV	W0, _fechaSistema
-	MOV	W1, _fechaSistema+2
-;Acelerografo.c,701 :: 		AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
-	MOV.D	W0, W12
-	MOV	_horaSistema, W10
-	MOV	_horaSistema+2, W11
-	MOV	#lo_addr(_tiempo), W0
-	PUSH	W0
-	CALL	_AjustarTiempoSistema
-	SUB	#2, W15
-;Acelerografo.c,716 :: 		if (tramaGPS[12] == 0x41)
-	MOV	#lo_addr(_tramaGPS+12), W0
-	MOV.B	[W0], W1
-	MOV.B	#65, W0
-	CP.B	W1, W0
-	BRA Z	L__urx_1376
-	GOTO	L_urx_1168
-L__urx_1376:
-;Acelerografo.c,718 :: 		fuenteReloj = 1; // Fuente reloj: GPS
-	MOV	#lo_addr(_fuenteReloj), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,719 :: 		banSyncReloj = 1;
-	MOV	#lo_addr(_banSyncReloj), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,720 :: 		banSetReloj = 1;
-	MOV	#lo_addr(_banSetReloj), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,722 :: 		InterrupcionP1(0xB2);
-	MOV.B	#178, W10
-	CALL	_InterrupcionP1
-;Acelerografo.c,724 :: 		}
-	GOTO	L_urx_1169
-L_urx_1168:
-;Acelerografo.c,727 :: 		fuenteReloj = 3; // Fuente reloj: GPS/E3
-	MOV	#lo_addr(_fuenteReloj), W1
-	MOV.B	#3, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,728 :: 		banSyncReloj = 1;
-	MOV	#lo_addr(_banSyncReloj), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,729 :: 		banSetReloj = 1;
-	MOV	#lo_addr(_banSetReloj), W1
-	MOV.B	#1, W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,730 :: 		InterrupcionP1(0xB2); // Envia la hora local a la RPi
-	MOV.B	#178, W10
-	CALL	_InterrupcionP1
-;Acelerografo.c,731 :: 		}
-L_urx_1169:
-;Acelerografo.c,733 :: 		banGPSI = 0;
-	MOV	#lo_addr(_banGPSI), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,734 :: 		banGPSC = 0;
-	MOV	#lo_addr(_banGPSC), W1
-	CLR	W0
-	MOV.B	W0, [W1]
-;Acelerografo.c,735 :: 		i_gps = 0;
-	CLR	W0
-	MOV	W0, _i_gps
-;Acelerografo.c,736 :: 		U1MODE.UARTEN = 0; // Desactiva el UART1
-	BCLR	U1MODE, #15
-;Acelerografo.c,737 :: 		}
-L_urx_1157:
-;Acelerografo.c,738 :: 		}
-L_end_urx_1:
-	POP	W13
-	POP	W12
-	POP	W11
-	POP	W10
-	MOV	#26, W0
-	REPEAT	#12
-	POP	[W0--]
-	POP	W0
-	POP	RCOUNT
-	POP	50
-	POP	DSWPAG
-	RETFIE
-; end of _urx_1

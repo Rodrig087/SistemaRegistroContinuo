@@ -105,24 +105,30 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 
 
+void GPS_init()
+{
 
-void GPS_init(){
-#line 31 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+
+ UART1_Write_Text("$PMTK605*31\r\n");
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
+ UART1_Write_Text("$PMTK251,115200*1F\r\n");
  Delay_ms(1000);
-
-
-
+ UART1_Init(115200);
+ UART1_Write_Text("$PMTK313,1*2E\r\n");
  UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+ UART1_Write_Text("$PMTK319,1*24\r\n");
+ UART1_Write_Text("$PMTK413*34\r\n");
+ UART1_Write_Text("$PMTK513,1*28\r\n");
  Delay_ms(1000);
-
  U1MODE.UARTEN = 0;
+#line 43 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 }
 
 
 
 
-unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
+unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
+{
 
  unsigned long tramaFecha[4];
  unsigned long fechaGPS;
@@ -146,14 +152,14 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS){
  datoStringF[1] = tramaDatosGPS[7];
  tramaFecha[2] = atoi(ptrDatoStringF);
 
- fechaGPS = (tramaFecha[0]*10000)+(tramaFecha[1]*100)+(tramaFecha[2]);
+ fechaGPS = (tramaFecha[0] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[2]);
 
  return fechaGPS;
-
 }
 
 
-unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
+unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS)
+{
 
  unsigned long tramaTiempo[4];
  unsigned long horaGPS;
@@ -177,9 +183,8 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS){
  datoString[1] = tramaDatosGPS[5];
  tramaTiempo[2] = atoi(ptrDatoString);
 
- horaGPS = (tramaTiempo[0]*3600)+(tramaTiempo[1]*60)+(tramaTiempo[2]);
+ horaGPS = (tramaTiempo[0] * 3600) + (tramaTiempo[1] * 60) + (tramaTiempo[2]);
  return horaGPS;
-
 }
 #line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 #line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
@@ -518,7 +523,7 @@ void main()
 {
 
  ConfiguracionPrincipal();
-
+ GPS_init();
  DS3234_init();
  tasaMuestreo = 1;
  ADXL355_init(tasaMuestreo);
@@ -633,8 +638,7 @@ void ConfiguracionPrincipal()
  IPC2bits.U1RXIP = 0x04;
  U1STAbits.URXISEL = 0x00;
  UART1_Init(9600);
-
-
+#line 208 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  SPI1STAT.SPIEN = 1;
  SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE);
  SPI1IE_bit = 1;
@@ -858,13 +862,13 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  numSetsFIFO = 0;
  contTimer1 = 0;
  banInicio = 1;
-#line 427 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 436 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  }
  if ((banSPI1 == 1) && (bufferSPI == 0xF1))
  {
  CambiarEstadoBandera(1, 0);
  }
-#line 460 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 469 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banSPI4 == 0) && (bufferSPI == 0xA4))
  {
  CambiarEstadoBandera(4, 1);
@@ -907,7 +911,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  CambiarEstadoBandera(5, 0);
 
  }
-#line 515 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 524 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banSPI7 == 0) && (bufferSPI == 0xA7))
  {
  CambiarEstadoBandera(7, 1);
@@ -1000,122 +1004,5 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
  T1CON.TON = 0;
  banCiclo = 1;
  contTimer1 = 0;
- }
-}
-
-
-
-
-void urx_1() org IVT_ADDR_U1RXINTERRUPT
-{
-
-
- U1RXIF_bit = 0;
- byteGPS = U1RXREG;
- U1STA.OERR = 0;
-
-
- if (banGPSI == 3)
- {
- if (byteGPS != 0x2A)
- {
- tramaGPS[i_gps] = byteGPS;
- i_gps++;
- }
- else
- {
- banGPSI = 0;
- banGPSC = 1;
- }
- }
-
-
- if ((banGPSI == 1))
- {
- if (byteGPS == 0x24)
- {
- banGPSI = 2;
- i_gps = 0;
- }
- }
- if ((banGPSI == 2) && (i_gps < 6))
- {
- tramaGPS[i_gps] = byteGPS;
- i_gps++;
- }
- if ((banGPSI == 2) && (i_gps == 6))
- {
-
- T2CON.TON = 0;
- TMR2 = 0;
-
- if (tramaGPS[1] == 'G' && tramaGPS[2] == 'P' && tramaGPS[3] == 'R' && tramaGPS[4] == 'M' && tramaGPS[5] == 'C')
- {
- banGPSI = 3;
- i_gps = 0;
- }
- else
- {
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
-
- horaSistema = RecuperarHoraRTC();
- fechaSistema = RecuperarFechaRTC();
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 4;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
- U1MODE.UARTEN = 0;
- }
- }
-
-
- if (banGPSC == 1)
- {
-
- for (x = 0; x < 6; x++)
- {
- datosGPS[x] = tramaGPS[x + 1];
- }
-
- for (x = 44; x < 54; x++)
- {
- if (tramaGPS[x] == 0x2C)
- {
- for (y = 0; y < 6; y++)
- {
- datosGPS[6 + y] = tramaGPS[x + y + 1];
- }
- }
- }
- horaSistema = RecuperarHoraGPS(datosGPS);
- fechaSistema = RecuperarFechaGPS(datosGPS);
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 716 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
- if (tramaGPS[12] == 0x41)
- {
- fuenteReloj = 1;
- banSyncReloj = 1;
- banSetReloj = 1;
-
- InterrupcionP1(0xB2);
-
- }
- else
- {
- fuenteReloj = 3;
- banSyncReloj = 1;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- }
-
- banGPSI = 0;
- banGPSC = 0;
- i_gps = 0;
- U1MODE.UARTEN = 0;
  }
 }

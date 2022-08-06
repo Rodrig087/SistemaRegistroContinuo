@@ -39,9 +39,8 @@ Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
 Path2=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 Path3=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 [HEADER_PATH]
-Count=2
-Path0=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Librerias firmware\
-Path1=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\
+Count=1
+Path0=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\
 [HEADERS]
 Count=0
 [PLDS]
