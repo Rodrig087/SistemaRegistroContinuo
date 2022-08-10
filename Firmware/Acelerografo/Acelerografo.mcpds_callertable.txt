@@ -15,7 +15,6 @@ main
 	GPS_init
 		UART1_Write_Text
 			UART1_Write
-		UART1_Init
 	DS3234_init
 		SPI2_Init_Advanced
 		DS3234_write_byte

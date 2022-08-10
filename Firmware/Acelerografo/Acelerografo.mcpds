@@ -34,10 +34,10 @@ Count=0
 Count=0
 [SEARCH_PATH]
 Count=5
-Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\Defs\
+Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
-Path2=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
-Path3=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path2=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path3=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 Path4=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 [HEADER_PATH]
 Count=2

@@ -352,6 +352,10 @@ void CrearArchivos()
     //*****************************************************************************
 }
 
+//**************************************************************************************************************************************
+// Comunicacion RPi-dsPIC:
+
+// C:0xA0	F:0xF0
 void ObtenerOperacion()
 {
 
@@ -374,6 +378,7 @@ void ObtenerOperacion()
     }
 }
 
+// C:0xA1	F:0xF1
 void IniciarMuestreo()
 {
     printf("Iniciando el muestreo...\n");
@@ -382,6 +387,7 @@ void IniciarMuestreo()
     bcm2835_spi_transfer(0xF1);
 }
 
+// C:0xA2	F:0xF2
 void DetenerMuestreo()
 {
     printf("Deteniendo el muestreo...\n");
@@ -390,6 +396,7 @@ void DetenerMuestreo()
     bcm2835_spi_transfer(0xF2);
 }
 
+// C:0xA3	F:0xF3
 void NuevoCiclo()
 {
 
@@ -414,6 +421,7 @@ void NuevoCiclo()
     DetectarEvento(tramaDatos);
 }
 
+// C:0xA4	F:0xF4
 void EnviarTiempoLocal()
 {
 
@@ -446,6 +454,7 @@ void EnviarTiempoLocal()
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 }
 
+// C:0xA5	F:0xF5
 void ObtenerTiempoPIC()
 {
 
@@ -490,6 +499,7 @@ void ObtenerTiempoPIC()
     // IniciarMuestreo();
 }
 
+// C:0xA6	F:0xF6
 void ObtenerTiempoGPS()
 {
     printf("Obteniendo hora del GPS...\n");
@@ -498,6 +508,7 @@ void ObtenerTiempoGPS()
     bcm2835_spi_transfer(0xF6);
 }
 
+// C:0xA7	F:0xF7
 void ObtenerTiempoRTC()
 {
     printf("Obteniendo hora del RTC...\n");
@@ -505,6 +516,7 @@ void ObtenerTiempoRTC()
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     bcm2835_spi_transfer(0xF7);
 }
+//**************************************************************************************************************************************
 
 // Esta funcion sirve para guardar en el archivo binario las tramas de 1 segundo recibidas
 void GuardarVector(unsigned char *tramaD)
