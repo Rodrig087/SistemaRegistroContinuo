@@ -23,19 +23,7 @@ main
 	ADXL355_init
 		ADXL355_write_byte
 int_1
-spi_1
-	CambiarEstadoBandera
-	RecuperarHoraRPI
-		_Multiply_32x32
-	RecuperarFechaRPI
-		_Multiply_32x32
-	DS3234_setDate
-		SPI2_Init_Advanced
-		Dec2Bcd
-		DS3234_write_byte
-		SPI2_Init
-		_Divide_32x32
-		_Modulus_32x32
+urx_1
 	RecuperarHoraRTC
 		SPI2_Init_Advanced
 		DS3234_read_byte
@@ -55,6 +43,30 @@ spi_1
 		_Modulus_32x32
 	InterrupcionP1
 		CambiarEstadoBandera
+	RecuperarHoraGPS
+		atoi
+			isdigit
+		_Multiply_32x32
+	RecuperarFechaGPS
+		atoi
+		_Multiply_32x32
+spi_1
+	CambiarEstadoBandera
+	RecuperarHoraRPI
+		_Multiply_32x32
+	RecuperarFechaRPI
+		_Multiply_32x32
+	DS3234_setDate
+		SPI2_Init_Advanced
+		Dec2Bcd
+		DS3234_write_byte
+		SPI2_Init
+		_Divide_32x32
+		_Modulus_32x32
+	RecuperarHoraRTC
+	RecuperarFechaRTC
+	AjustarTiempoSistema
+	InterrupcionP1
 Timer1Int
 	ADXL355_read_byte
 		SPI2_Write

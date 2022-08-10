@@ -487,6 +487,7 @@ char tiempoRPI[6];
 volatile char banSetReloj, banSyncReloj;
 char fuenteReloj;
 unsigned long horaSistema, fechaSistema;
+char referenciaTiempo;
 
 
 char banInicializar;
@@ -564,6 +565,7 @@ void main()
  fuenteReloj = 0;
  horaSistema = 0;
  fechaSistema = 0;
+ referenciaTiempo = 0;
 
 
  contMuestras = 0;
@@ -878,13 +880,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  numSetsFIFO = 0;
  contTimer1 = 0;
  banInicio = 1;
-#line 447 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  }
  if ((banSPI1 == 1) && (bufferSPI == 0xF1))
  {
  CambiarEstadoBandera(1, 0);
  }
-#line 480 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 477 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banSPI4 == 0) && (bufferSPI == 0xA4))
  {
  CambiarEstadoBandera(4, 1);
@@ -904,7 +905,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 2;
+ fuenteReloj = 0;
  banSetReloj = 1;
  InterrupcionP1(0XB2);
  }
@@ -925,22 +926,41 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  if ((banSPI5 == 1) && (bufferSPI == 0xF5))
  {
  CambiarEstadoBandera(5, 0);
+ SPI1BUF = 0xFF;
+ }
+#line 551 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ if ((banSPI6 == 0) && (bufferSPI == 0xA6))
+ {
+ CambiarEstadoBandera(6, 1);
+ }
+ if ((banSPI6 == 1) && (bufferSPI != 0xA6) && (bufferSPI != 0xF6))
+ {
+ referenciaTiempo = bufferSPI;
+ }
+ if ((banSPI6 == 1) && (bufferSPI == 0xF6))
+ {
+ CambiarEstadoBandera(6, 0);
+ banSetReloj = 1;
+
+ if (referenciaTiempo == 1)
+ {
+
+ banGPSI = 1;
+ banGPSC = 0;
+ U1MODE.UARTEN = 1;
+
+
 
  }
-#line 535 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
- if ((banSPI7 == 0) && (bufferSPI == 0xA7))
+ else
  {
- CambiarEstadoBandera(7, 1);
- }
- if ((banSPI7 == 1) && (bufferSPI == 0xF7))
- {
- CambiarEstadoBandera(7, 0);
+
  horaSistema = RecuperarHoraRTC();
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
- fuenteReloj = 0;
- banSetReloj = 1;
- InterrupcionP1(0XB2);
+ fuenteReloj = 2;
+ InterrupcionP1(0xB2);
+ }
  }
 
 
@@ -1025,4 +1045,125 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
 
 
  T1IF_bit = 0;
+}
+
+
+
+
+
+void urx_1() org IVT_ADDR_U1RXINTERRUPT
+{
+
+
+ byteGPS = U1RXREG;
+ U1STA.OERR = 0;
+
+
+ if (banGPSI == 3)
+ {
+ if (byteGPS != 0x2A)
+ {
+ tramaGPS[i_gps] = byteGPS;
+ i_gps++;
+ }
+ else
+ {
+ banGPSI = 0;
+ banGPSC = 1;
+ }
+ }
+
+
+ if ((banGPSI == 1))
+ {
+ if (byteGPS == 0x24)
+ {
+ banGPSI = 2;
+ i_gps = 0;
+ }
+ }
+ if ((banGPSI == 2) && (i_gps < 6))
+ {
+ tramaGPS[i_gps] = byteGPS;
+ i_gps++;
+ }
+ if ((banGPSI == 2) && (i_gps == 6))
+ {
+
+ T2CON.TON = 0;
+ TMR2 = 0;
+
+ if (tramaGPS[1] == 'G' && tramaGPS[2] == 'P' && tramaGPS[3] == 'R' && tramaGPS[4] == 'M' && tramaGPS[5] == 'C')
+ {
+ banGPSI = 3;
+ i_gps = 0;
+ }
+ else
+ {
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+
+ horaSistema = RecuperarHoraRTC();
+ fechaSistema = RecuperarFechaRTC();
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+ fuenteReloj = 4;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+ U1MODE.UARTEN = 0;
+ }
+ }
+
+
+ if (banGPSC == 1)
+ {
+
+ for (x = 0; x < 6; x++)
+ {
+ datosGPS[x] = tramaGPS[x + 1];
+ }
+
+ for (x = 44; x < 54; x++)
+ {
+ if (tramaGPS[x] == 0x2C)
+ {
+ for (y = 0; y < 6; y++)
+ {
+ datosGPS[6 + y] = tramaGPS[x + y + 1];
+ }
+ }
+ }
+ horaSistema = RecuperarHoraGPS(datosGPS);
+ fechaSistema = RecuperarFechaGPS(datosGPS);
+ AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+#line 775 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ if (tramaGPS[12] == 0x41)
+ {
+ fuenteReloj = 1;
+ banSyncReloj = 1;
+ banSetReloj = 1;
+
+ InterrupcionP1(0xB2);
+
+ }
+ else
+ {
+ fuenteReloj = 3;
+ banSyncReloj = 1;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
+ }
+
+ banGPSI = 0;
+ banGPSC = 0;
+ i_gps = 0;
+ U1MODE.UARTEN = 0;
+ }
+
+
+ U1RXIF_bit = 0;
+
 }
