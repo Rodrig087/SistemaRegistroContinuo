@@ -23,16 +23,17 @@ sbit RP1 at LATA4_bit; // Definicion del pin P1
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit; // Definicion del pin P2
 sbit RP2_Direction at TRISB4_bit;
-sbit TEST at LATB12_bit; // Definicion del pin P2
+sbit ledTest at LATB12_bit; // Definicion del pin P2
 sbit TEST_Direction at TRISB12_bit;
 
 // Variables para la comunicacion SPI:
 char bufferSPI;
-char banLec, banEsc, banCiclo, banInicio;
-char banMuestrear;
-// char banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
-char banOperacion, tipoOperacion;
-char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
+volatile char banLec, banEsc, banCiclo, banInicioMuestreo;
+// char banMuestrear;
+//  char banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
+char banOperacion;
+volatile char tipoOperacion;
+volatile char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
 // Variables para manejo del GPS:
 unsigned int i_gps;
@@ -58,7 +59,7 @@ char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 char datosFIFO[243];      // Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 char tramaCompleta[2506]; // Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
 // char tramaSalida[2506];  //Declarado pero nunca utilizado
-char numFIFO, numSetsFIFO; // Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
+char numFIFO, numSetsFIFO; // Variable para almacenar el numero de muestras y sets recuperados del buffer FIFO
 char contTimer1;           // Variable para contar el numero de veces que entra a la interrupcion por Timer 1
 char contMuestras;
 char contCiclos;
@@ -78,7 +79,10 @@ void InterrupcionP1(char operacion);
 void CambiarEstadoBandera(char bandera, char estado);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////      Main      ////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void main()
 {
 
@@ -97,10 +101,10 @@ void main()
    banLec = 0;
    banEsc = 0;
    banCiclo = 0;
-   banInicio = 0;
+   banInicioMuestreo = 0;
    banOperacion = 0;
    tipoOperacion = 0;
-   banMuestrear = 0; // Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
+   // banMuestrear = 0; // Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
 
    banSPI0 = 0;
    banSPI1 = 0;
@@ -142,7 +146,7 @@ void main()
    // Puertos:
    RP1 = 0;
    RP2 = 0;
-   TEST = 1;
+   ledTest = 1;
 
    // Configuracion:
    ConfiguracionPrincipal();
@@ -155,11 +159,13 @@ void main()
          DS3234_init();              // inicializa el RTC
          ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
          banInicializar = 0;         // Desactiva la bandera para salir del bucle
-         TEST = ~TEST;
+
+         // Conmuta el ledTest para indicar que se termino de inicializar
+         ledTest = ~ledTest;
          Delay_ms(300);
-         TEST = ~TEST;
+         ledTest = ~ledTest;
          Delay_ms(300);
-         TEST = ~TEST;
+         ledTest = ~ledTest;
       }
 
       Delay_ms(10);
@@ -167,10 +173,13 @@ void main()
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////// Funciones ////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//****************************************************************************************************************************************
+//*****************************************************************************************************************************************
 // Funcion para realizar la configuracion principal
+//*****************************************************************************************************************************************
 void ConfiguracionPrincipal()
 {
 
@@ -197,8 +206,8 @@ void ConfiguracionPrincipal()
    TRISB14_bit = 1; // PPS
    TRISB15_bit = 1; // SQW
 
-   INTCON1.NSTDIS = 0; //**Interrupciones anidadas
-   INTCON2.GIE = 1;    // Habilita las interrupciones globales *
+   // INTCON1.NSTDIS = 1; //**Interrupciones anidadas
+   INTCON2.GIE = 1; // Habilita las interrupciones globales *
 
    // Configuracion del puerto UART1
    RPINR18bits.U1RXR = 0x22; // Configura el pin RB2/RPI34 como Rx1 *
@@ -208,7 +217,6 @@ void ConfiguracionPrincipal()
    U1RXIE_bit = 1;           // Habilita la interrupcion por UART1 RX *
    U1STAbits.URXISEL = 0x00; // Interrupt is set when any character is received and transferred from the UxRSR to the receive buffer; receive buffer has one or more characters
    UART1_Init(9600);         // Inicializa el UART1 con una velocidad de 9600 baudios
-   // UART1_Init(115200);
 
    // Configuracion del puerto SPI1 en modo Esclavo
    SPI1STAT.SPIEN = 1;                                                                                                                                                 // Habilita el SPI1 *
@@ -244,13 +252,15 @@ void ConfiguracionPrincipal()
    T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
    T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
 
-   Delay_ms(500); // Espera hasta que se estabilicen los cambios
+   // Espera hasta que se estabilicen los cambios:
+   Delay_ms(500);
 
-   TEST = ~TEST;
+   // Conmuta el ledTest para indicar que se termino la configuracion:
+   ledTest = ~ledTest;
    Delay_ms(300);
-   TEST = ~TEST;
+   ledTest = ~ledTest;
    Delay_ms(300);
-   TEST = ~TEST;
+   ledTest = ~ledTest;
 
    // Activa la bandera para inicializar el RTC, el GPS y el ADXL
    banInicializar = 1;
@@ -259,11 +269,12 @@ void ConfiguracionPrincipal()
 
 //*****************************************************************************************************************************************
 // Funcion para realizar la interrupcion en la RPi
+//*****************************************************************************************************************************************
 void InterrupcionP1(char operacion)
 {
    // banOperacion = 0;           // Encera la bandera para permitir una nueva peticion de operacion
-   CambiarEstadoBandera(0, 0); // Limpia la bandera banSPI0 para permitir una nueva peticion de operacion
-   tipoOperacion = operacion;  // Carga en la variable el tipo de operacion requerido
+   // CambiarEstadoBandera(0, 0); // Limpia la bandera banSPI0 para permitir una nueva peticion de operacion
+   tipoOperacion = operacion; // Carga en la variable el tipo de operacion requerido
    // Genera el pulso P1 para producir la interrupcion externa en la RPi
    RP1 = 1;
    Delay_us(50);
@@ -273,6 +284,7 @@ void InterrupcionP1(char operacion)
 
 //*****************************************************************************************************************************************
 // Funcion para cambiar el estado de las banderas:
+//*****************************************************************************************************************************************
 void CambiarEstadoBandera(char bandera, char estado)
 {
    if (estado == 1)
@@ -338,6 +350,7 @@ void CambiarEstadoBandera(char bandera, char estado)
 
 //****************************************************************************************************************************************
 // Funcion para relizar el muesteo
+//*****************************************************************************************************************************************
 void Muestrear()
 {
    if (banCiclo == 0)
@@ -393,9 +406,10 @@ void Muestrear()
 
       banLec = 1; // Activa la bandera de lectura para enviar la trama
 
-      TEST = 0;
+      ledTest = 0;
 
-      InterrupcionP1(0XB1);
+      // Genera la interrupcion en la RPi para enviar la trama de datos:
+      // InterrupcionP1(0XB1);
    }
 
    contCiclos++; // Incrementa el contador de ciclos
@@ -404,36 +418,47 @@ void Muestrear()
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////// Interrupciones /////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+//*****************************************************************************************************************************************
 // Interrupcion SPI1
+//*****************************************************************************************************************************************
 void spi_1() org IVT_ADDR_SPI1INTERRUPT
 {
    bufferSPI = SPI1BUF; // Guarda el contenido del bufeer (lectura)
 
-   //************************************************************************************************************************************
+   //------------------------------------------------------------------------------------------------------------------------------------
    // Rutina para enviar la peticion de operacion a la RPi  (C:0xA0   F:0xF0)
+   //------------------------------------------------------------------------------------------------------------------------------------
    if ((banSPI0 == 0) && (bufferSPI == 0xA0))
    {
       // banOperacion = 1;                                                     //Activa la bandera para enviar el tipo de operacion requerido a la RPi
       CambiarEstadoBandera(0, 1);
       SPI1BUF = tipoOperacion; // Carga en el buffer el tipo de operacion requerido
    }
-   if ((banSPI0 == 1) && (bufferSPI != 0xA0) && (bufferSPI == 0xF0))
+   if ((banSPI0 == 1) && (bufferSPI == 0xF0))
    {
       CambiarEstadoBandera(0, 0); // Limpia la bandera
       tipoOperacion = 0;          // Limpia la variable de tipo de operacion
    }
-   //************************************************************************************************************************************
+   //------------------------------------------------------------------------------------------------------------------------------------
 
-   //************************************************************************************************************************************
+   //------------------------------------------------------------------------------------------------------------------------------------
    // Rutinas de control del muestreo:
+   //------------------------------------------------------------------------------------------------------------------------------------
 
    // Rutina para inicio del muestreo (C:0xA1   F:0xF1):
-   if ((banMuestrear == 0) && (bufferSPI == 0xA1))
+   if ((banSPI1 == 0) && (bufferSPI == 0xA1))
    {
-      banMuestrear = 1; // Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+      // banMuestrear = 1; // Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
       CambiarEstadoBandera(1, 1);
+   }
+   if ((banSPI1 == 1) && (bufferSPI == 0xF1))
+   {
+      CambiarEstadoBandera(1, 0);
+      // Limpia las banderas y las variables necesarias para el muestreo:
       banCiclo = 0;
       contMuestras = 0;
       contCiclos = 0;
@@ -441,11 +466,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       numFIFO = 0;
       numSetsFIFO = 0;
       contTimer1 = 0;
-      banInicio = 1; // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-   }
-   if ((banSPI1 == 1) && (bufferSPI == 0xF1))
-   {
-      CambiarEstadoBandera(1, 0);
+      // Activa la bandera que permite el inicio del muestreo dentro de la interrupcion INT1:
+      banInicioMuestreo = 1;
    }
 
    // (C:0xA3   F:0xF3)
@@ -467,11 +489,11 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       banLec = 0; // Limpia la bandera de lectura                        ****AQUI Me QUEDE
       SPI1BUF = 0xFF;
    }
+   //------------------------------------------------------------------------------------------------------------------------------------
 
-   //************************************************************************************************************************************
-
-   //************************************************************************************************************************************
+   //------------------------------------------------------------------------------------------------------------------------------------
    // Rutinas de manejo de tiempo:
+   //------------------------------------------------------------------------------------------------------------------------------------
 
    // (C:0xA4   F:0xF4)
    // Rutina para obtener la hora de la RPi:
@@ -553,22 +575,25 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
          InterrupcionP1(0xB2);                                    // Envia la hora local a la RPi
       }
    }
+   //------------------------------------------------------------------------------------------------------------------------------------
 
+   //------------------------------------------------------------------------------------------------------------------------------------
    // Limpia la bandera de interrupcion por SPI:
    SPI1IF_bit = 0;
-   //************************************************************************************************************************************
+   //------------------------------------------------------------------------------------------------------------------------------------
 }
-//************************************************************************************************************************************
+//*****************************************************************************************************************************************
 
-//************************************************************************************************************************************
+//*****************************************************************************************************************************************
 // Interrupcion INT1
+//*****************************************************************************************************************************************
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
 
    // Incrementa el reloj del sistema:
    if (banSetReloj == 1)
    {
-      TEST = ~TEST;
+      // ledTest = ~ledTest;
       horaSistema++; // Incrementa el reloj del sistema
    }
 
@@ -579,19 +604,20 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
    }
 
    // Inicia el muestreo
-   if (banInicio == 1)
+   if (banInicioMuestreo == 1)
    {
-      // TEST = ~TEST;
+      ledTest = ~ledTest;
       Muestrear();
    }
 
    // Limpia la bandera de interrupcion externa INT1
    INT1IF_bit = 0;
 }
-//************************************************************************************************************************************
+//*****************************************************************************************************************************************
 
-//************************************************************************************************************************************
+//*****************************************************************************************************************************************
 // Interrupcion por desbordamiento del Timer1
+//*****************************************************************************************************************************************
 void Timer1Int() org IVT_ADDR_T1INTERRUPT
 {
    numFIFO = ADXL355_read_byte(FIFO_ENTRIES); // 75                            //Lee el numero de muestras disponibles en el FIFO
@@ -636,10 +662,11 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
    // Limpia la bandera de interrupcion por desbordamiento del Timer1:
    T1IF_bit = 0;
 }
-//************************************************************************************************************************************
+//*****************************************************************************************************************************************
 
 //*****************************************************************************************************************************************
 // Interrupcion UART1
+//*****************************************************************************************************************************************
 void urx_1() org IVT_ADDR_U1RXINTERRUPT
 {
 
@@ -767,6 +794,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
    U1RXIF_bit = 0;
 }
 //*****************************************************************************************************************************************
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Fuentes de reloj V1:
 // 0 -> RTC

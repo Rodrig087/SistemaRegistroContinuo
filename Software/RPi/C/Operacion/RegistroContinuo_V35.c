@@ -167,7 +167,7 @@ int main(void)
     contador = 0;
 
     ConfiguracionPrincipal();
-    CrearArchivos();
+    // CrearArchivos();
 
     sleep(1);
 
@@ -184,12 +184,13 @@ int main(void)
     }
 
     // Llama al metodo para inicializar el filtro FIR
-    firFloatInit();
+    // firFloatInit();
 
     sleep(5);
 
     while (1)
     {
+        delay(10);
     }
 
     bcm2835_spi_end();
@@ -243,7 +244,7 @@ int ConfiguracionPrincipal()
     delay(100);
     digitalWrite(MCLR, HIGH);
 
-    printf("Configuracion completa\n");
+    printf("\nConfiguracion completa\n");
 }
 
 void CrearArchivos()
@@ -368,7 +369,6 @@ void CrearArchivos()
 // C:0xA0	F:0xF0
 void ObtenerOperacion()
 {
-
     bcm2835_delayMicroseconds(200);
 
     bcm2835_spi_transfer(0xA0);
@@ -404,7 +404,6 @@ void IniciarMuestreo()
 // C:0xA3	F:0xF3
 void NuevoCiclo()
 {
-
     // printf("Nuevo ciclo\n");
     bcm2835_spi_transfer(0xA3); // Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);

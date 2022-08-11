@@ -39,6 +39,8 @@ void GPS_init()
      UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
      Delay_ms(1000);
 
+     return;
+
      // U1RXIE_bit = 1;    // Habilita la interrupcion por UART1 RX *
 }
 //* Estructura comandos PMTK: |Preamble ($)|Talker ID (PMTK)|Pkt Type,Data Field|*|Checksum (just an XOR of all the bytes between the $ and the *)|CR LF|

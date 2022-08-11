@@ -1,80 +1,86 @@
 #line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 #line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
-#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 91 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
 void ADXL355_init();
-void ADXL355_write_byte(unsigned char address, unsigned char value);
-unsigned char ADXL355_read_byte(unsigned char address);
-unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
-unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO);
+void ADXL355_write_byte(char address, char value);
+char ADXL355_read_byte(char address);
+unsigned int ADXL355_read_data(char *vectorMuestra);
+unsigned int ADXL355_read_FIFO(char *vectorFIFO);
 
-
-void ADXL355_init(short tMuestreo){
- ADXL355_write_byte( 0x2F ,0x52);
+void ADXL355_init(char tMuestreo)
+{
+ ADXL355_write_byte( 0x2F , 0x52);
  Delay_ms(10);
- ADXL355_write_byte( 0x2D ,  0x04 | 0x01 );
+ ADXL355_write_byte( 0x2D ,  0x04  |  0x01 );
  ADXL355_write_byte( 0x2C ,  0x01 );
- switch (tMuestreo){
+ switch (tMuestreo)
+ {
  case 1:
- ADXL355_write_byte( 0x28 ,  0x00 | 0x04 );
+ ADXL355_write_byte( 0x28 ,  0x00  |  0x04 );
  break;
  case 2:
- ADXL355_write_byte( 0x28 ,  0x00 | 0x05 );
+ ADXL355_write_byte( 0x28 ,  0x00  |  0x05 );
  break;
  case 4:
- ADXL355_write_byte( 0x28 ,  0x00 | 0x06 );
+ ADXL355_write_byte( 0x28 ,  0x00  |  0x06 );
  break;
  case 8:
- ADXL355_write_byte( 0x28 ,  0x00 | 0x07  );
+ ADXL355_write_byte( 0x28 ,  0x00  |  0x07 );
  break;
  }
 }
 
-
-void ADXL355_write_byte(unsigned char address, unsigned char value){
- address = (address<<1)&0xFE;
- CS_ADXL355=0;
+void ADXL355_write_byte(char address, char value)
+{
+ address = (address << 1) & 0xFE;
+ CS_ADXL355 = 0;
  SPI2_Write(address);
  SPI2_Write(value);
- CS_ADXL355=1;
+ CS_ADXL355 = 1;
 }
 
-
-unsigned char ADXL355_read_byte(unsigned char address){
- unsigned char value = 0x00;
- address=(address<<1)|0x01;
- CS_ADXL355=0;
+char ADXL355_read_byte(char address)
+{
+ char value = 0x00;
+ address = (address << 1) | 0x01;
+ CS_ADXL355 = 0;
  SPI2_Write(address);
- value=SPI2_Read(0);
- CS_ADXL355=1;
+ value = SPI2_Read(0);
+ CS_ADXL355 = 1;
  return value;
 }
 
-
-unsigned int ADXL355_read_data(unsigned char *vectorMuestra){
+unsigned int ADXL355_read_data(char *vectorMuestra)
+{
  unsigned short j;
  unsigned short muestra;
- if((ADXL355_read_byte( 0x04 )&0x01)==1){
- CS_ADXL355=0;
- for (j=0;j<9;j++){
+ if ((ADXL355_read_byte( 0x04 ) & 0x01) == 1)
+ {
+ CS_ADXL355 = 0;
+ for (j = 0; j < 9; j++)
+ {
  muestra = ADXL355_read_byte(axisAddresses[j]);
  vectorMuestra[j] = muestra;
  }
- CS_ADXL355=1;
- } else {
- for (j=0;j<9;j++){
+ CS_ADXL355 = 1;
+ }
+ else
+ {
+ for (j = 0; j < 9; j++)
+ {
  vectorMuestra[j] = 0;
  }
  }
  return;
 }
 
-
-unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
- unsigned char add;
- add = ( 0x11 <<1)|0x01;
+unsigned int ADXL355_read_FIFO(char *vectorFIFO)
+{
+ char add;
+ add = ( 0x11  << 1) | 0x01;
  CS_ADXL355 = 0;
  SPI2_Write(add);
 
@@ -115,6 +121,8 @@ void GPS_init()
 
  UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
  Delay_ms(1000);
+
+ return;
 
 
 }
@@ -462,16 +470,17 @@ sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
 sbit RP2_Direction at TRISB4_bit;
-sbit TEST at LATB12_bit;
+sbit ledTest at LATB12_bit;
 sbit TEST_Direction at TRISB12_bit;
 
 
 char bufferSPI;
-char banLec, banEsc, banCiclo, banInicio;
-char banMuestrear;
+volatile char banLec, banEsc, banCiclo, banInicioMuestreo;
 
-char banOperacion, tipoOperacion;
-char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
+
+char banOperacion;
+volatile char tipoOperacion;
+volatile char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
 
 unsigned int i_gps;
@@ -518,6 +527,9 @@ void CambiarEstadoBandera(char bandera, char estado);
 
 
 
+
+
+
 void main()
 {
 
@@ -536,10 +548,10 @@ void main()
  banLec = 0;
  banEsc = 0;
  banCiclo = 0;
- banInicio = 0;
+ banInicioMuestreo = 0;
  banOperacion = 0;
  tipoOperacion = 0;
- banMuestrear = 0;
+
 
  banSPI0 = 0;
  banSPI1 = 0;
@@ -581,7 +593,7 @@ void main()
 
  RP1 = 0;
  RP2 = 0;
- TEST = 1;
+ ledTest = 1;
 
 
  ConfiguracionPrincipal();
@@ -594,16 +606,21 @@ void main()
  DS3234_init();
  ADXL355_init(tasaMuestreo);
  banInicializar = 0;
- TEST = ~TEST;
+
+
+ ledTest = ~ledTest;
  Delay_ms(300);
- TEST = ~TEST;
+ ledTest = ~ledTest;
  Delay_ms(300);
- TEST = ~TEST;
+ ledTest = ~ledTest;
  }
 
  Delay_ms(10);
  }
 }
+
+
+
 
 
 
@@ -636,7 +653,7 @@ void ConfiguracionPrincipal()
  TRISB14_bit = 1;
  TRISB15_bit = 1;
 
- INTCON1.NSTDIS = 0;
+
  INTCON2.GIE = 1;
 
 
@@ -647,7 +664,6 @@ void ConfiguracionPrincipal()
  U1RXIE_bit = 1;
  U1STAbits.URXISEL = 0x00;
  UART1_Init(9600);
-
 
 
  SPI1STAT.SPIEN = 1;
@@ -683,13 +699,15 @@ void ConfiguracionPrincipal()
  T1IF_bit = 0;
  T1IE_bit = 1;
 
+
  Delay_ms(500);
 
- TEST = ~TEST;
+
+ ledTest = ~ledTest;
  Delay_ms(300);
- TEST = ~TEST;
+ ledTest = ~ledTest;
  Delay_ms(300);
- TEST = ~TEST;
+ ledTest = ~ledTest;
 
 
  banInicializar = 1;
@@ -698,16 +716,18 @@ void ConfiguracionPrincipal()
 
 
 
+
 void InterrupcionP1(char operacion)
 {
 
- CambiarEstadoBandera(0, 0);
+
  tipoOperacion = operacion;
 
  RP1 = 1;
  Delay_us(50);
  RP1 = 0;
 }
+
 
 
 
@@ -777,6 +797,7 @@ void CambiarEstadoBandera(char bandera, char estado)
 
 
 
+
 void Muestrear()
 {
  if (banCiclo == 0)
@@ -832,23 +853,19 @@ void Muestrear()
 
  banLec = 1;
 
- TEST = 0;
+ ledTest = 0;
 
- InterrupcionP1(0XB1);
+
+
  }
 
  contCiclos++;
 }
-
-
-
-
-
-
-
+#line 428 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 void spi_1() org IVT_ADDR_SPI1INTERRUPT
 {
  bufferSPI = SPI1BUF;
+
 
 
 
@@ -858,7 +875,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  CambiarEstadoBandera(0, 1);
  SPI1BUF = tipoOperacion;
  }
- if ((banSPI0 == 1) && (bufferSPI != 0xA0) && (bufferSPI == 0xF0))
+ if ((banSPI0 == 1) && (bufferSPI == 0xF0))
  {
  CambiarEstadoBandera(0, 0);
  tipoOperacion = 0;
@@ -869,10 +886,16 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 
 
 
- if ((banMuestrear == 0) && (bufferSPI == 0xA1))
+
+ if ((banSPI1 == 0) && (bufferSPI == 0xA1))
  {
- banMuestrear = 1;
+
  CambiarEstadoBandera(1, 1);
+ }
+ if ((banSPI1 == 1) && (bufferSPI == 0xF1))
+ {
+ CambiarEstadoBandera(1, 0);
+
  banCiclo = 0;
  contMuestras = 0;
  contCiclos = 0;
@@ -880,11 +903,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
- banInicio = 1;
- }
- if ((banSPI1 == 1) && (bufferSPI == 0xF1))
- {
- CambiarEstadoBandera(1, 0);
+
+ banInicioMuestreo = 1;
  }
 
 
@@ -994,9 +1014,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  }
 
 
+
+
  SPI1IF_bit = 0;
 
 }
+
 
 
 
@@ -1005,10 +1028,9 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
 {
 
 
-
  if (banSetReloj == 1)
  {
- TEST = ~TEST;
+
  horaSistema++;
  }
 
@@ -1019,15 +1041,16 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
  }
 
 
- if (banInicio == 1)
+ if (banInicioMuestreo == 1)
  {
-
+ ledTest = ~ledTest;
  Muestrear();
  }
 
 
  INT1IF_bit = 0;
 }
+
 
 
 
@@ -1076,6 +1099,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
 
  T1IF_bit = 0;
 }
+
 
 
 
@@ -1168,7 +1192,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 744 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 770 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if (tramaGPS[12] == 0x41)
  {
  fuenteReloj = 1;

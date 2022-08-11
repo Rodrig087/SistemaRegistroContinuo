@@ -1294,9 +1294,8 @@ banesc
 bangpsc
 bangpsi
 baninicializar
-baninicio
+baniniciomuestreo
 banlec
-banmuestrear
 banoperacion
 bansetreloj
 banspi0
@@ -5935,6 +5934,7 @@ lebdly2
 lebdly2bits
 lebdly3
 lebdly3bits
+ledtest
 lendian
 lendian
 lendian_bit
@@ -11127,7 +11127,6 @@ tcs_t2con_bit
 tcs_t3con_bit
 tcs_t4con_bit
 tcs_t5con_bit
-test
 test_direction
 tgate
 tgate
