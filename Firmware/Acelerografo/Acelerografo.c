@@ -142,7 +142,7 @@ void main()
    // Puertos:
    RP1 = 0;
    RP2 = 0;
-   TEST = 0;
+   TEST = 1;
 
    // Configuracion:
    ConfiguracionPrincipal();
@@ -155,11 +155,11 @@ void main()
          DS3234_init();              // inicializa el RTC
          ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
          banInicializar = 0;         // Desactiva la bandera para salir del bucle
-         TEST = 0;
+         TEST = ~TEST;
          Delay_ms(300);
-         TEST = 1;
+         TEST = ~TEST;
          Delay_ms(300);
-         TEST = 0;
+         TEST = ~TEST;
       }
 
       Delay_ms(10);
@@ -244,13 +244,13 @@ void ConfiguracionPrincipal()
    T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
    T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
 
-   TEST = 1;
-   Delay_ms(300);
-   TEST = 0;
-   Delay_ms(300);
-   TEST = 1;
-
    Delay_ms(500); // Espera hasta que se estabilicen los cambios
+
+   TEST = ~TEST;
+   Delay_ms(300);
+   TEST = ~TEST;
+   Delay_ms(300);
+   TEST = ~TEST;
 
    // Activa la bandera para inicializar el RTC, el GPS y el ADXL
    banInicializar = 1;
@@ -392,9 +392,10 @@ void Muestrear()
       T1CON.TON = 1;    // Enciende el Timer1
 
       banLec = 1; // Activa la bandera de lectura para enviar la trama
-      InterrupcionP1(0XB1);
 
       TEST = 0;
+
+      InterrupcionP1(0XB1);
    }
 
    contCiclos++; // Incrementa el contador de ciclos
@@ -447,7 +448,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       CambiarEstadoBandera(1, 0);
    }
 
-   /*
    // (C:0xA3   F:0xF3)
    // Rutina de lectura de los datos del acelerometro:
    if ((banLec == 1) && (bufferSPI == 0xA3))
@@ -462,11 +462,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       i++;
    }
    if ((banLec == 2) && (bufferSPI == 0xF3))
-   {              // Si detecta el delimitador de final de trama:
+   {
+      // Si detecta el delimitador de final de trama:
       banLec = 0; // Limpia la bandera de lectura                        ****AQUI Me QUEDE
       SPI1BUF = 0xFF;
    }
-   */
+
    //************************************************************************************************************************************
 
    //************************************************************************************************************************************
@@ -517,35 +518,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       SPI1BUF = 0xFF; //**No se que hace esto
    }
 
-   /*
-   // Rutina para obtener la hora del GPS(C:0xA6   F:0xF6):
-   if ((banSetReloj == 0) && (bufferSPI == 0xA6))
-   {
-      banGPSI = 1;       // Inicia la bandera de inicio de trama  del GPS
-      banGPSC = 0;       // Limpia la bandera de trama completa
-      U1MODE.UARTEN = 1; // Inicializa el UART1
-   }
-   */
-
-   /*
-   // (C:0xA7   F:0xF7)
-   // Rutina para obtener la hora del RTC:
-   if ((banSPI7 == 0) && (bufferSPI == 0xA7))
-   {
-      CambiarEstadoBandera(7, 1);
-   }
-   if ((banSPI7 == 1) && (bufferSPI == 0xF7))
-   {
-      CambiarEstadoBandera(7, 0);
-      horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
-      fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
-      AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-      fuenteReloj = 0;                                         // Indica que la fuente de reloj es el RTC
-      banSetReloj = 1;                                         // Activa esta bandera para usar la hora/fecha recuperada
-      InterrupcionP1(0XB2);                                    // Envia la hora local a la RPi
-   }
-   */
-
    //(C:0xA6   F:0xF6)
    // Rutina para obtener la referencia de tiempo (1=GPS, 2=RTC):
    if ((banSPI6 == 0) && (bufferSPI == 0xA6))
@@ -592,7 +564,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 // Interrupcion INT1
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
-   // TEST = ~TEST;
 
    // Incrementa el reloj del sistema:
    if (banSetReloj == 1)
@@ -611,7 +582,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
    if (banInicio == 1)
    {
       // TEST = ~TEST;
-      // Muestrear();
+      Muestrear();
    }
 
    // Limpia la bandera de interrupcion externa INT1
@@ -666,7 +637,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
    T1IF_bit = 0;
 }
 //************************************************************************************************************************************
-
 
 //*****************************************************************************************************************************************
 // Interrupcion UART1
@@ -759,48 +729,44 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
       fechaSistema = RecuperarFechaGPS(datosGPS);              // Recupera la fecha del GPS
       AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
 
-
-      //Prueba
-       //Recupera la hora del RTC:
-       //horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
-       //fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
-       //AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-       //fuenteReloj = 4;                                                        //Fuente reloj: RTC/E5
-       //banSetReloj = 1;
-       //InterrupcionP1(0XB2);
-      //Fin prueba
-
+      // Prueba
+      // Recupera la hora del RTC:
+      // horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
+      // fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
+      // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+      // fuenteReloj = 4;                                                        //Fuente reloj: RTC/E5
+      // banSetReloj = 1;
+      // InterrupcionP1(0XB2);
+      // Fin prueba
 
       // Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
       if (tramaGPS[12] == 0x41)
       {
          fuenteReloj = 1; // Fuente reloj: GPS
-         banSyncReloj = 1;
-         banSetReloj = 1;
-         // Prueba
-         InterrupcionP1(0xB2);
-         // Fin prueba
+         // banSyncReloj = 1;
+         // banSetReloj = 1;
+         // InterrupcionP1(0xB2);
       }
       else
       {
          fuenteReloj = 3; // Fuente reloj: GPS/E3
-         banSyncReloj = 1;
-         banSetReloj = 1;
-         InterrupcionP1(0xB2); // Envia la hora local a la RPi
+         // banSyncReloj = 1;
+         // banSetReloj = 1;
+         // InterrupcionP1(0xB2); // Envia la hora local a la RPi
       }
-
       banGPSI = 0;
       banGPSC = 0;
       i_gps = 0;
-      U1MODE.UARTEN = 0; // Desactiva el UART1
+      banSyncReloj = 1;
+      banSetReloj = 1;
+      InterrupcionP1(0xB2); // Envia la hora local a la RPi
+      U1MODE.UARTEN = 0;    // Desactiva el UART1
    }
-   
+
    // Limpia la bandera de interrupcion por UART
    U1RXIF_bit = 0;
-   
 }
 //*****************************************************************************************************************************************
-
 
 // Fuentes de reloj V1:
 // 0 -> RTC

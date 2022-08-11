@@ -581,7 +581,7 @@ void main()
 
  RP1 = 0;
  RP2 = 0;
- TEST = 0;
+ TEST = 1;
 
 
  ConfiguracionPrincipal();
@@ -594,11 +594,11 @@ void main()
  DS3234_init();
  ADXL355_init(tasaMuestreo);
  banInicializar = 0;
- TEST = 0;
+ TEST = ~TEST;
  Delay_ms(300);
- TEST = 1;
+ TEST = ~TEST;
  Delay_ms(300);
- TEST = 0;
+ TEST = ~TEST;
  }
 
  Delay_ms(10);
@@ -683,13 +683,13 @@ void ConfiguracionPrincipal()
  T1IF_bit = 0;
  T1IE_bit = 1;
 
- TEST = 1;
- Delay_ms(300);
- TEST = 0;
- Delay_ms(300);
- TEST = 1;
-
  Delay_ms(500);
+
+ TEST = ~TEST;
+ Delay_ms(300);
+ TEST = ~TEST;
+ Delay_ms(300);
+ TEST = ~TEST;
 
 
  banInicializar = 1;
@@ -831,9 +831,10 @@ void Muestrear()
  T1CON.TON = 1;
 
  banLec = 1;
- InterrupcionP1(0XB1);
 
  TEST = 0;
+
+ InterrupcionP1(0XB1);
  }
 
  contCiclos++;
@@ -885,7 +886,34 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  {
  CambiarEstadoBandera(1, 0);
  }
-#line 477 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
+
+ if ((banLec == 1) && (bufferSPI == 0xA3))
+ {
+ banLec = 2;
+ i = 0;
+ SPI1BUF = tramaCompleta[i];
+ }
+ if ((banLec == 2) && (bufferSPI != 0xF3))
+ {
+ SPI1BUF = tramaCompleta[i];
+ i++;
+ }
+ if ((banLec == 2) && (bufferSPI == 0xF3))
+ {
+
+ banLec = 0;
+ SPI1BUF = 0xFF;
+ }
+
+
+
+
+
+
+
+
  if ((banSPI4 == 0) && (bufferSPI == 0xA4))
  {
  CambiarEstadoBandera(4, 1);
@@ -928,7 +956,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  CambiarEstadoBandera(5, 0);
  SPI1BUF = 0xFF;
  }
-#line 551 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
+
  if ((banSPI6 == 0) && (bufferSPI == 0xA6))
  {
  CambiarEstadoBandera(6, 1);
@@ -992,7 +1022,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
  if (banInicio == 1)
  {
 
-
+ Muestrear();
  }
 
 
@@ -1046,7 +1076,6 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
 
  T1IF_bit = 0;
 }
-
 
 
 
@@ -1139,31 +1168,30 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 775 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 744 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if (tramaGPS[12] == 0x41)
  {
  fuenteReloj = 1;
- banSyncReloj = 1;
- banSetReloj = 1;
 
- InterrupcionP1(0xB2);
+
 
  }
  else
  {
  fuenteReloj = 3;
- banSyncReloj = 1;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
- }
 
+
+
+ }
  banGPSI = 0;
  banGPSC = 0;
  i_gps = 0;
+ banSyncReloj = 1;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
  U1MODE.UARTEN = 0;
  }
 
 
  U1RXIF_bit = 0;
-
 }

@@ -13,7 +13,7 @@ hint: 0	1004	interrupt handler (spi_1 at 0x0028)	Acelerografo.c
 hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
 hint: 0	1004	interrupt handler (urx_1 at 0x002A)	Acelerografo.c
-diagnostics: 801	123	Compiled Successfully	Acelerografo.c
+diagnostics: 769	123	Compiled Successfully	Acelerografo.c
 warning: 150	1519	Logical expression is always: 'False'	Acelerografo.c
 hint: 138	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
 hint: 150	1164	Variable 'muestra' has been eliminated by optimizer	Acelerografo.c
@@ -28,11 +28,11 @@ hint: 162	1164	Variable 'anio' has been eliminated by optimizer	Acelerografo.c
 hint: 191	1164	Variable 'fechaInc' has been eliminated by optimizer	Acelerografo.c
 hint: 12	1164	Variable 'fechaRPi' has been eliminated by optimizer	Acelerografo.c
 hint: 23	1164	Variable 'horaRPi' has been eliminated by optimizer	Acelerografo.c
-diagnostics: 0	127	All files Compiled in 172 ms	 
+diagnostics: 0	127	All files Compiled in 141 ms	 
 hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)
 hint: 0	1144	Static RAM (bytes): 2986   Dynamic RAM (bytes): 25686	Static RAM (bytes): 2986   Dynamic RAM (bytes): 25686
-hint: 0	1144	Used ROM (bytes): 5622 (3%)  Free ROM (bytes): 170486 (97%)	Used ROM (bytes): 5622 (3%)  Free ROM (bytes): 170486 (97%)
+hint: 0	1144	Used ROM (bytes): 6064 (3%)  Free ROM (bytes): 170044 (97%)	Used ROM (bytes): 6064 (3%)  Free ROM (bytes): 170044 (97%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
-diagnostics: 0	128	Linked in 140 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 469 ms	 
-diagnostics: 0	103	Finished successfully: 09 ago. 2022, 21:19:16	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 141 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 391 ms	 
+diagnostics: 0	103	Finished successfully: 10 ago. 2022, 20:15:24	Acelerografo.mcpds
