@@ -131,18 +131,14 @@ int ConfiguracionPrincipal();
 void LeerArchivoConfiguracion();
 void CrearArchivos();
 void GuardarVector(unsigned char *tramaD);
-void ObtenerOperacion();  // C:0xA0    F:0xF0
-void IniciarMuestreo();   // C:0xA1	F:0xF1
-void DetenerMuestreo();   // C:0xA2	F:0xF2
-void NuevoCiclo();        // C:0xA3	F:0xF3
-void EnviarTiempoLocal(); // C:0xA4	F:0xF4
-void ObtenerTiempoPIC();  // C:0xA5	F:0xF5
-void ObtenerTiempoGPS();  // C:0xA6	F:0xF6
-void ObtenerTiempoRTC();  // C:0xA7	F:0xF7
-void SetRelojLocal(unsigned char *tramaTiempo);
-
-// Prueba
+void ObtenerOperacion();                      // C:0xA0    F:0xF0
+void IniciarMuestreo();                       // C:0xA1	F:0xF1
+void DetenerMuestreo();                       // C:0xA2	F:0xF2
+void NuevoCiclo();                            // C:0xA3	F:0xF3
+void EnviarTiempoLocal();                     // C:0xA4	F:0xF4
+void ObtenerTiempoPIC();                      // C:0xA5	F:0xF5
 void ObtenerReferenciaTiempo(int referencia); // C:0xA6	F:0xF6
+void SetRelojLocal(unsigned char *tramaTiempo);
 
 // Metodos para detectar automaticamente los eventos sismicos:
 void DetectarEvento(unsigned char *tramaD);
@@ -171,15 +167,12 @@ int main(void)
     contador = 0;
 
     ConfiguracionPrincipal();
-    // CrearArchivos();
+    CrearArchivos();
 
     sleep(1);
-    // ObtenerTiempoGPS();
-    // ObtenerTiempoRTC();
-    // EnviarTiempoLocal();
 
     // Obtencion de fuente de reloj:
-    fuenteTiempo = 1; // 0:RPi 1:GPS 2:RTC
+    fuenteTiempo = 0; // 0:RPi 1:GPS 2:RTC
 
     if (fuenteTiempo != 0)
     {
@@ -191,7 +184,7 @@ int main(void)
     }
 
     // Llama al metodo para inicializar el filtro FIR
-    // firFloatInit();
+    firFloatInit();
 
     sleep(5);
 
@@ -378,8 +371,6 @@ void ObtenerOperacion()
 
     bcm2835_delayMicroseconds(200);
 
-    printf("\nInterrupcion P1: ");
-
     bcm2835_spi_transfer(0xA0);
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     buffer = bcm2835_spi_transfer(0x00);
@@ -391,12 +382,12 @@ void ObtenerOperacion()
     // Aqui se selecciona el tipo de operacion que se va a ejecutar
     if (buffer == 0xB1)
     {
-        printf("0xB1\n");
+        // printf("Interrupcion P1: 0xB1\n");
         NuevoCiclo();
     }
     if (buffer == 0xB2)
     {
-        printf("0xB2\n");
+        printf("Interrupcion P1: 0xB2\n");
         ObtenerTiempoPIC();
     }
 }
@@ -404,19 +395,10 @@ void ObtenerOperacion()
 // C:0xA1	F:0xF1
 void IniciarMuestreo()
 {
-    printf("Iniciando el muestreo...\n");
+    printf("\nIniciando el muestreo...\n");
     bcm2835_spi_transfer(0xA1);
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     bcm2835_spi_transfer(0xF1);
-}
-
-// C:0xA2	F:0xF2
-void DetenerMuestreo()
-{
-    printf("Deteniendo el muestreo...\n");
-    bcm2835_spi_transfer(0xA2);
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
-    bcm2835_spi_transfer(0xF2);
 }
 
 // C:0xA3	F:0xF3
@@ -498,17 +480,20 @@ void ObtenerTiempoPIC()
     bcm2835_spi_transfer(0xF5); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
-    if (fuenteTiempoPic == 0)
+    switch (fuenteTiempoPic)
     {
+    case 0:
         printf("RPi ");
-    }
-    if (fuenteTiempoPic == 1)
-    {
+        break;
+    case 1:
         printf("GPS ");
-    }
-    if (fuenteTiempoPic == 2)
-    {
+        break;
+    case 2:
         printf("RTC ");
+        break;
+    default:
+        printf("E%d ", fuenteTiempoPic);
+        break;
     }
 
     printf("%0.2d:", tiempoPIC[3]);  // hh
@@ -518,8 +503,8 @@ void ObtenerTiempoPIC()
     printf("%0.2d/", tiempoPIC[1]);  // MM
     printf("%0.2d\n", tiempoPIC[2]); // aa
 
-    SetRelojLocal(tiempoPIC);
-    // IniciarMuestreo();
+    // SetRelojLocal(tiempoPIC);
+    IniciarMuestreo();
 }
 
 // C:0xA6	F:0xF6
