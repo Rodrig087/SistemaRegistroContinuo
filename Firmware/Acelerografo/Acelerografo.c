@@ -31,7 +31,7 @@ char bufferSPI;
 volatile char banLec, banEsc, banCiclo, banInicioMuestreo;
 // char banMuestrear;
 //  char banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
-char banOperacion;
+// char banOperacion;
 volatile char tipoOperacion;
 volatile char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
@@ -102,7 +102,7 @@ void main()
    banEsc = 0;
    banCiclo = 0;
    banInicioMuestreo = 0;
-   banOperacion = 0;
+   // banOperacion = 0;
    tipoOperacion = 0;
    // banMuestrear = 0; // Inicia el programa con esta bandera en bajo para permitir que la RPi envie la peticion de inicio de muestreo
 
@@ -287,50 +287,6 @@ void InterrupcionP1(char operacion)
 //*****************************************************************************************************************************************
 void CambiarEstadoBandera(char bandera, char estado)
 {
-   if (estado == 1)
-   {
-      // Cambia el estado de todas las baderas para evitar posibles interferencias
-      banSPI0 = 3;
-      banSPI1 = 3;
-      banSPI2 = 3;
-      banSPI4 = 3;
-      banSPI5 = 3;
-      banSPI6 = 3;
-      banSPI7 = 3;
-      banSPI8 = 3;
-      banSPIA = 3;
-      // Activa la bandera requerida:
-      switch (bandera)
-      {
-      case 0:
-         banSPI0 = 1;
-         break;
-      case 1:
-         banSPI1 = 1;
-         break;
-      case 2:
-         banSPI2 = 1;
-         break;
-      case 4:
-         banSPI4 = 1;
-         break;
-      case 5:
-         banSPI5 = 1;
-         break;
-      case 6:
-         banSPI6 = 1;
-         break;
-      case 7:
-         banSPI7 = 1;
-         break;
-      case 8:
-         banSPI8 = 1;
-         break;
-      case 0x0A:
-         banSPIA = 1;
-         break;
-      }
-   }
 
    // Limpia todas las banderas de comunicacion SPI:
    if (estado == 0)
@@ -344,6 +300,50 @@ void CambiarEstadoBandera(char bandera, char estado)
       banSPI7 = 0;
       banSPI8 = 0;
       banSPIA = 0;
+   }
+   else
+   {
+      // Cambia el estado de todas las baderas para evitar posibles interferencias:
+      banSPI0 = 0xFF;
+      banSPI1 = 0xFF;
+      banSPI2 = 0xFF;
+      banSPI4 = 0xFF;
+      banSPI5 = 0xFF;
+      banSPI6 = 0xFF;
+      banSPI7 = 0xFF;
+      banSPI8 = 0xFF;
+      banSPIA = 0xFF;
+      // Activa la bandera requerida:
+      switch (bandera)
+      {
+      case 0:
+         banSPI0 = estado;
+         break;
+      case 1:
+         banSPI1 = estado;
+         break;
+      case 2:
+         banSPI2 = estado;
+         break;
+      case 4:
+         banSPI4 = estado;
+         break;
+      case 5:
+         banSPI5 = estado;
+         break;
+      case 6:
+         banSPI6 = estado;
+         break;
+      case 7:
+         banSPI7 = estado;
+         break;
+      case 8:
+         banSPI8 = estado;
+         break;
+      case 0x0A:
+         banSPIA = estado;
+         break;
+      }
    }
 }
 //*****************************************************************************************************************************************
@@ -404,7 +404,10 @@ void Muestrear()
       contFIFO = 0;     // Limpia el contador de FIFOs
       T1CON.TON = 1;    // Enciende el Timer1
 
-      banLec = 1; // Activa la bandera de lectura para enviar la trama
+      // banLec = 1; // Activa la bandera de lectura para enviar la trama
+
+      // Activa la bandera banSPI3 para enviar la trama a la RPi:
+      CambiarEstadoBandera(3, 1);
 
       ledTest = 0;
 
@@ -472,13 +475,14 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 
    // (C:0xA3   F:0xF3)
    // Rutina de lectura de los datos del acelerometro:
-   if ((banLec == 1) && (bufferSPI == 0xA3))
-   {              // Verifica si la bandera de inicio de trama esta activa
-      banLec = 2; // Activa la bandera de lectura
+   if ((banSPI3 == 1) && (bufferSPI == 0xA3))
+   { // Verifica si la bandera de inicio de trama esta activa
+      // banLec = 2; // Activa la bandera de lectura
+      CambiarEstadoBandera(3, 2);
       i = 0;
       SPI1BUF = tramaCompleta[i];
    }
-   if ((banLec == 2) && (bufferSPI != 0xF3))
+   if ((banSPI3 == 2) && (bufferSPI != 0xA3) && (bufferSPI != 0xF3))
    {
       SPI1BUF = tramaCompleta[i];
       i++;
@@ -486,8 +490,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    if ((banLec == 2) && (bufferSPI == 0xF3))
    {
       // Si detecta el delimitador de final de trama:
-      banLec = 0; // Limpia la bandera de lectura                        ****AQUI Me QUEDE
-      SPI1BUF = 0xFF;
+      // banLec = 0; // Limpia la bandera de lectura                        ****AQUI Me QUEDE
+      // SPI1BUF = 0xFF;
+      CambiarEstadoBandera(3, 0);
    }
    //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -537,7 +542,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    if ((banSPI5 == 1) && (bufferSPI == 0xF5))
    {
       CambiarEstadoBandera(5, 0);
-      SPI1BUF = 0xFF; //**No se que hace esto
+      // SPI1BUF = 0xFF; //**No se que hace esto
    }
 
    //(C:0xA6   F:0xF6)
@@ -607,7 +612,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
    if (banInicioMuestreo == 1)
    {
       ledTest = ~ledTest;
-      Muestrear();
+      // Muestrear();
    }
 
    // Limpia la bandera de interrupcion externa INT1

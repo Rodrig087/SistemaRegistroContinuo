@@ -131,13 +131,13 @@ int ConfiguracionPrincipal();
 void LeerArchivoConfiguracion();
 void CrearArchivos();
 void GuardarVector(unsigned char *tramaD);
-void ObtenerOperacion();                      // C:0xA0    F:0xF0
-void IniciarMuestreo();                       // C:0xA1	F:0xF1
-void DetenerMuestreo();                       // C:0xA2	F:0xF2
-void NuevoCiclo();                            // C:0xA3	F:0xF3
-void EnviarTiempoLocal();                     // C:0xA4	F:0xF4
-void ObtenerTiempoPIC();                      // C:0xA5	F:0xF5
-void ObtenerReferenciaTiempo(int referencia); // C:0xA6	F:0xF6
+void ObtenerOperacion();  // C:0xA0    F:0xF0
+void IniciarMuestreo();   // C:0xA1	F:0xF1
+void DetenerMuestreo();   // C:0xA2	F:0xF2
+void NuevoCiclo();        // C:0xA3	F:0xF3
+void EnviarTiempoLocal(); // C:0xA4	F:0xF4
+void ObtenerTiempoPIC();  // C:0xA5	F:0xF5
+void ObtenerReferenciaTiempo(int referencia);						//C:0xA6	F:0xF6
 void SetRelojLocal(unsigned char *tramaTiempo);
 
 // Metodos para detectar automaticamente los eventos sismicos:
@@ -154,7 +154,7 @@ void ExtraerEvento(char *nombreArchivoRegistro, unsigned int tiempoEvento, unsig
 int main(void)
 {
 
-    printf("Iniciando...\n");
+    printf("\n\nIniciando...\n");
 
     // Inicializa las variables:
     i = 0;
@@ -167,31 +167,30 @@ int main(void)
     contador = 0;
 
     ConfiguracionPrincipal();
-    // CrearArchivos();
+    //CrearArchivos();
 
     sleep(1);
+    
+    //Obtencion de fuente de reloj:
+    fuenteTiempo = 1;  //0:RPi 1:GPS 2:RTC
 
-    // Obtencion de fuente de reloj:
-    fuenteTiempo = 0; // 0:RPi 1:GPS 2:RTC
-
-    if (fuenteTiempo != 0)
-    {
-        ObtenerReferenciaTiempo(fuenteTiempo);
-    }
-    else
-    {
-        EnviarTiempoLocal();
-    }
+	if (fuenteTiempo!=0){
+		ObtenerReferenciaTiempo(fuenteTiempo);
+	} else {
+		EnviarTiempoLocal();
+	}
 
     // Llama al metodo para inicializar el filtro FIR
-    // firFloatInit();
+    //firFloatInit();
 
-    sleep(5);
+    //sleep(5);
 
+    
     while (1)
     {
-        delay(10);
+       delay(10); 
     }
+    
 
     bcm2835_spi_end();
     bcm2835_close();
@@ -203,9 +202,9 @@ int ConfiguracionPrincipal()
 {
 
     // Reinicia el modulo SPI
-    // system("sudo rmmod  spi_bcm2835");
-    // bcm2835_delayMicroseconds(500);
-    // system("sudo modprobe spi_bcm2835");
+    system("sudo rmmod  spi_bcm2835");
+    //bcm2835_delayMicroseconds(500);
+    system("sudo modprobe spi_bcm2835");
 
     // Configuracion libreria bcm2835:
     if (!bcm2835_init())
@@ -244,7 +243,9 @@ int ConfiguracionPrincipal()
     delay(100);
     digitalWrite(MCLR, HIGH);
 
-    printf("\nConfiguracion completa\n");
+    printf("\n****************************************\n");
+    printf("Configuracion completa\n");
+    printf("****************************************\n");
 }
 
 void CrearArchivos()
@@ -378,16 +379,17 @@ void ObtenerOperacion()
     bcm2835_spi_transfer(0xF0);
 
     delay(25); //**Este retardo es muy importante**
-
+    
     // Aqui se selecciona el tipo de operacion que se va a ejecutar
     if (buffer == 0xB1)
     {
-        // printf("Interrupcion P1: 0xB1\n");
+        //printf("Interrupcion P1: 0xB1\n");
         NuevoCiclo();
     }
     if (buffer == 0xB2)
     {
         printf("Interrupcion P1: 0xB2\n");
+        printf("****************************************\n");
         ObtenerTiempoPIC();
     }
 }
@@ -430,7 +432,7 @@ void EnviarTiempoLocal()
 {
 
     // Obtiene la hora y la fecha del sistema:
-    printf("Hora local: ");
+    printf("Enviando tiempo local: ");
     time_t t;
     struct tm *tm;
     t = time(NULL);
@@ -441,11 +443,13 @@ void EnviarTiempoLocal()
     tiempoLocal[3] = tm->tm_hour;       // Hora
     tiempoLocal[4] = tm->tm_min;        // Minuto
     tiempoLocal[5] = tm->tm_sec;        // Segundo
-    for (i = 0; i < 6; i++)
-    {
-        printf("%0.2d ", tiempoLocal[i]);
-    }
-    printf("\n");
+    printf("%0.2d:", tiempoLocal[3]);  // hh
+    printf("%0.2d:", tiempoLocal[4]);  // mm
+    printf("%0.2d ", tiempoLocal[5]);  // ss
+    printf("%0.2d/", tiempoLocal[0]);  // dd
+    printf("%0.2d/", tiempoLocal[1]);  // MM
+    printf("%0.2d\n", tiempoLocal[2]); // aa
+    printf("****************************************\n");
 
     bcm2835_spi_transfer(0xA4); // Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
@@ -479,21 +483,20 @@ void ObtenerTiempoPIC()
     bcm2835_spi_transfer(0xF5); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
-    switch (fuenteTiempoPic)
-    {
-    case 0:
-        printf("RPi ");
-        break;
-    case 1:
-        printf("GPS ");
-        break;
-    case 2:
-        printf("RTC ");
-        break;
-    default:
-        printf("E%d ", fuenteTiempoPic);
-        break;
-    }
+    switch (fuenteTiempoPic){
+			case 0: 
+					printf("RPi ");
+					break;
+			case 1:
+					printf("GPS ");
+					break;
+			case 2:
+					printf("RTC ");
+					break;			
+			default:
+					printf("E%d ", fuenteTiempoPic);
+					break;
+	}
 
     printf("%0.2d:", tiempoPIC[3]);  // hh
     printf("%0.2d:", tiempoPIC[4]);  // mm
@@ -502,30 +505,29 @@ void ObtenerTiempoPIC()
     printf("%0.2d/", tiempoPIC[1]);  // MM
     printf("%0.2d\n", tiempoPIC[2]); // aa
 
-    // SetRelojLocal(tiempoPIC);
+    printf("****************************************\n");
+
+    //SetRelojLocal(tiempoPIC);
     IniciarMuestreo();
+
 }
 
-// C:0xA6	F:0xF6
-void ObtenerReferenciaTiempo(int referencia)
-{
-    // referencia = 1 -> GPS
-    // referencia = 2 -> RTC
-    if (referencia == 1)
-    {
-        printf("Obteniendo hora del GPS...\n");
-    }
-    else
-    {
-        printf("Obteniendo hora del RTC...\n");
-    }
-
-    bcm2835_spi_transfer(0xA6);
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
-    bcm2835_spi_transfer(referencia);
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
-    bcm2835_spi_transfer(0xF6);
-    bcm2835_delayMicroseconds(TIEMPO_SPI);
+//C:0xA6	F:0xF6
+void ObtenerReferenciaTiempo(int referencia){ 
+	//referencia = 1 -> GPS
+	//referencia = 2 -> RTC
+	if (referencia==1){
+		printf("Obteniendo hora del GPS...\n");	
+	} else {
+		printf("Obteniendo hora del RTC...\n");	
+	}
+	printf("****************************************\n");    
+	bcm2835_spi_transfer(0xA6);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(referencia);								
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	bcm2835_spi_transfer(0xF6);
+	bcm2835_delayMicroseconds(TIEMPO_SPI);
 }
 //**************************************************************************************************************************************
 

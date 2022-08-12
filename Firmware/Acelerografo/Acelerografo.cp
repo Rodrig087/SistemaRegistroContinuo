@@ -478,7 +478,7 @@ char bufferSPI;
 volatile char banLec, banEsc, banCiclo, banInicioMuestreo;
 
 
-char banOperacion;
+
 volatile char tipoOperacion;
 volatile char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
 
@@ -549,7 +549,7 @@ void main()
  banEsc = 0;
  banCiclo = 0;
  banInicioMuestreo = 0;
- banOperacion = 0;
+
  tipoOperacion = 0;
 
 
@@ -734,50 +734,6 @@ void InterrupcionP1(char operacion)
 
 void CambiarEstadoBandera(char bandera, char estado)
 {
- if (estado == 1)
- {
-
- banSPI0 = 3;
- banSPI1 = 3;
- banSPI2 = 3;
- banSPI4 = 3;
- banSPI5 = 3;
- banSPI6 = 3;
- banSPI7 = 3;
- banSPI8 = 3;
- banSPIA = 3;
-
- switch (bandera)
- {
- case 0:
- banSPI0 = 1;
- break;
- case 1:
- banSPI1 = 1;
- break;
- case 2:
- banSPI2 = 1;
- break;
- case 4:
- banSPI4 = 1;
- break;
- case 5:
- banSPI5 = 1;
- break;
- case 6:
- banSPI6 = 1;
- break;
- case 7:
- banSPI7 = 1;
- break;
- case 8:
- banSPI8 = 1;
- break;
- case 0x0A:
- banSPIA = 1;
- break;
- }
- }
 
 
  if (estado == 0)
@@ -791,6 +747,50 @@ void CambiarEstadoBandera(char bandera, char estado)
  banSPI7 = 0;
  banSPI8 = 0;
  banSPIA = 0;
+ }
+ else
+ {
+
+ banSPI0 = 0xFF;
+ banSPI1 = 0xFF;
+ banSPI2 = 0xFF;
+ banSPI4 = 0xFF;
+ banSPI5 = 0xFF;
+ banSPI6 = 0xFF;
+ banSPI7 = 0xFF;
+ banSPI8 = 0xFF;
+ banSPIA = 0xFF;
+
+ switch (bandera)
+ {
+ case 0:
+ banSPI0 = estado;
+ break;
+ case 1:
+ banSPI1 = estado;
+ break;
+ case 2:
+ banSPI2 = estado;
+ break;
+ case 4:
+ banSPI4 = estado;
+ break;
+ case 5:
+ banSPI5 = estado;
+ break;
+ case 6:
+ banSPI6 = estado;
+ break;
+ case 7:
+ banSPI7 = estado;
+ break;
+ case 8:
+ banSPI8 = estado;
+ break;
+ case 0x0A:
+ banSPIA = estado;
+ break;
+ }
  }
 }
 
@@ -851,7 +851,10 @@ void Muestrear()
  contFIFO = 0;
  T1CON.TON = 1;
 
- banLec = 1;
+
+
+
+ CambiarEstadoBandera(3, 1);
 
  ledTest = 0;
 
@@ -861,7 +864,7 @@ void Muestrear()
 
  contCiclos++;
 }
-#line 428 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 431 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 void spi_1() org IVT_ADDR_SPI1INTERRUPT
 {
  bufferSPI = SPI1BUF;
@@ -909,13 +912,14 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 
 
 
- if ((banLec == 1) && (bufferSPI == 0xA3))
+ if ((banSPI3 == 1) && (bufferSPI == 0xA3))
  {
- banLec = 2;
+
+ CambiarEstadoBandera(3, 2);
  i = 0;
  SPI1BUF = tramaCompleta[i];
  }
- if ((banLec == 2) && (bufferSPI != 0xF3))
+ if ((banSPI3 == 2) && (bufferSPI != 0xA3) && (bufferSPI != 0xF3))
  {
  SPI1BUF = tramaCompleta[i];
  i++;
@@ -923,8 +927,9 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  if ((banLec == 2) && (bufferSPI == 0xF3))
  {
 
- banLec = 0;
- SPI1BUF = 0xFF;
+
+
+ CambiarEstadoBandera(3, 0);
  }
 
 
@@ -974,7 +979,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  if ((banSPI5 == 1) && (bufferSPI == 0xF5))
  {
  CambiarEstadoBandera(5, 0);
- SPI1BUF = 0xFF;
+
  }
 
 
@@ -1044,7 +1049,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
  if (banInicioMuestreo == 1)
  {
  ledTest = ~ledTest;
- Muestrear();
+
  }
 
 
@@ -1192,7 +1197,7 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
  horaSistema = RecuperarHoraGPS(datosGPS);
  fechaSistema = RecuperarFechaGPS(datosGPS);
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
-#line 770 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 775 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if (tramaGPS[12] == 0x41)
  {
  fuenteReloj = 1;
