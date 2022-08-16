@@ -10,8 +10,8 @@ hint: 0	1004	interrupt handler (spi_1 at 0x0028)	Acelerografo.c
 hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
 hint: 0	1004	interrupt handler (urx_1 at 0x002A)	Acelerografo.c
-diagnostics: 800	123	Compiled Successfully	Acelerografo.c
-warning: 154	1519	Logical expression is always: 'False'	Acelerografo.c
+diagnostics: 791	123	Compiled Successfully	Acelerografo.c
+warning: 152	1519	Logical expression is always: 'False'	Acelerografo.c
 hint: 134	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
 hint: 146	1164	Variable 'muestra' has been eliminated by optimizer	Acelerografo.c
 hint: 169	1164	Variable 'add' has been eliminated by optimizer	Acelerografo.c
@@ -27,9 +27,9 @@ hint: 12	1164	Variable 'fechaRPi' has been eliminated by optimizer	Acelerografo.
 hint: 23	1164	Variable 'horaRPi' has been eliminated by optimizer	Acelerografo.c
 diagnostics: 0	127	All files Compiled in 140 ms	 
 hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)
-hint: 0	1144	Static RAM (bytes): 2984   Dynamic RAM (bytes): 25688	Static RAM (bytes): 2984   Dynamic RAM (bytes): 25688
-hint: 0	1144	Used ROM (bytes): 5648 (3%)  Free ROM (bytes): 170460 (97%)	Used ROM (bytes): 5648 (3%)  Free ROM (bytes): 170460 (97%)
+hint: 0	1144	Static RAM (bytes): 2980   Dynamic RAM (bytes): 25692	Static RAM (bytes): 2980   Dynamic RAM (bytes): 25692
+hint: 0	1144	Used ROM (bytes): 5984 (3%)  Free ROM (bytes): 170124 (97%)	Used ROM (bytes): 5984 (3%)  Free ROM (bytes): 170124 (97%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
 diagnostics: 0	128	Linked in 141 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 375 ms	 
-diagnostics: 0	103	Finished successfully: 11 ago. 2022, 23:10:19	Acelerografo.mcpds
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 391 ms	 
+diagnostics: 0	103	Finished successfully: 15 ago. 2022, 23:42:31	Acelerografo.mcpds

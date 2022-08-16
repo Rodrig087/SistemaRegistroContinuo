@@ -32,8 +32,8 @@ volatile char banLec, banEsc, banCiclo, banInicioMuestreo;
 // char banMuestrear;
 //  char banLeer, banConf;  //Ojo: Parece que no son utilizadas para nada importantes
 // char banOperacion;
-volatile char tipoOperacion;
-volatile char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6, banSPI7, banSPI8, banSPI9, banSPIA;
+char tipoOperacion;
+volatile char banSPI0, banSPI1, banSPI2, banSPI3, banSPI4, banSPI5, banSPI6;
 
 // Variables para manejo del GPS:
 unsigned int i_gps;
@@ -64,8 +64,8 @@ char contTimer1;           // Variable para contar el numero de veces que entra 
 char contMuestras;
 char contCiclos;
 unsigned int contFIFO;
-char tasaMuestreo;
-char numTMR1;
+short tasaMuestreo;
+short numTMR1;
 
 // Variables sin usar:
 // char banTC, banTI, banTF;                                             //Banderas de trama completa, inicio de trama y final de trama
@@ -113,10 +113,6 @@ void main()
    banSPI4 = 0;
    banSPI5 = 0;
    banSPI6 = 0;
-   banSPI7 = 0;
-   banSPI8 = 0;
-   banSPI9 = 0;
-   banSPIA = 0;
 
    // GPS:
    i_gps = 0;
@@ -148,6 +144,8 @@ void main()
    RP2 = 0;
    ledTest = 1;
 
+   SPI1BUF = 0x00;
+
    // Configuracion:
    ConfiguracionPrincipal();
 
@@ -162,9 +160,13 @@ void main()
 
          // Conmuta el ledTest para indicar que se termino de inicializar
          ledTest = ~ledTest;
-         Delay_ms(300);
+         Delay_ms(150);
          ledTest = ~ledTest;
-         Delay_ms(300);
+         Delay_ms(150);
+         ledTest = ~ledTest;
+         Delay_ms(150);
+         ledTest = ~ledTest;
+         Delay_ms(150);
          ledTest = ~ledTest;
       }
 
@@ -221,7 +223,7 @@ void ConfiguracionPrincipal()
    // Configuracion del puerto SPI1 en modo Esclavo
    SPI1STAT.SPIEN = 1;                                                                                                                                                 // Habilita el SPI1 *
    SPI1_Init_Advanced(_SPI_SLAVE, _SPI_8_BIT, _SPI_PRESCALE_SEC_1, _SPI_PRESCALE_PRI_1, _SPI_SS_ENABLE, _SPI_DATA_SAMPLE_END, _SPI_CLK_IDLE_HIGH, _SPI_ACTIVE_2_IDLE); //*
-   IPC2bits.SPI1IP = 0x04;                                                                                                                                             // Prioridad de la interrupcion SPI1
+   IPC2bits.SPI1IP = 0x03;                                                                                                                                             // Prioridad de la interrupcion SPI1
    SPI1IF_bit = 0;                                                                                                                                                     // Limpia la bandera de interrupcion por SPI *
    SPI1IE_bit = 1;                                                                                                                                                     // Habilita la interrupcion por SPI1  *
 
@@ -240,7 +242,7 @@ void ConfiguracionPrincipal()
    // Configuracion de la interrupcion externa INT1
    // RPINR0 = 0x2E00;                                                          //Asigna INT1 al RB14/RPI46 (PPS)
    RPINR0 = 0x2F00;        // Asigna INT1 al RB15/RPI47 (SQW)
-   IPC5bits.INT1IP = 0x06; // Prioridad en la interrupcion INT1 (1-7, 7=>mas alta)
+   IPC5bits.INT1IP = 0x01; // Prioridad en la interrupcion INT1 (1-7, 7=>mas alta)
    INT1IF_bit = 0;         // Limpia la bandera de interrupcion INT1
    INT1IE_bit = 1;         // Habilita la interrupcion INT1
 
@@ -248,7 +250,7 @@ void ConfiguracionPrincipal()
    T1CON = 0x0020;
    PR1 = 62500;          // Carga el preload para un tiempo de 100ms
    T1CON.TON = 0;        // Apaga el Timer1
-   IPC0bits.T1IP = 0x05; // Prioridad de la interrupcion por desbordamiento del TMR1
+   IPC0bits.T1IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR1
    T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
    T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
 
@@ -294,12 +296,10 @@ void CambiarEstadoBandera(char bandera, char estado)
       banSPI0 = 0;
       banSPI1 = 0;
       banSPI2 = 0;
+      banSPI3 = 0;
       banSPI4 = 0;
       banSPI5 = 0;
       banSPI6 = 0;
-      banSPI7 = 0;
-      banSPI8 = 0;
-      banSPIA = 0;
    }
    else
    {
@@ -310,9 +310,6 @@ void CambiarEstadoBandera(char bandera, char estado)
       banSPI4 = 0xFF;
       banSPI5 = 0xFF;
       banSPI6 = 0xFF;
-      banSPI7 = 0xFF;
-      banSPI8 = 0xFF;
-      banSPIA = 0xFF;
       // Activa la bandera requerida:
       switch (bandera)
       {
@@ -325,6 +322,9 @@ void CambiarEstadoBandera(char bandera, char estado)
       case 2:
          banSPI2 = estado;
          break;
+      case 3:
+         banSPI3 = estado;
+         break;
       case 4:
          banSPI4 = estado;
          break;
@@ -333,15 +333,6 @@ void CambiarEstadoBandera(char bandera, char estado)
          break;
       case 6:
          banSPI6 = estado;
-         break;
-      case 7:
-         banSPI7 = estado;
-         break;
-      case 8:
-         banSPI8 = estado;
-         break;
-      case 0x0A:
-         banSPIA = estado;
          break;
       }
    }
@@ -356,8 +347,8 @@ void Muestrear()
    if (banCiclo == 0)
    {
 
-      ADXL355_write_byte(POWER_CTL, DRDY_OFF | MEASURING); // Coloca el ADXL en modo medicion
-      T1CON.TON = 1;                                       // Enciende el Timer1
+      // ADXL355_write_byte(POWER_CTL, DRDY_OFF | MEASURING); // Coloca el ADXL en modo medicion
+      T1CON.TON = 1; // Enciende el Timer1
    }
    else if (banCiclo == 1)
    {
@@ -408,11 +399,11 @@ void Muestrear()
 
       // Activa la bandera banSPI3 para enviar la trama a la RPi:
       CambiarEstadoBandera(3, 1);
+      // Genera la interrupcion en la RPi para enviar la trama de datos:
+      tipoOperacion = 0xB1;
+      InterrupcionP1(177); // 0xB1
 
       ledTest = 0;
-
-      // Genera la interrupcion en la RPi para enviar la trama de datos:
-      // InterrupcionP1(0XB1);
    }
 
    contCiclos++; // Incrementa el contador de ciclos
@@ -491,7 +482,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    {
       // Si detecta el delimitador de final de trama:
       // banLec = 0; // Limpia la bandera de lectura                        ****AQUI Me QUEDE
-      // SPI1BUF = 0xFF;
+      SPI1BUF = 0xFF;
       CambiarEstadoBandera(3, 0);
    }
    //------------------------------------------------------------------------------------------------------------------------------------
@@ -523,7 +514,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
       fuenteReloj = 0;                                         // Fuente de reloj = RPi
       banSetReloj = 1;                                         // Activa esta bandera para usar la hora/fecha recuperada
-      InterrupcionP1(0XB2);                                    // Envia la hora local a la RPi
+      InterrupcionP1(0xB2);                                    // Envia la hora local a la RPi
    }
 
    // (C:0xA5   F:0xF5)
@@ -542,7 +533,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    if ((banSPI5 == 1) && (bufferSPI == 0xF5))
    {
       CambiarEstadoBandera(5, 0);
-      // SPI1BUF = 0xFF; //**No se que hace esto
+      SPI1BUF = 0xFF; //**No se que hace esto
    }
 
    //(C:0xA6   F:0xF6)
@@ -598,7 +589,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
    // Incrementa el reloj del sistema:
    if (banSetReloj == 1)
    {
-      // ledTest = ~ledTest;
+      ledTest = ~ledTest;
       horaSistema++; // Incrementa el reloj del sistema
    }
 
@@ -611,8 +602,8 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
    // Inicia el muestreo
    if (banInicioMuestreo == 1)
    {
-      ledTest = ~ledTest;
-      // Muestrear();
+      // ledTest = ~ledTest;
+      Muestrear();
    }
 
    // Limpia la bandera de interrupcion externa INT1

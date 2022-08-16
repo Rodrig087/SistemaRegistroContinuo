@@ -23,6 +23,18 @@ main
 	ADXL355_init
 		ADXL355_write_byte
 int_1
+	Muestrear
+		ADXL355_read_byte
+			SPI2_Write
+			SPI2_Read
+		ADXL355_read_FIFO
+			SPI2_Write
+			SPI2_Read
+		AjustarTiempoSistema
+			_Divide_32x32
+			_Modulus_32x32
+		CambiarEstadoBandera
+		InterrupcionP1
 urx_1
 	RecuperarHoraRTC
 		SPI2_Init_Advanced
@@ -39,8 +51,6 @@ urx_1
 		SPI2_Init
 		_Multiply_32x32
 	AjustarTiempoSistema
-		_Divide_32x32
-		_Modulus_32x32
 	InterrupcionP1
 	RecuperarHoraGPS
 		atoi
@@ -68,8 +78,4 @@ spi_1
 	InterrupcionP1
 Timer1Int
 	ADXL355_read_byte
-		SPI2_Write
-		SPI2_Read
 	ADXL355_read_FIFO
-		SPI2_Write
-		SPI2_Read

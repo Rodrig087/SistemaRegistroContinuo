@@ -1,6 +1,6 @@
 /*       Device Addressing      */
 
-#define ADXL355_Write 0x3A // La direccci�n del i2c es 0x1D, pues asel est a en 0.
+#define ADXL355_Write 0x3A // La direccción del i2c es 0x1D, pues asel est a en 0.
 #define ADXL355_Read 0x3B
 
 /*      Register names      */
@@ -92,12 +92,12 @@ sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = {XDATA3, XDATA2, XDATA1, YDATA3, YDATA2, YDATA1, ZDATA3, ZDATA2, ZDATA1};
 
 void ADXL355_init();
-void ADXL355_write_byte(char address, char value);
-char ADXL355_read_byte(char address);
-unsigned int ADXL355_read_data(char *vectorMuestra);
-unsigned int ADXL355_read_FIFO(char *vectorFIFO);
+void ADXL355_write_byte(unsigned char address, unsigned char value);
+unsigned char ADXL355_read_byte(unsigned char address);
+unsigned int ADXL355_read_data(unsigned char *vectorMuestra);
+unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO);
 
-void ADXL355_init(char tMuestreo)
+void ADXL355_init(short tMuestreo)
 {
      ADXL355_write_byte(Reset, 0x52); // Resetea el dispositivo
      Delay_ms(10);
@@ -120,7 +120,7 @@ void ADXL355_init(char tMuestreo)
      }
 }
 
-void ADXL355_write_byte(char address, char value)
+void ADXL355_write_byte(unsigned char address, unsigned char value)
 {
      address = (address << 1) & 0xFE;
      CS_ADXL355 = 0;
@@ -129,9 +129,9 @@ void ADXL355_write_byte(char address, char value)
      CS_ADXL355 = 1;
 }
 
-char ADXL355_read_byte(char address)
+unsigned char ADXL355_read_byte(unsigned char address)
 {
-     char value = 0x00;
+     unsigned char value = 0x00;
      address = (address << 1) | 0x01;
      CS_ADXL355 = 0;
      SPI2_Write(address);
@@ -140,7 +140,7 @@ char ADXL355_read_byte(char address)
      return value;
 }
 
-unsigned int ADXL355_read_data(char *vectorMuestra)
+unsigned int ADXL355_read_data(unsigned char *vectorMuestra)
 {
      unsigned short j;
      unsigned short muestra;
@@ -164,9 +164,9 @@ unsigned int ADXL355_read_data(char *vectorMuestra)
      return;
 }
 
-unsigned int ADXL355_read_FIFO(char *vectorFIFO)
+unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO)
 {
-     char add;
+     unsigned char add;
      add = (FIFO_DATA << 1) | 0x01;
      CS_ADXL355 = 0;
      SPI2_Write(add);

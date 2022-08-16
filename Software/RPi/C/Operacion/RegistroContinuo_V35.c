@@ -167,7 +167,7 @@ int main(void)
     contador = 0;
 
     ConfiguracionPrincipal();
-    //CrearArchivos();
+    CrearArchivos();
 
     sleep(1);
     
@@ -181,7 +181,7 @@ int main(void)
 	}
 
     // Llama al metodo para inicializar el filtro FIR
-    //firFloatInit();
+    firFloatInit();
 
     //sleep(5);
 
@@ -370,7 +370,9 @@ void CrearArchivos()
 // C:0xA0	F:0xF0
 void ObtenerOperacion()
 {
-    bcm2835_delayMicroseconds(200);
+    //bcm2835_delayMicroseconds(200);
+
+    //printf(".\n");
 
     bcm2835_spi_transfer(0xA0);
     bcm2835_delayMicroseconds(TIEMPO_SPI);
@@ -378,19 +380,25 @@ void ObtenerOperacion()
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     bcm2835_spi_transfer(0xF0);
 
+    printf("%X \n", buffer);
+
     delay(25); //**Este retardo es muy importante**
     
     // Aqui se selecciona el tipo de operacion que se va a ejecutar
-    if (buffer == 0xB1)
-    {
-        //printf("Interrupcion P1: 0xB1\n");
-        NuevoCiclo();
-    }
+    // if (buffer == 0xB1)
+    // {
+    //     printf("Interrupcion P1: 0xB1\n");
+    //     NuevoCiclo();
+    // }
     if (buffer == 0xB2)
     {
         printf("Interrupcion P1: 0xB2\n");
         printf("****************************************\n");
         ObtenerTiempoPIC();
+    }
+    else {
+        printf("Interrupcion P1: 0xB1\n");
+        NuevoCiclo();
     }
 }
 
@@ -406,7 +414,7 @@ void IniciarMuestreo()
 // C:0xA3	F:0xF3
 void NuevoCiclo()
 {
-    // printf("Nuevo ciclo\n");
+    //printf("Nuevo ciclo\n");
     bcm2835_spi_transfer(0xA3); // Envia el delimitador de inicio de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
