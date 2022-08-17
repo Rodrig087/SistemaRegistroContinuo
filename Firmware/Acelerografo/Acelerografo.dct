@@ -2340,6 +2340,7 @@ configuracionprincipal
 contciclos
 contfifo
 contmuestras
+conttimeout1
 conttimer1
 corcon
 corconbits
@@ -11144,6 +11145,7 @@ tgen_bit
 tiempo
 tiemporpi
 timer1int
+timer2int
 tipooperacion
 tmr1
 tmr1_0

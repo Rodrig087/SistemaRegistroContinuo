@@ -73,6 +73,11 @@ spi_1
 	RecuperarFechaRTC
 	AjustarTiempoSistema
 	InterrupcionP1
+Timer2Int
+	RecuperarHoraRTC
+	RecuperarFechaRTC
+	AjustarTiempoSistema
+	InterrupcionP1
 Timer1Int
 	ADXL355_read_byte
 	ADXL355_read_FIFO

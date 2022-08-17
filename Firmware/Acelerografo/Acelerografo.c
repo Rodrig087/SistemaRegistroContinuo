@@ -53,6 +53,7 @@ short confGPS[2];
 unsigned long horaSistema, fechaSistema;
 unsigned short referenciaTiempo;
 unsigned short banInicializar;
+unsigned short contTimeout1;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -100,6 +101,7 @@ void main()
    i_gps = 0;
    horaSistema = 0;
    referenciaTiempo = 0;
+   contTimeout1 = 0;
 
    contMuestras = 0;
    contCiclos = 0;
@@ -141,9 +143,8 @@ void main()
          Delay_ms(150);
          LedTest = ~LedTest;
       }
-      
+
       Delay_ms(1);
-      
    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -217,10 +218,18 @@ void ConfiguracionPrincipal()
    // Configuracion del TMR1 con un tiempo de 100ms
    T1CON = 0x0020;
    T1CON.TON = 0;        // Apaga el Timer1
-   T1IE_bit = 1;         // Habilita la interrupci�n de desbordamiento TMR1
+   T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
    T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
    PR1 = 62500;          // Car ga el preload para un tiempo de 100ms
    IPC0bits.T1IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR1
+
+   // Configuracion del TMR2 con un tiempo de 300ms
+   T2CON = 0x30;         // Prescalador
+   T2CON.TON = 0;        // Apaga el Timer2
+   T2IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR2
+   T2IF_bit = 0;         // Limpia la bandera de interrupcion del TMR2
+   PR2 = 46875;          // Carga el preload para un tiempo de 300ms
+   IPC1bits.T2IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR2
 
    Delay_ms(200); // Espera hasta que se estabilicen los cambios
 
@@ -251,14 +260,6 @@ void InterrupcionP1(unsigned short operacion)
       U1RXIE_bit = 0;
    }*/
    //}
-
-   // Sacado del programa del Ivan:
-   // //  Analiza si la bandera de overflow del SPI esta activa
-   // if (SPI2STATbits.SPIROV == 1)
-   // {
-   //    // Limpia la bandera y el buffer
-   //    SPI2STATbits.SPIROV = 0;
-   // }
 
    banOperacion = 0;          // Encera la bandera para permitir una nueva peticion de operacion
    tipoOperacion = operacion; // Carga en la variable el tipo de operacion requerido
@@ -495,8 +496,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
          banGPSC = 0;       // Limpia la bandera de trama completa
          U1MODE.UARTEN = 1; // Inicializa el UART1
          //  Inicia el Timeout 1:
-         //  T1CON.TON = 1;
-         //  TMR1 = 0;
+         T2CON.TON = 1;
+         TMR2 = 0;
       }
       else
       {
@@ -606,6 +607,29 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Timeout de 4*300ms para el UART1:
+void Timer2Int() org IVT_ADDR_T2INTERRUPT
+{
+
+   T2IF_bit = 0;   // Limpia la bandera de interrupcion por desbordamiento del Timer2
+   contTimeout1++; // Incrementa el contador de Timeout
+
+   // Despues de 4 desbordamientos apaga el Timer2 y recupera la hora del RTC:
+   if (contTimeout1 == 4)
+   {
+      T2CON.TON = 0;
+      TMR2 = 0;
+      contTimeout1 = 0;
+      // Recupera la hora del RTC:
+      horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
+      fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
+      AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
+      fuenteReloj = 5;                                         //**Indica que se obtuvo la hora del RTC
+      InterrupcionP1(0xB2);                                    // Envia la hora local a la RPi
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interrupcion UART1
 void urx_1() org IVT_ADDR_U1RXINTERRUPT
 {
@@ -695,30 +719,14 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
       fechaSistema = RecuperarFechaGPS(datosGPS);              // Recupera la fecha del GPS
       AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del gps
 
-      // Prueba
-      // Recupera la hora del RTC:
-      // horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
-      // fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
-      // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-      // fuenteReloj = 4;                                                        //Fuente reloj: RTC/E5
-      // banSetReloj = 1;
-      // InterrupcionP1(0XB2);
-      // Fin prueba
-
       // Verifica que el caracter 12 sea igual a "A" lo cual comprueba que los datos son validos:
       if (tramaGPS[12] == 0x41)
       {
          fuenteReloj = 1; // Fuente reloj: GPS
-         // banSyncReloj = 1;
-         // banSetReloj = 1;
-         // InterrupcionP1(0xB2);
       }
       else
       {
          fuenteReloj = 3; // Fuente reloj: GPS/E3
-         // banSyncReloj = 1;
-         // banSetReloj = 1;
-         // InterrupcionP1(0xB2); // Envia la hora local a la RPi
       }
       banGPSI = 0;
       banGPSC = 0;
