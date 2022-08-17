@@ -172,7 +172,7 @@ int main(void)
     sleep(1);
     
     //Obtencion de fuente de reloj:
-    fuenteTiempo = 2;  //0:RPi 1:GPS 2:RTC
+    fuenteTiempo = 1;  //0:RPi 1:GPS 2:RTC
 
 	if (fuenteTiempo!=0){
 		ObtenerReferenciaTiempo(fuenteTiempo);

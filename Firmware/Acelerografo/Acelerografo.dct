@@ -1292,6 +1292,9 @@ b9
 banciclo
 banconf
 banesc
+bangpsc
+bangpsi
+baninicializar
 baninicio
 banlec
 banleer
@@ -1299,12 +1302,11 @@ banmuestrear
 banoperacion
 bansetgps
 bansetreloj
+bansyncreloj
 bantc
-bantcgps
 bantf
 bantfgps
 banti
-bantigps
 bcd2dec
 bcd2dec16
 bch
