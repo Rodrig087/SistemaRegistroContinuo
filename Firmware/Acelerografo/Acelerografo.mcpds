@@ -24,9 +24,10 @@ Count=0
 Count=0
 ActiveImageIndex=-1
 [OPENED_FILES]
-Count=2
+Count=3
 File0=Acelerografo.c
-File1=..\Librerias firmware\tiempo_rtc.c
+File1=..\Librerias firmware\adxl355_spi.c
+File2=..\Librerias firmware\tiempo_rtc.c
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]
@@ -34,15 +35,13 @@ Count=0
 [OTHER_FILES]
 Count=0
 [SEARCH_PATH]
-Count=4
+Count=3
 Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
 Path2=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
-Path3=C:\Users\Ivan\Desktop\Milton Muñoz\Proyectos\Git\SistemaRegistroContinuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 [HEADER_PATH]
-Count=2
-Path0=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Librerias firmware\
-Path1=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\
+Count=1
+Path0=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\
 [HEADERS]
 Count=0
 [PLDS]
