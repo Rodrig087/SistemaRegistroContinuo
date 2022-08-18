@@ -209,11 +209,14 @@ void ConfiguracionPrincipal()
    ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
 
    // Configuracion de la interrupcion externa INT1
-   // RPINR0 = 0x2E00;                                                           //Asigna INT1 al RB14/RPI46 (PPS)
    RPINR0 = 0x2F00;        // Asigna INT1 al RB15/RPI47 (SQW)
-   INT1IE_bit = 0;         // Habilita la interrupcion externa INT1
+   RPINR1 = 0x002E;        // Asigna INT2 al RB14/RPI46 (PPS)
+   INT1IE_bit = 1;         // Habilita la interrupcion externa INT1
    INT1IF_bit = 0;         // Limpia la bandera de interrupcion externa INT1
-   IPC5bits.INT1IP = 0x01; // Prioridad en la interrupocion externa 1
+   INT2IE_bit = 1;         // Habilita la interrupcion externa INT1
+   INT2IF_bit = 0;         // Limpia la bandera de interrupcion externa INT1
+   IPC5bits.INT1IP = 0x02; // Prioridad en la interrupocion externa INT1
+   IPC7bits.INT2IP = 0x01; // Prioridad en la interrupocion externa INT2
 
    // Configuracion del TMR1 con un tiempo de 100ms
    T1CON = 0x0020;
@@ -251,10 +254,10 @@ void InterrupcionP1(unsigned short operacion)
 {
    // Si se ejecuta una operacion de tiempo, habilita la interrupcion INT1 para incrementar la hora del sistema con cada pulso PPS
    // if (operacion==0xB2){
-   if (INT1IE_bit == 0)
-   {
-      INT1IE_bit = 1;
-   }
+   // if (INT1IE_bit == 0)
+   // {
+   //    INT1IE_bit = 1;
+   // }
    // Desabilita interrupcion por UART1Rx si esta habilitada:
    /*if (U1RXIE_bit==1){
       U1RXIE_bit = 0;
@@ -374,47 +377,47 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       numSetsFIFO = 0;
       contTimer1 = 0;
       banInicio = 1; // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-      if (INT1IE_bit == 0)
-      {
-         INT1IE_bit = 1;
-      }
+      // if (INT1IE_bit == 0)
+      // {
+      //    INT1IE_bit = 1;
+      // }
    }
 
-   // Rutina para detener el muestreo (C:0xA2   F:0xF2):
-   if ((banMuestrear == 1) && (buffer == 0xA2))
-   {
-      banInicio = 0;    // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-      banMuestrear = 0; // Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
+   // // Rutina para detener el muestreo (C:0xA2   F:0xF2):
+   // if ((banMuestrear == 1) && (buffer == 0xA2))
+   // {
+   //    banInicio = 0;    // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+   //    banMuestrear = 0; // Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
 
-      banTI = 0;
-      banLec = 0;
-      banEsc = 0;
-      banSetReloj = 0;
-      banSetGPS = 0;
-      banGPSI = 0;
-      banTFGPS = 0;
-      banGPSC = 0;
-      banLeer = 0;
-      banConf = 0;
-      i = 0;
-      x = 0;
-      y = 0;
-      i_gps = 0;
-      contTimer1 = 0;
-      byteGPS = 0;
+   //    banTI = 0;
+   //    banLec = 0;
+   //    banEsc = 0;
+   //    banSetReloj = 0;
+   //    banSetGPS = 0;
+   //    banGPSI = 0;
+   //    banTFGPS = 0;
+   //    banGPSC = 0;
+   //    banLeer = 0;
+   //    banConf = 0;
+   //    i = 0;
+   //    x = 0;
+   //    y = 0;
+   //    i_gps = 0;
+   //    contTimer1 = 0;
+   //    byteGPS = 0;
 
-      ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-      // Desabilita la interrupcion INT1 si esta habilitada:
-      if (INT1IE_bit == 1)
-      {
-         INT1IE_bit = 0;
-      }
-      // Desabilita la interrupcion TMR1 si esta habilitada:
-      if (T1CON.TON == 1)
-      {
-         T1CON.TON = 0;
-      }
-   }
+   //    ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
+   //    // Desabilita la interrupcion INT1 si esta habilitada:
+   //    if (INT1IE_bit == 1)
+   //    {
+   //       INT1IE_bit = 0;
+   //    }
+   //    // Desabilita la interrupcion TMR1 si esta habilitada:
+   //    if (T1CON.TON == 1)
+   //    {
+   //       T1CON.TON = 0;
+   //    }
+   // }
 
    // Rutina de lectura de los datos del acelerometro (C:0xA3   F:0xF3):
    if ((banLec == 1) && (buffer == 0xA3))
@@ -474,10 +477,11 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    }
    if ((banSetReloj == 2) && (buffer == 0xF5))
    {                   // Si detecta el delimitador de final de trama:
-      banSetReloj = 0; // Limpia la bandera de lectura
+      banSetReloj = 1; // Reactiva la bandera de lectura
       SPI1BUF = 0xFF;
    }
 
+   // Rutina para obtener la referencia de reloj del GPS o el RTC (C:0xA6   F:0xF6):
    if ((banSetReloj == 0) && (buffer == 0xA6))
    {
       banSetReloj = 2;
@@ -509,30 +513,6 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
          InterrupcionP1(0xB2);                                    // Envia la hora local a la RPi
       }
    }
-
-   /*
-   //Rutina para obtener la hora del GPS(C:0xA6   F:0xF6):
-   if ((banSetReloj==0)&&(buffer==0xA6)){
-      banTIGPS = 0;                                                           //Limpia la bandera de inicio de trama  del GPS
-      banTCGPS = 0;                                                           //Limpia la bandera de trama completa
-      i_gps = 0;                                                              //Limpia el subindice de la trama GPS
-      //Habilita interrupcion por UART1Rx si esta desabilitada:
-      if (U1RXIE_bit==0){
-         U1RXIE_bit = 1;
-      }
-   }
-
-   //Rutina para obtener la hora del RTC (C:0xA7   F:0xF7):
-   if ((banSetReloj==0)&&(buffer==0xA7)){
-      horaSistema = RecuperarHoraRTC();                                       //Recupera la hora del RTC
-      fechaSistema = RecuperarFechaRTC();                                     //Recupera la fecha del RTC
-      AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);                //Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-      fuenteReloj = 0;                                                        //Indica que la fuente de reloj es el RTC
-      banSetReloj = 1;
-      InterrupcionP1(0XB2);
-   }
-  */
-
    //************************************************************************************************************************************
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -544,18 +524,47 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
 
    INT1IF_bit = 0; // Limpia la bandera de interrupcion externa INT1
 
-   LedTest = ~LedTest;
-   horaSistema++; // Incrementa el reloj del sistema
-
-   if (horaSistema == 86400)
-   {                   //(24*3600)+(0*60)+(0) = 86400
-      horaSistema = 0; // Reinicia el reloj al llegar a las 24:00:00 horas
+   if (banSetReloj == 1)
+   {
+      LedTest = ~LedTest;
+      horaSistema++; // Incrementa el reloj del sistema
+      // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+      //  Reinicia el reloj al llegar a las 24:00:00 horas
+      if (horaSistema == 86400)
+      {
+         horaSistema = 0; //(24*3600)+(0*60)+(0) = 86400
+      }
    }
 
    if (banInicio == 1)
    {
       // LedTest = ~LedTest;
       Muestrear();
+   }
+}
+
+//*****************************************************************************************************************************************
+// Interrupcion INT2
+void int_2() org IVT_ADDR_INT2INTERRUPT
+{
+
+   INT2IF_bit = 0; // Limpia la bandera de interrupcion externa INT2
+
+   if (banSyncReloj == 1)
+   {
+      // Cumple en este turno las tareas del pulso SQW:
+      // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
+      LedTest = ~LedTest;
+      // Realiza el retraso necesario para sincronizar el RTC con el PPS (Consultar Datasheet del DS3234)
+      Delay_ms(499);
+      Delay_us(900);
+      DS3234_setDate(horaSistema, fechaSistema); // Configura la hora en el RTC con la hora recuperada de la RPi
+
+      banSyncReloj = 0;
+      banSetReloj = 1; // Activa esta bandera para continuar trabajando con el pulso SQW
+
+      // Sincroniza el tiempo de los nodos cada hora:
+      InterrupcionP1(0xB2); // Envia la hora local a la RPi y a los nodos
    }
 }
 
@@ -625,7 +634,8 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT
       fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
       AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas del RTC
       fuenteReloj = 5;                                         //**Indica que se obtuvo la hora del RTC
-      InterrupcionP1(0xB2);                                    // Envia la hora local a la RPi
+      banSetReloj = 1;
+      InterrupcionP1(0xB2); // Envia la hora local a la RPi
    }
 }
 
@@ -723,18 +733,20 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
       if (tramaGPS[12] == 0x41)
       {
          fuenteReloj = 1; // Fuente reloj: GPS
+         banSyncReloj = 1;
+         banSetReloj = 0;
       }
       else
       {
          fuenteReloj = 3; // Fuente reloj: GPS/E3
+         banSyncReloj = 0;
+         banSetReloj = 1;
+         InterrupcionP1(0xB2); // Envia la hora local a la RPi
       }
       banGPSI = 0;
       banGPSC = 0;
       i_gps = 0;
-      banSyncReloj = 1;
-      banSetReloj = 1;
-      InterrupcionP1(0xB2); // Envia la hora local a la RPi
-      U1MODE.UARTEN = 0;    // Desactiva el UART1
+      U1MODE.UARTEN = 0; // Desactiva el UART1
    }
 
    // Limpia la bandera de interrupcion por UART

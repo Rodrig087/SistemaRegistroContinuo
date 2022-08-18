@@ -380,7 +380,7 @@ void ObtenerOperacion()
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     bcm2835_spi_transfer(0xF0);
 
-    printf("%X \n", buffer);
+    //printf("%X \n", buffer);
 
     delay(25); //**Este retardo es muy importante**
     
@@ -397,7 +397,7 @@ void ObtenerOperacion()
         ObtenerTiempoPIC();
     }
     else {
-        printf("Interrupcion P1: 0xB1\n");
+        //printf("Interrupcion P1: 0xB1\n");
         NuevoCiclo();
     }
 }

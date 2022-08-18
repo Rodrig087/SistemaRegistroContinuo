@@ -669,11 +669,14 @@ void ConfiguracionPrincipal()
  ADXL355_write_byte( 0x2D ,  0x04  |  0x01 );
 
 
-
  RPINR0 = 0x2F00;
- INT1IE_bit = 0;
+ RPINR1 = 0x002E;
+ INT1IE_bit = 1;
  INT1IF_bit = 0;
- IPC5bits.INT1IP = 0x01;
+ INT2IE_bit = 1;
+ INT2IF_bit = 0;
+ IPC5bits.INT1IP = 0x02;
+ IPC7bits.INT2IP = 0x01;
 
 
  T1CON = 0x0020;
@@ -709,13 +712,7 @@ void ConfiguracionPrincipal()
 
 void InterrupcionP1(unsigned short operacion)
 {
-
-
- if (INT1IE_bit == 0)
- {
- INT1IE_bit = 1;
- }
-#line 264 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 267 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -829,49 +826,12 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  numSetsFIFO = 0;
  contTimer1 = 0;
  banInicio = 1;
- if (INT1IE_bit == 0)
- {
- INT1IE_bit = 1;
+
+
+
+
  }
- }
-
-
- if ((banMuestrear == 1) && (buffer == 0xA2))
- {
- banInicio = 0;
- banMuestrear = 0;
-
- banTI = 0;
- banLec = 0;
- banEsc = 0;
- banSetReloj = 0;
- banSetGPS = 0;
- banGPSI = 0;
- banTFGPS = 0;
- banGPSC = 0;
- banLeer = 0;
- banConf = 0;
- i = 0;
- x = 0;
- y = 0;
- i_gps = 0;
- contTimer1 = 0;
- byteGPS = 0;
-
- ADXL355_write_byte( 0x2D ,  0x04  |  0x01 );
-
- if (INT1IE_bit == 1)
- {
- INT1IE_bit = 0;
- }
-
- if (T1CON.TON == 1)
- {
- T1CON.TON = 0;
- }
- }
-
-
+#line 423 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  if ((banLec == 1) && (buffer == 0xA3))
  {
  banLec = 2;
@@ -929,9 +889,10 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  }
  if ((banSetReloj == 2) && (buffer == 0xF5))
  {
- banSetReloj = 0;
+ banSetReloj = 1;
  SPI1BUF = 0xFF;
  }
+
 
  if ((banSetReloj == 0) && (buffer == 0xA6))
  {
@@ -964,7 +925,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  InterrupcionP1(0xB2);
  }
  }
-#line 537 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
 }
 
 
@@ -975,18 +936,47 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
 
  INT1IF_bit = 0;
 
+ if (banSetReloj == 1)
+ {
  LedTest = ~LedTest;
  horaSistema++;
+
 
  if (horaSistema == 86400)
  {
  horaSistema = 0;
+ }
  }
 
  if (banInicio == 1)
  {
 
  Muestrear();
+ }
+}
+
+
+
+void int_2() org IVT_ADDR_INT2INTERRUPT
+{
+
+ INT2IF_bit = 0;
+
+ if (banSyncReloj == 1)
+ {
+
+
+ LedTest = ~LedTest;
+
+ Delay_ms(499);
+ Delay_us(900);
+ DS3234_setDate(horaSistema, fechaSistema);
+
+ banSyncReloj = 0;
+ banSetReloj = 1;
+
+
+ InterrupcionP1(0xB2);
  }
 }
 
@@ -1056,6 +1046,7 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT
  fechaSistema = RecuperarFechaRTC();
  AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  fuenteReloj = 5;
+ banSetReloj = 1;
  InterrupcionP1(0xB2);
  }
 }
@@ -1154,17 +1145,19 @@ void urx_1() org IVT_ADDR_U1RXINTERRUPT
  if (tramaGPS[12] == 0x41)
  {
  fuenteReloj = 1;
+ banSyncReloj = 1;
+ banSetReloj = 0;
  }
  else
  {
  fuenteReloj = 3;
+ banSyncReloj = 0;
+ banSetReloj = 1;
+ InterrupcionP1(0xB2);
  }
  banGPSI = 0;
  banGPSC = 0;
  i_gps = 0;
- banSyncReloj = 1;
- banSetReloj = 1;
- InterrupcionP1(0xB2);
  U1MODE.UARTEN = 0;
  }
 

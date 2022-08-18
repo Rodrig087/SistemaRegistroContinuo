@@ -19,6 +19,15 @@ main
 		SPI2_Init
 	ADXL355_init
 		ADXL355_write_byte
+int_2
+	DS3234_setDate
+		SPI2_Init_Advanced
+		Dec2Bcd
+		DS3234_write_byte
+		SPI2_Init
+		_Divide_32x32
+		_Modulus_32x32
+	InterrupcionP1
 int_1
 	Muestrear
 		ADXL355_write_byte
@@ -57,18 +66,11 @@ urx_1
 		atoi
 		_Multiply_32x32
 spi_1
-	ADXL355_write_byte
 	RecuperarHoraRPI
 		_Multiply_32x32
 	RecuperarFechaRPI
 		_Multiply_32x32
 	DS3234_setDate
-		SPI2_Init_Advanced
-		Dec2Bcd
-		DS3234_write_byte
-		SPI2_Init
-		_Divide_32x32
-		_Modulus_32x32
 	RecuperarHoraRTC
 	RecuperarFechaRTC
 	AjustarTiempoSistema
