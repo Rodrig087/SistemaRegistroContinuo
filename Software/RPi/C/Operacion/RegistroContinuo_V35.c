@@ -1,11 +1,15 @@
 // Compilar:
 // gcc /home/rsa/Programas/RegistroContinuo_V35.c -o /home/rsa/Ejecutables/acelerografo -lbcm2835 -lwiringPi -lm
 
+// Para manejo del tiempo
+#define _XOPEN_SOURCE //Debe ir en la primera linea
+#include <time.h>
+#include <sys/time.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <wiringPi.h>
 #include <bcm2835.h>
-#include <time.h>
 #include <string.h>
 #include <unistd.h>
 #include <errno.h>
@@ -13,11 +17,12 @@
 #include <math.h>
 #include <stdbool.h>
 
+
 // Declaracion de constantes
 #define P2 2
 #define P1 0
-#define MCLR 28 // Pin 38 GPIO
-#define TEST 26
+#define MCLR 28 // Pin 38 
+#define LedTest 26 // Pin 32
 #define NUM_MUESTRAS 199
 #define NUM_ELEMENTOS 2506
 #define TIEMPO_SPI 10
@@ -99,9 +104,19 @@ unsigned short banNewFile;
 
 unsigned short contCiclos;
 unsigned short contador;
-short fuenteTiempoPic;
 
+//Variables para control de tiempo:
 int fuenteTiempo;
+unsigned short fuenteTiempoPic;
+unsigned short banTiempoRed, banTiempoRTC;
+char datePICStr[20];
+char datePicUNIX[15];
+char dateRedUNIX[15];
+struct tm datePIC;
+//struct tm dateRed;
+long tiempoPicUNIX, tiempoRedUNIX, deltaUNIX;
+
+
 
 // Variables para extraer los datos de configuracion:
 char idEstacion[10];
@@ -125,6 +140,9 @@ FILE *ftmp;
 FILE *fTramaTmp;
 FILE *ficheroDatosConfiguracion;
 FILE *obj_fp;
+
+//Metodo para comprobar la hora de red:
+int ComprobarNTP();
 
 // Metodos para la comunicacion con el dsPIC
 int ConfiguracionPrincipal();
@@ -166,19 +184,18 @@ int main(void)
     contCiclos = 0;
     contador = 0;
 
-    ConfiguracionPrincipal();
-    CrearArchivos();
+    banTiempoRed = 0;
+    banTiempoRTC = 0;
 
-    sleep(1);
-    
+    //Realiza la configuracion principal:
+    ConfiguracionPrincipal();
+
+    //Comprueba si el equipo esta sincronizado con el tiempo de red:
+    banTiempoRed = ComprobarNTP();
+   
     //Obtencion de fuente de reloj:
     fuenteTiempo = 1;  //0:RPi 1:GPS 2:RTC
-
-	if (fuenteTiempo!=0){
-		ObtenerReferenciaTiempo(fuenteTiempo);
-	} else {
-		EnviarTiempoLocal();
-	}
+    ObtenerReferenciaTiempo(fuenteTiempo);
 
     // Llama al metodo para inicializar el filtro FIR
     firFloatInit();
@@ -230,22 +247,65 @@ int ConfiguracionPrincipal()
     wiringPiSetup();
     pinMode(P1, INPUT);
     pinMode(MCLR, OUTPUT);
-    pinMode(TEST, OUTPUT);
+    pinMode(LedTest, OUTPUT);
     wiringPiISR(P1, INT_EDGE_RISING, ObtenerOperacion);
 
-    // Enciende el pin TEST
-    digitalWrite(TEST, HIGH);
+    // Enciende el pin LedTest
+    digitalWrite(LedTest, HIGH);
 
     // Genera un pulso para resetear el dsPIC:
-    digitalWrite(MCLR, HIGH);
-    delay(100);
-    digitalWrite(MCLR, LOW);
-    delay(100);
-    digitalWrite(MCLR, HIGH);
+    // digitalWrite(MCLR, HIGH);
+    // delay(100);
+    // digitalWrite(MCLR, LOW);
+    // delay(100);
+    // digitalWrite(MCLR, HIGH);
 
     printf("\n****************************************\n");
     printf("Configuracion completa\n");
     printf("****************************************\n");
+}
+
+int ComprobarNTP()
+{
+    char str1[5];
+    const char *str2 = "yes";
+    int v;
+
+    printf("****************************************\n");
+    printf("Comprobando conexion con servidor NTP...\n");
+    //system("timedatectl | grep System | tail -c4");
+    FILE *ftimedate = popen("timedatectl | grep System | tail -c4","r");
+    fscanf(ftimedate,"%s",str1);
+    printf("System clock synchronized: %s\n", str1 );
+    pclose(ftimedate);
+
+    //Comprueba si System clock synchronized == yes
+    v = strcmp(str1, str2);
+    if (v == 0)
+    {
+        system("date"); 
+        time_t now;
+        struct tm *lt;
+        now = time(NULL);
+        lt = localtime(&now);
+        lt->tm_year;
+        lt->tm_mon;
+        lt->tm_mday;
+        lt->tm_hour;
+        lt->tm_min;
+        lt->tm_sec;
+        time_t midnight = mktime(lt);
+        tiempoRedUNIX = (long)midnight;
+        printf("Tiempo UNIX red: %d\n", tiempoRedUNIX);    
+        printf("****************************************\n");  
+        return 1;
+    } else 
+    {
+        return 2;
+        printf("****************************************\n");
+    }
+    
+
 }
 
 void CrearArchivos()
@@ -372,8 +432,8 @@ void ObtenerOperacion()
 {
     //bcm2835_delayMicroseconds(200);
 
-    //printf(".\n");
-
+    digitalWrite(LedTest, !digitalRead(LedTest));
+    
     bcm2835_spi_transfer(0xA0);
     bcm2835_delayMicroseconds(TIEMPO_SPI);
     buffer = bcm2835_spi_transfer(0x00);
@@ -382,24 +442,21 @@ void ObtenerOperacion()
 
     //printf("%X \n", buffer);
 
-    delay(25); //**Este retardo es muy importante**
+    delay(1); 
     
     // Aqui se selecciona el tipo de operacion que se va a ejecutar
-    // if (buffer == 0xB1)
-    // {
-    //     printf("Interrupcion P1: 0xB1\n");
-    //     NuevoCiclo();
-    // }
+    if (buffer == 0xB1)
+    {
+        //printf("Interrupcion P1: 0xB1\n");
+        NuevoCiclo();
+    }
     if (buffer == 0xB2)
     {
         printf("Interrupcion P1: 0xB2\n");
         printf("****************************************\n");
         ObtenerTiempoPIC();
     }
-    else {
-        //printf("Interrupcion P1: 0xB1\n");
-        NuevoCiclo();
-    }
+    
 }
 
 // C:0xA1	F:0xF1
@@ -491,6 +548,8 @@ void ObtenerTiempoPIC()
     bcm2835_spi_transfer(0xF5); // Envia el delimitador de final de trama
     bcm2835_delayMicroseconds(TIEMPO_SPI);
 
+    sprintf(datePICStr, "%0.2d:%0.2d:%0.2d %0.2d/%0.2d/%0.2d", tiempoPIC[3], tiempoPIC[4], tiempoPIC[5], tiempoPIC[0], tiempoPIC[1], tiempoPIC[2]);
+	
     switch (fuenteTiempoPic){
 			case 0: 
 					printf("RPi ");
@@ -506,36 +565,96 @@ void ObtenerTiempoPIC()
 					break;
 	}
 
-    printf("%0.2d:", tiempoPIC[3]);  // hh
-    printf("%0.2d:", tiempoPIC[4]);  // mm
-    printf("%0.2d ", tiempoPIC[5]);  // ss
-    printf("%0.2d/", tiempoPIC[0]);  // dd
-    printf("%0.2d/", tiempoPIC[1]);  // MM
-    printf("%0.2d\n", tiempoPIC[2]); // aa
+    //Imprime la trama de tiempo del dsPIC:
+    printf("%s\n", datePICStr);
+    
+    //Imprime el tipo de error si es que existe:
+	if (fuenteTiempoPic==3||fuenteTiempoPic==4||fuenteTiempoPic==5)
+	{
+		switch (fuenteTiempoPic){
+				case 3:
+						printf("**Error E3/GPS: No se pudo comprobar la trama GPRS\n");
+						break;
+				case 4:
+						printf("**Error E4/RTC: No se pudo recuperar la trama GPRS\n");
+						break;
+				case 5:
+						printf("**Error E5/RTC: El GPS no responde\n");
+						break;
+		}
+	}
 
+    //Calcula el tiempo UNIX de la trama de tiempo recibida del dsPIC
+    strptime(datePICStr, "%H:%M:%S %y/%m/%d", &datePIC); //Convierte el tiempo en string a struct
+    strftime(datePicUNIX, sizeof(datePicUNIX), "%s", &datePIC); //%s: The number of seconds since the Epoch, 1970-01-01 00:00:00
+    tiempoPicUNIX = atoi(datePicUNIX);
+    printf("Tiempo UNIX dsPIC: %d\n", tiempoPicUNIX);
     printf("****************************************\n");
 
-    //SetRelojLocal(tiempoPIC);
-    IniciarMuestreo();
+    //Comprueba si se recibio cualquier fuente de reloj proveniente del RTC del dsPIC:
+    if (fuenteTiempoPic==2||fuenteTiempoPic==4||fuenteTiempoPic==5)
+    {
+        //Comprueba que la hora de Red sea confiable:
+        if (banTiempoRed==1)
+        {
+            //Comprueba que la diferencia entre el tiempo de Red y el tiempo del RTC no sea mayor a 10 segundos:
+            deltaUNIX = abs(tiempoRedUNIX-tiempoPicUNIX);
+            if (deltaUNIX>10)
+            {
+                // Envia la hora de la Red al dsPIC:
+                printf("Hora RTC no valida. Enviando hora de Red...\n");
+                fuenteTiempo = 0;  //0:RPi 1:GPS 2:RTC
+                ObtenerReferenciaTiempo(fuenteTiempo);
+            }
+            else
+            {
+                printf("Hora RTC valida.\n");
+                //Crea los archivos e inicia el muestreo:
+                CrearArchivos();
+                IniciarMuestreo();
+            }
+        } 
+        else
+        {
+            //Si la hora de Red no es confiable, utiliza la hora del RTC:
+            SetRelojLocal(tiempoPIC);
+            //Crea los archivos e inicia el muestreo:
+            CrearArchivos();
+            IniciarMuestreo();
+        }
+    }
+    else
+    {
+        CrearArchivos();
+        IniciarMuestreo();  
+    }
 
+    
 }
 
 //C:0xA6	F:0xF6
 void ObtenerReferenciaTiempo(int referencia){ 
-	//referencia = 1 -> GPS
+	//referencia = 0 -> RPi
+    //referencia = 1 -> GPS
 	//referencia = 2 -> RTC
-	if (referencia==1){
-		printf("Obteniendo hora del GPS...\n");	
-	} else {
-		printf("Obteniendo hora del RTC...\n");	
-	}
-	printf("****************************************\n");    
-	bcm2835_spi_transfer(0xA6);
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(referencia);								
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
-	bcm2835_spi_transfer(0xF6);
-	bcm2835_delayMicroseconds(TIEMPO_SPI);
+	if (referencia==0){
+        EnviarTiempoLocal();
+    } 
+    else
+    {
+        if (referencia==1){
+            printf("Obteniendo hora del GPS...\n");	
+        } else {
+            printf("Obteniendo hora del RTC...\n");	
+        }
+        printf("****************************************\n");    
+        bcm2835_spi_transfer(0xA6);
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+        bcm2835_spi_transfer(referencia);								
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+        bcm2835_spi_transfer(0xF6);
+        bcm2835_delayMicroseconds(TIEMPO_SPI);
+    }
 }
 //**************************************************************************************************************************************
 
@@ -580,7 +699,7 @@ void GuardarVector(unsigned char *tramaD)
 
 void SetRelojLocal(unsigned char *tramaTiempo)
 {
-
+    printf("Configurando hora de Red con la hora RTC...\n");	
     char datePIC[22];
     // Configura el reloj interno de la RPi con la hora recuperada del PIC:
     strcpy(comando, "sudo date --set "); // strcpy( <variable_destino>, <cadena_fuente> )

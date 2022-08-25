@@ -105,38 +105,12 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 
 
 
-void GPS_init(short conf, short NMA)
+void GPS_init()
 {
- if (conf == 1)
- {
-
-
- UART1_Write_Text("$PMTK605*31\r\n");
+#line 48 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
  UART1_Write_Text("$PMTK220,1000*1F\r\n");
-
-
-
- }
-
- UART1_Write_Text("$PMTK313,1*2E\r\n");
- UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- UART1_Write_Text("$PMTK319,1*24\r\n");
- UART1_Write_Text("$PMTK413*34\r\n");
- UART1_Write_Text("$PMTK513,1*28\r\n");
-
- switch (NMA)
- {
- case 1:
+ Delay_ms(1000);
  UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- break;
- case 3:
- UART1_Write_Text("$PMTK314,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- break;
- default:
- UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- break;
- }
-
  Delay_ms(1000);
 }
 
@@ -514,6 +488,7 @@ unsigned long horaSistema, fechaSistema;
 unsigned short referenciaTiempo;
 unsigned short banInicializar;
 unsigned short contTimeout1;
+unsigned short banInitGPS;
 
 
 
@@ -571,6 +546,7 @@ void main()
  contTimer1 = 0;
 
  byteGPS = 0;
+ banInitGPS = 0;
 
 
  banInicializar = 0;
@@ -712,7 +688,6 @@ void ConfiguracionPrincipal()
 
 void InterrupcionP1(unsigned short operacion)
 {
-#line 267 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  banOperacion = 0;
  tipoOperacion = operacion;
 
@@ -729,7 +704,6 @@ void Muestrear()
 
  if (banCiclo == 0)
  {
-
  ADXL355_write_byte( 0x2D ,  0x04  |  0x00 );
  T1CON.TON = 1;
  }
@@ -738,7 +712,8 @@ void Muestrear()
 
  banCiclo = 2;
 
- tramaCompleta[0] = contCiclos;
+
+ tramaCompleta[0] = fuenteReloj;
  numFIFO = ADXL355_read_byte( 0x05 );
  numSetsFIFO = (numFIFO) / 3;
 
@@ -825,13 +800,35 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
+
  banInicio = 1;
-
-
-
-
  }
-#line 423 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
+ if ((banInitGPS == 0) && (buffer == 0xA2))
+ {
+
+ banInitGPS = 1;
+ SPI1BUF = 0x47;
+ }
+ if ((banInitGPS == 1) && (buffer == 0xF2))
+ {
+ GPS_init();
+
+ LedTest = 0;
+ Delay_ms(150);
+ LedTest = ~LedTest;
+ Delay_ms(150);
+ LedTest = ~LedTest;
+ Delay_ms(150);
+ LedTest = ~LedTest;
+ Delay_ms(150);
+ LedTest = ~LedTest;
+ Delay_ms(150);
+ LedTest = ~LedTest;
+ }
+
+
  if ((banLec == 1) && (buffer == 0xA3))
  {
  banLec = 2;
@@ -946,12 +943,12 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
  {
  horaSistema = 0;
  }
- }
 
  if (banInicio == 1)
  {
 
  Muestrear();
+ }
  }
 }
 
@@ -967,9 +964,9 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
 
 
  LedTest = ~LedTest;
+ horaSistema = horaSistema + 2;
 
- Delay_ms(499);
- Delay_us(900);
+ Delay_ms(500);
  DS3234_setDate(horaSistema, fechaSistema);
 
  banSyncReloj = 0;

@@ -9,17 +9,18 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
 ///////////////////////////////////////////        Funciones        ///////////////////////////////////////////
 
 // Funcion para configurar el GPS
-void GPS_init(short conf, short NMA)
+void GPS_init()
 {
+     /*
      if (conf == 1)
      {
-          // UART1_Init(9600);                                                            //La configuracion debe hacerse a 9600 baudios
-          // Delay_ms(200);
-          UART1_Write_Text("$PMTK605*31\r\n");      // Consulta la informacion de la version del firmware.
-          UART1_Write_Text("$PMTK220,1000*1F\r\n"); // Set position fix interval. Interval: Position fix interval [msec]. Must be larger than 200.
-          // UART1_Write_Text("$PMTK251,115200*1F\r\n");                                  //Set NMEA port baud rate. 0 - 115200 bauds
-          // Delay_ms(1000);                                                              //Tiempo necesario para que se de efecto el cambio de configuracion
-          // UART1_Init(115200);                                                          //Maxima velocidad del UART que soporta el GPS
+          UART1_Init(9600); // La configuracion debe hacerse a 9600 baudios
+          Delay_ms(200);
+          UART1_Write_Text("$PMTK605*31\r\n");        // Consulta la informacion de la version del firmware.
+          UART1_Write_Text("$PMTK220,1000*1F\r\n");   // Set position fix interval. Interval: Position fix interval [msec]. Must be larger than 200.
+          UART1_Write_Text("$PMTK251,115200*1F\r\n"); // Set NMEA port baud rate. 0 - 115200 bauds
+          Delay_ms(1000);                             // Tiempo necesario para que se de efecto el cambio de configuracion
+          UART1_Init(115200);                         // Maxima velocidad del UART que soporta el GPS
      }
 
      UART1_Write_Text("$PMTK313,1*2E\r\n"); // Enable to search a SBAS satellite or not. 1 = Enable
@@ -41,6 +42,12 @@ void GPS_init(short conf, short NMA)
           break;
      }
 
+     Delay_ms(1000);
+     */
+
+     UART1_Write_Text("$PMTK220,1000*1F\r\n"); // Set position fix interval. Interval: Position fix interval [msec]. Must be larger than 200.
+     Delay_ms(1000);
+     UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n"); // GPRMC
      Delay_ms(1000);
 }
 //* Estructura comandos PMTK: |Preamble ($)|Talker ID (PMTK)|Pkt Type,Data Field|*|Checksum (just an XOR of all the bytes between the $ and the *)|CR LF|

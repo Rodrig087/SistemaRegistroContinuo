@@ -27,6 +27,8 @@ unsigned char tramaInSPI[20];
 unsigned char tramaDatos[16 + (NUM_MUESTRAS * 10)];
 unsigned short tiempoSPI;
 unsigned short tramaSize;
+unsigned short fuenteReloj, banErrorReloj;
+
 char entrada[30];
 char salida[30];
 char ext1[8];
@@ -72,6 +74,11 @@ int main(void)
 	segInicio = 0;
 	segActual = 0;
 	segTranscurridos = 0;
+
+	fuenteReloj = 0;
+	banErrorReloj = 0;
+
+	printf("Comprobando...\n");
 
 	RecuperarVector();
 
@@ -134,17 +141,40 @@ void RecuperarVector()
 	//Calcula el tiempo en segundos:
 	tiempoSegundos = (3600 * tramaDatos[tramaSize - 3]) + (60 * tramaDatos[tramaSize - 2]) + (tramaDatos[tramaSize - 1]);
 
-	printf("Archivo actual:\n");
+	printf("\nArchivo actual:\n");
 	printf(nombreActualARC);
 	printf("\n");
+
+	printf("\nInformacion directorio RegistroContinuo:\n");
+	system("ls -sht --block-size=K /home/rsa/Resultados/RegistroContinuo/ | head -2");
 
 	printf("\nHora del sistema:\n");
 	system("date");
 	printf("\n");
 
-	//Imprime la hora y fecha recuperada de la trama de datos
+	//Extrae la fuente de reloj:
+	fuenteReloj = tramaDatos[0];
+
+	//Imprime la fuente de reloj:
 	printf("Datos de la trama:\n");
 	printf("| ");
+	//Imprime la fuente de reloj:
+	switch (fuenteReloj){
+			case 0: 
+					printf("RPi ");
+					break;
+			case 1:
+					printf("GPS ");
+					break;
+			case 2:
+					printf("RTC ");
+					break;			
+			default:
+					printf("E%d ", fuenteReloj);
+					banErrorReloj = 1;
+					break;
+	}
+	//Imprime la fecha y hora:
 	printf("%0.2d/", tramaDatos[tramaSize - 6]); //aa
 	printf("%0.2d/", tramaDatos[tramaSize - 5]); //mm
 	printf("%0.2d ", tramaDatos[tramaSize - 4]); //dd
@@ -154,6 +184,7 @@ void RecuperarVector()
 	printf("%d ", tiempoSegundos);
 	printf("| ");
 
+	//Imprime los valores de acelaracion
 	for (x = 0; x < 3; x++)
 	{
 		xData[x] = tramaDatos[x + 1];
@@ -198,6 +229,22 @@ void RecuperarVector()
 	printf("Z: ");
 	printf("%2.8f ", zAceleracion);
 	printf("|\n");
+
+	//Imprime el tipo de error si es que existe:
+	if (banErrorReloj==1)
+	{
+		switch (fuenteReloj){
+				case 3:
+						printf("**Error E3/GPS: No se pudo comprobar la trama GPRS\n");
+						break;
+				case 4:
+						printf("**Error E4/RTC: No se pudo recuperar la trama GPRS\n");
+						break;
+				case 5:
+						printf("**Error E5/RTC: El GPS no responde\n");
+						break;
+		}
+	}
 
 	fclose(lf);
 }

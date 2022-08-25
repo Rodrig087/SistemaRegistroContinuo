@@ -66,6 +66,9 @@ urx_1
 		atoi
 		_Multiply_32x32
 spi_1
+	GPS_init
+		UART1_Write_Text
+			UART1_Write
 	RecuperarHoraRPI
 		_Multiply_32x32
 	RecuperarFechaRPI

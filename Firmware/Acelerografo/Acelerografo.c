@@ -54,6 +54,7 @@ unsigned long horaSistema, fechaSistema;
 unsigned short referenciaTiempo;
 unsigned short banInicializar;
 unsigned short contTimeout1;
+unsigned short banInitGPS;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -111,6 +112,7 @@ void main()
    contTimer1 = 0;
 
    byteGPS = 0;
+   banInitGPS = 0;
 
    // Inicio:
    banInicializar = 0;
@@ -127,7 +129,7 @@ void main()
    {
       if (banInicializar == 1)
       {
-         // GPS_init(1, 1);             // Inicializa el GPS
+         // GPS_init();                 // Inicializa el GPS
          DS3234_init();              // inicializa el RTC
          ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
          banInicializar = 0;         // Desactiva la bandera para salir del bucle
@@ -252,18 +254,6 @@ void ConfiguracionPrincipal()
 // Funcion para realizar la interrupcion en la RPi
 void InterrupcionP1(unsigned short operacion)
 {
-   // Si se ejecuta una operacion de tiempo, habilita la interrupcion INT1 para incrementar la hora del sistema con cada pulso PPS
-   // if (operacion==0xB2){
-   // if (INT1IE_bit == 0)
-   // {
-   //    INT1IE_bit = 1;
-   // }
-   // Desabilita interrupcion por UART1Rx si esta habilitada:
-   /*if (U1RXIE_bit==1){
-      U1RXIE_bit = 0;
-   }*/
-   //}
-
    banOperacion = 0;          // Encera la bandera para permitir una nueva peticion de operacion
    tipoOperacion = operacion; // Carga en la variable el tipo de operacion requerido
    // Genera el pulso P1 para producir la interrupcion externa en la RPi
@@ -280,7 +270,6 @@ void Muestrear()
 
    if (banCiclo == 0)
    {
-
       ADXL355_write_byte(POWER_CTL, DRDY_OFF | MEASURING); // Coloca el ADXL en modo medicion
       T1CON.TON = 1;                                       // Enciende el Timer1
    }
@@ -289,7 +278,8 @@ void Muestrear()
 
       banCiclo = 2; // Limpia la bandera de ciclo completo
 
-      tramaCompleta[0] = contCiclos; // LLena el primer elemento de la tramaCompleta con el contador de ciclos
+      // tramaCompleta[0] = contCiclos; // LLena el primer elemento de la tramaCompleta con el contador de ciclos
+      tramaCompleta[0] = fuenteReloj; // LLena el primer elemento de la tramaCompleta con el identificador de fuente de reloj
       numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
       numSetsFIFO = (numFIFO) / 3; // Lee el numero de sets disponibles en el FIFO
 
@@ -376,48 +366,33 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       numFIFO = 0;
       numSetsFIFO = 0;
       contTimer1 = 0;
-      banInicio = 1; // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-      // if (INT1IE_bit == 0)
-      // {
-      //    INT1IE_bit = 1;
-      // }
+      // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1:
+      banInicio = 1;
    }
 
-   // // Rutina para detener el muestreo (C:0xA2   F:0xF2):
-   // if ((banMuestrear == 1) && (buffer == 0xA2))
-   // {
-   //    banInicio = 0;    // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
-   //    banMuestrear = 0; // Cambia el estado de la bandera para permitir que inicie el muestreo de nuevo en el futuro
-
-   //    banTI = 0;
-   //    banLec = 0;
-   //    banEsc = 0;
-   //    banSetReloj = 0;
-   //    banSetGPS = 0;
-   //    banGPSI = 0;
-   //    banTFGPS = 0;
-   //    banGPSC = 0;
-   //    banLeer = 0;
-   //    banConf = 0;
-   //    i = 0;
-   //    x = 0;
-   //    y = 0;
-   //    i_gps = 0;
-   //    contTimer1 = 0;
-   //    byteGPS = 0;
-
-   //    ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-   //    // Desabilita la interrupcion INT1 si esta habilitada:
-   //    if (INT1IE_bit == 1)
-   //    {
-   //       INT1IE_bit = 0;
-   //    }
-   //    // Desabilita la interrupcion TMR1 si esta habilitada:
-   //    if (T1CON.TON == 1)
-   //    {
-   //       T1CON.TON = 0;
-   //    }
-   // }
+   // Rutina para inicializar el GPS:
+   if ((banInitGPS == 0) && (buffer == 0xA2))
+   {
+      // Cambia el estado de la bandera:
+      banInitGPS = 1;
+      SPI1BUF = 0x47; // Ascii: G
+   }
+   if ((banInitGPS == 1) && (buffer == 0xF2))
+   {
+      GPS_init();
+      // Conmuta el LedTest para indicar que se inicializo el GPS:
+      LedTest = 0;
+      Delay_ms(150);
+      LedTest = ~LedTest;
+      Delay_ms(150);
+      LedTest = ~LedTest;
+      Delay_ms(150);
+      LedTest = ~LedTest;
+      Delay_ms(150);
+      LedTest = ~LedTest;
+      Delay_ms(150);
+      LedTest = ~LedTest;
+   }
 
    // Rutina de lectura de los datos del acelerometro (C:0xA3   F:0xF3):
    if ((banLec == 1) && (buffer == 0xA3))
@@ -534,12 +509,12 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
       {
          horaSistema = 0; //(24*3600)+(0*60)+(0) = 86400
       }
-   }
 
-   if (banInicio == 1)
-   {
-      // LedTest = ~LedTest;
-      Muestrear();
+      if (banInicio == 1)
+      {
+         // LedTest = ~LedTest;
+         Muestrear();
+      }
    }
 }
 
@@ -555,16 +530,16 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
       // Cumple en este turno las tareas del pulso SQW:
       // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
       LedTest = ~LedTest;
+      horaSistema = horaSistema + 2; // Incrementa el reloj del sistema en 2 segundos
       // Realiza el retraso necesario para sincronizar el RTC con el PPS (Consultar Datasheet del DS3234)
-      Delay_ms(499);
-      Delay_us(900);
+      Delay_ms(500);
       DS3234_setDate(horaSistema, fechaSistema); // Configura la hora en el RTC con la hora recuperada de la RPi
 
       banSyncReloj = 0;
       banSetReloj = 1; // Activa esta bandera para continuar trabajando con el pulso SQW
 
-      // Sincroniza el tiempo de los nodos cada hora:
-      InterrupcionP1(0xB2); // Envia la hora local a la RPi y a los nodos
+      // Envia la hora local a la RPi:
+      InterrupcionP1(0xB2);
    }
 }
 
