@@ -1,2 +1,8 @@
-0 0 * * * /usr/local/bin/registrocontinuo stop
-1 0 * * * /usr/local/bin/registrocontinuo start
+#Reinicia el registro continuo al final del dia;
+59 23 * * * /usr/local/bin/registrocontinuo stop
+0 0 * * * /usr/local/bin/registrocontinuo start
+
+#Al iniciar el sistema resetea el dsPIC, inicia el GPS e inicia el registro continuo: 
+@reboot sleep 30 && /usr/local/bin/resetmaster
+@reboot sleep 60 && /usr/local/bin/iniciargps
+@reboot sleep 90 && /usr/local/bin/registrocontinuo start

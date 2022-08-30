@@ -2343,6 +2343,7 @@ contfifo
 contmuestras
 conttimeout1
 conttimer1
+conttimer3
 corcon
 corconbits
 cosc
@@ -11148,6 +11149,7 @@ tiempo
 tiemporpi
 timer1int
 timer2int
+timer3int
 tipooperacion
 tmr1
 tmr1_0

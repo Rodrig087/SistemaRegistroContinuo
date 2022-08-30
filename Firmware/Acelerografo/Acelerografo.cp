@@ -489,6 +489,7 @@ unsigned short referenciaTiempo;
 unsigned short banInicializar;
 unsigned short contTimeout1;
 unsigned short banInitGPS;
+unsigned short contTimer3;
 
 
 
@@ -544,6 +545,7 @@ void main()
  numFIFO = 0;
  numSetsFIFO = 0;
  contTimer1 = 0;
+ contTimer3 = 0;
 
  byteGPS = 0;
  banInitGPS = 0;
@@ -646,12 +648,14 @@ void ConfiguracionPrincipal()
 
 
  RPINR0 = 0x2F00;
- RPINR1 = 0x002E;
  INT1IE_bit = 1;
  INT1IF_bit = 0;
+ IPC5bits.INT1IP = 0x02;
+
+
+ RPINR1 = 0x002E;
  INT2IE_bit = 1;
  INT2IF_bit = 0;
- IPC5bits.INT1IP = 0x02;
  IPC7bits.INT2IP = 0x01;
 
 
@@ -669,6 +673,14 @@ void ConfiguracionPrincipal()
  T2IF_bit = 0;
  PR2 = 46875;
  IPC1bits.T2IP = 0x02;
+
+
+ T3CON = 0x20;
+ T3CON.TON = 0;
+ T3IE_bit = 1;
+ T3IF_bit = 0;
+ PR3 = 62500;
+ IPC2bits.T3IP = 0x02;
 
  Delay_ms(200);
 
@@ -849,7 +861,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 
 
 
- if ((banSetReloj == 0) && (buffer == 0xA4))
+ if ((banEsc == 0) && (buffer == 0xA4))
  {
  banEsc = 1;
  j = 0;
@@ -891,17 +903,16 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  }
 
 
- if ((banSetReloj == 0) && (buffer == 0xA6))
+ if ((banEsc == 0) && (buffer == 0xA6))
  {
- banSetReloj = 2;
+ banEsc = 1;
  }
- if ((banSetReloj == 2) && (buffer != 0xA6) && (buffer != 0xF6))
+ if ((banEsc == 1) && (buffer != 0xA6) && (buffer != 0xF6))
  {
  referenciaTiempo = buffer;
  }
- if ((banSetReloj == 2) && (buffer == 0xF6))
+ if ((banEsc == 1) && (buffer == 0xF6))
  {
- banSetReloj = 1;
  if (referenciaTiempo == 1)
  {
 
@@ -921,6 +932,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  fuenteReloj = 2;
  InterrupcionP1(0xB2);
  }
+ banEsc = 0;
+ banSetReloj = 1;
  }
 
 }
@@ -966,14 +979,11 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
  LedTest = ~LedTest;
  horaSistema = horaSistema + 2;
 
- Delay_ms(500);
- DS3234_setDate(horaSistema, fechaSistema);
-
- banSyncReloj = 0;
- banSetReloj = 1;
 
 
- InterrupcionP1(0xB2);
+ T3CON.TON = 1;
+ TMR3 = 0;
+#line 564 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  }
 }
 
@@ -1045,6 +1055,29 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT
  fuenteReloj = 5;
  banSetReloj = 1;
  InterrupcionP1(0xB2);
+ }
+}
+
+
+
+void Timer3Int() org IVT_ADDR_T3INTERRUPT
+{
+ T3IF_bit = 0;
+
+ contTimer3++;
+
+
+ if (contTimer3 == 5)
+ {
+ DS3234_setDate(horaSistema, fechaSistema);
+
+ banSyncReloj = 0;
+ banSetReloj = 1;
+
+
+ InterrupcionP1(0xB2);
+ contTimer3 = 0;
+ T3CON.TON = 0;
  }
 }
 

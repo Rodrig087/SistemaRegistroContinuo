@@ -55,6 +55,7 @@ unsigned short referenciaTiempo;
 unsigned short banInicializar;
 unsigned short contTimeout1;
 unsigned short banInitGPS;
+unsigned short contTimer3;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -110,6 +111,7 @@ void main()
    numFIFO = 0;
    numSetsFIFO = 0;
    contTimer1 = 0;
+   contTimer3 = 0;
 
    byteGPS = 0;
    banInitGPS = 0;
@@ -212,17 +214,19 @@ void ConfiguracionPrincipal()
 
    // Configuracion de la interrupcion externa INT1
    RPINR0 = 0x2F00;        // Asigna INT1 al RB15/RPI47 (SQW)
-   RPINR1 = 0x002E;        // Asigna INT2 al RB14/RPI46 (PPS)
    INT1IE_bit = 1;         // Habilita la interrupcion externa INT1
    INT1IF_bit = 0;         // Limpia la bandera de interrupcion externa INT1
+   IPC5bits.INT1IP = 0x02; // Prioridad en la interrupocion externa INT1
+
+   // Configuracion de la interrupcion externa INT2
+   RPINR1 = 0x002E;        // Asigna INT2 al RB14/RPI46 (PPS)
    INT2IE_bit = 1;         // Habilita la interrupcion externa INT1
    INT2IF_bit = 0;         // Limpia la bandera de interrupcion externa INT1
-   IPC5bits.INT1IP = 0x02; // Prioridad en la interrupocion externa INT1
    IPC7bits.INT2IP = 0x01; // Prioridad en la interrupocion externa INT2
 
    // Configuracion del TMR1 con un tiempo de 100ms
    T1CON = 0x0020;
-   T1CON.TON = 0;        // Apaga el Timer1
+   T1CON.TON = 0;        // Apaga el TMR1
    T1IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR1
    T1IF_bit = 0;         // Limpia la bandera de interrupcion del TMR1
    PR1 = 62500;          // Car ga el preload para un tiempo de 100ms
@@ -230,11 +234,19 @@ void ConfiguracionPrincipal()
 
    // Configuracion del TMR2 con un tiempo de 300ms
    T2CON = 0x30;         // Prescalador
-   T2CON.TON = 0;        // Apaga el Timer2
+   T2CON.TON = 0;        // Apaga el TMR2
    T2IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR2
    T2IF_bit = 0;         // Limpia la bandera de interrupcion del TMR2
    PR2 = 46875;          // Carga el preload para un tiempo de 300ms
    IPC1bits.T2IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR2
+
+   // Configuracion del TMR3 con un tiempo de 500ms
+   T3CON = 0x20;         // Prescalador
+   T3CON.TON = 0;        // Apaga el TMR3
+   T3IE_bit = 1;         // Habilita la interrupcion de desbordamiento TMR3
+   T3IF_bit = 0;         // Limpia la bandera de interrupcion del TMR3
+   PR3 = 62500;          // Carga el preload para un tiempo de 500ms
+   IPC2bits.T3IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR3
 
    Delay_ms(200); // Espera hasta que se estabilicen los cambios
 
@@ -415,7 +427,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 
    //************************************************************************************************************************************
    // Rutina para obtener la hora de la RPi (C:0xA4   F:0xF4):
-   if ((banSetReloj == 0) && (buffer == 0xA4))
+   if ((banEsc == 0) && (buffer == 0xA4))
    {
       banEsc = 1;
       j = 0;
@@ -457,17 +469,16 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    }
 
    // Rutina para obtener la referencia de reloj del GPS o el RTC (C:0xA6   F:0xF6):
-   if ((banSetReloj == 0) && (buffer == 0xA6))
+   if ((banEsc == 0) && (buffer == 0xA6))
    {
-      banSetReloj = 2;
+      banEsc = 1;
    }
-   if ((banSetReloj == 2) && (buffer != 0xA6) && (buffer != 0xF6))
+   if ((banEsc == 1) && (buffer != 0xA6) && (buffer != 0xF6))
    {
       referenciaTiempo = buffer; // Recupera la opcion de referencia de tiempo solicitada
    }
-   if ((banSetReloj == 2) && (buffer == 0xF6))
+   if ((banEsc == 1) && (buffer == 0xF6))
    {
-      banSetReloj = 1; // Activa esta bandera para usar la hora/fecha recuperada
       if (referenciaTiempo == 1)
       {
          // Recupera el tiempo del GPS:
@@ -487,6 +498,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
          fuenteReloj = 2;                                         // Fuente de reloj = RTC
          InterrupcionP1(0xB2);                                    // Envia la hora local a la RPi
       }
+      banEsc = 0;
+      banSetReloj = 1; // Activa esta bandera para usar la hora/fecha recuperada
    }
    //************************************************************************************************************************************
 }
@@ -531,6 +544,13 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
       // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
       LedTest = ~LedTest;
       horaSistema = horaSistema + 2; // Incrementa el reloj del sistema en 2 segundos
+
+      // Inicia el Timer3 de 500ms:
+      //   Inicia el Timeout 1:
+      T3CON.TON = 1;
+      TMR3 = 0;
+
+      /*
       // Realiza el retraso necesario para sincronizar el RTC con el PPS (Consultar Datasheet del DS3234)
       Delay_ms(500);
       DS3234_setDate(horaSistema, fechaSistema); // Configura la hora en el RTC con la hora recuperada de la RPi
@@ -540,6 +560,7 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
 
       // Envia la hora local a la RPi:
       InterrupcionP1(0xB2);
+      */
    }
 }
 
@@ -611,6 +632,29 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT
       fuenteReloj = 5;                                         //**Indica que se obtuvo la hora del RTC
       banSetReloj = 1;
       InterrupcionP1(0xB2); // Envia la hora local a la RPi
+   }
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Interrupcion por desbordamiento del Timer3
+void Timer3Int() org IVT_ADDR_T3INTERRUPT
+{
+   T3IF_bit = 0;
+
+   contTimer3++; // Incrementa una unidad cada vez que entra a la interrupcion por Timer3
+
+   // Revisa si el contador es igual a 5 (500ms)
+   if (contTimer3 == 5)
+   {
+      DS3234_setDate(horaSistema, fechaSistema); // Configura la hora en el RTC con la hora recuperada de la RPi
+
+      banSyncReloj = 0;
+      banSetReloj = 1; // Activa esta bandera para continuar trabajando con el pulso SQW
+
+      // Envia la hora local a la RPi:
+      InterrupcionP1(0xB2);
+      contTimer3 = 0; // Encera el contador
+      T3CON.TON = 0;  // Apaga el Timer3
    }
 }
 

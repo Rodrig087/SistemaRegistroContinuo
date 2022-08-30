@@ -11,9 +11,10 @@ hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
 hint: 0	1004	interrupt handler (int_2 at 0x004E)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer2Int at 0x0022)	Acelerografo.c
+hint: 0	1004	interrupt handler (Timer3Int at 0x0024)	Acelerografo.c
 hint: 0	1004	interrupt handler (urx_1 at 0x002A)	Acelerografo.c
-diagnostics: 729	123	Compiled Successfully	Acelerografo.c
-warning: 128	1519	Logical expression is always: 'False'	Acelerografo.c
+diagnostics: 773	123	Compiled Successfully	Acelerografo.c
+warning: 130	1519	Logical expression is always: 'False'	Acelerografo.c
 hint: 138	1164	Variable 'value' has been eliminated by optimizer	Acelerografo.c
 hint: 150	1164	Variable 'muestra' has been eliminated by optimizer	Acelerografo.c
 hint: 168	1164	Variable 'add' has been eliminated by optimizer	Acelerografo.c
@@ -27,11 +28,11 @@ hint: 162	1164	Variable 'anio' has been eliminated by optimizer	Acelerografo.c
 hint: 191	1164	Variable 'fechaInc' has been eliminated by optimizer	Acelerografo.c
 hint: 12	1164	Variable 'fechaRPi' has been eliminated by optimizer	Acelerografo.c
 hint: 23	1164	Variable 'horaRPi' has been eliminated by optimizer	Acelerografo.c
-diagnostics: 0	127	All files Compiled in 203 ms	 
+diagnostics: 0	127	All files Compiled in 141 ms	 
 hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)
-hint: 0	1144	Static RAM (bytes): 2987   Dynamic RAM (bytes): 25684	Static RAM (bytes): 2987   Dynamic RAM (bytes): 25684
-hint: 0	1144	Used ROM (bytes): 6228 (4%)  Free ROM (bytes): 169880 (96%)	Used ROM (bytes): 6228 (4%)  Free ROM (bytes): 169880 (96%)
+hint: 0	1144	Static RAM (bytes): 2988   Dynamic RAM (bytes): 25684	Static RAM (bytes): 2988   Dynamic RAM (bytes): 25684
+hint: 0	1144	Used ROM (bytes): 6314 (4%)  Free ROM (bytes): 169794 (96%)	Used ROM (bytes): 6314 (4%)  Free ROM (bytes): 169794 (96%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
-diagnostics: 0	128	Linked in 172 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 547 ms	 
-diagnostics: 0	103	Finished successfully: 23 ago. 2022, 16:40:23	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 141 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 391 ms	 
+diagnostics: 0	103	Finished successfully: 26 ago. 2022, 16:23:55	Acelerografo.mcpds
