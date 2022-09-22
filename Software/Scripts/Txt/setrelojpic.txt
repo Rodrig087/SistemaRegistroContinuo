@@ -1,8 +1,0 @@
-#!/bin/bash
-
-echo " "
-sudo killall -q acelerografo
-sudo /home/pi/Ejecutables/setrtc
-echo " "
-
-exit 0

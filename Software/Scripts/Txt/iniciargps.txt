@@ -1,0 +1,7 @@
+#!/bin/bash
+
+echo " "
+sudo -b /home/rsa/Ejecutables/gps_init
+echo " "
+
+exit 0
