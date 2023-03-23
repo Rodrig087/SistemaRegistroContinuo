@@ -1,0 +1,16 @@
+# Este script debe ser copiado en la ruta /etc/network/rutasEstaticas.sh de la estacion CHA02
+
+#!/bin/bash
+
+ip route flush dev wlan0
+route add 192.168.10.5 dev wlan0
+
+route add 192.168.10.30 gw 192.168.10.5 metric 1 dev wlan0
+route add 192.168.10.40 gw 192.168.10.30 metric 2 dev wlan0
+route add 192.168.10.20 gw 192.168.10.30 metric 2 dev wlan0
+
+route add 192.168.10.31 gw 192.168.10.5 metric 1 dev wlan0
+route add 192.168.10.41 gw 192.168.10.31 metric 2 dev wlan0
+route add 192.168.10.21 gw 192.168.10.31 metric 2 dev wlan0
+
+sudo sysctl net.ipv4.ip_forward=1
