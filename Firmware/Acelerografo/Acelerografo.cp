@@ -1,6 +1,6 @@
-#line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
-#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 1 "C:/Users/SebasRSA07/Documents/Milton/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 96 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -93,30 +93,15 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 
 
 
 
-void GPS_init(short conf, short NMA);
+
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
-
-
-
-
-void GPS_init()
-{
-#line 48 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
- UART1_Write_Text("$PMTK220,1000*1F\r\n");
- Delay_ms(1000);
- UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
- Delay_ms(1000);
-}
-
-
-
-
+#line 27 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
 {
 
@@ -176,8 +161,8 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS)
  horaGPS = (tramaTiempo[0] * 3600) + (tramaTiempo[1] * 60) + (tramaTiempo[2]);
  return horaGPS;
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
-#line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 37 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 sbit CS_DS3234 at LATA2_bit;
 
 
@@ -419,7 +404,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
  tramaTiempoSistema[5] = segundo;
 
 }
-#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
+#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
 
 
 
@@ -449,7 +434,7 @@ unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
  return horaRPi;
 
 }
-#line 19 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 19 "C:/Users/SebasRSA07/Documents/Milton/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -463,8 +448,7 @@ unsigned short tiempo[6];
 unsigned short tiempoRPI[6];
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];
-unsigned char tramaCompleta[2506];
-unsigned char tramaSalida[2506];
+unsigned char tramaCompleta[2506] = {0};
 unsigned short numFIFO, numSetsFIFO;
 unsigned short contTimer1;
 
@@ -565,6 +549,16 @@ void main()
  {
  if (banInicializar == 1)
  {
+
+ UART1_Write_Text("$PMTK220,1000*1F\r\n");
+ UART1_Write_Text("$PMTK313,1*2E\r\n");
+ UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+ UART1_Write_Text("$PMTK319,1*24\r\n");
+ UART1_Write_Text("$PMTK413*34\r\n");
+ UART1_Write_Text("$PMTK513,1*28\r\n");
+ Delay_ms(1000);
+ U1MODE.UARTEN = 0;
+
 
  DS3234_init();
  ADXL355_init(tasaMuestreo);
@@ -724,7 +718,6 @@ void Muestrear()
 
  banCiclo = 2;
 
-
  tramaCompleta[0] = fuenteReloj;
  numFIFO = ADXL355_read_byte( 0x05 );
  numSetsFIFO = (numFIFO) / 3;
@@ -736,6 +729,7 @@ void Muestrear()
  for (y = 0; y < 9; y++)
  {
  datosFIFO[y + (x * 9)] = datosLeidos[y];
+
  }
  }
 
@@ -771,7 +765,6 @@ void Muestrear()
  LedTest = 0;
  }
 
- contCiclos++;
 }
 
 
@@ -825,7 +818,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  }
  if ((banInitGPS == 1) && (buffer == 0xF2))
  {
- GPS_init();
+
 
  LedTest = 0;
  Delay_ms(150);
@@ -983,7 +976,7 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
 
  T3CON.TON = 1;
  TMR3 = 0;
-#line 564 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 572 "C:/Users/SebasRSA07/Documents/Milton/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  }
 }
 

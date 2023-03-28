@@ -12,6 +12,8 @@ main
 		ADXL355_write_byte
 			SPI2_Write
 				SPI2_Read
+	UART1_Write_Text
+		UART1_Write
 	DS3234_init
 		SPI2_Init_Advanced
 		DS3234_write_byte
@@ -58,9 +60,6 @@ urx_1
 		atoi
 		_Multiply_32x32
 spi_1
-	GPS_init
-		UART1_Write_Text
-			UART1_Write
 	RecuperarHoraRPI
 		_Multiply_32x32
 	RecuperarFechaRPI

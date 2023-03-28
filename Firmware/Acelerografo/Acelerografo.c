@@ -29,8 +29,7 @@ unsigned short tiempo[6];    // Vector de datos de tiempo del sistema
 unsigned short tiempoRPI[6]; // Vector para recuperar el tiempo enviado desde la RPi
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];      // Vector para almacenar 27 muestras de 3 ejes del vector FIFO
-unsigned char tramaCompleta[2506]; // Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
-unsigned char tramaSalida[2506];
+unsigned char tramaCompleta[2506] = {0}; // Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
 unsigned short numFIFO, numSetsFIFO; // Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
 unsigned short contTimer1;           // Variable para contar el numero de veces que entra a la interrupcion por Timer 1
 
@@ -131,7 +130,17 @@ void main()
    {
       if (banInicializar == 1)
       {
-         // GPS_init();                 // Inicializa el GPS
+         
+         UART1_Write_Text("$PMTK220,1000*1F\r\n");
+         UART1_Write_Text("$PMTK313,1*2E\r\n");
+         UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
+         UART1_Write_Text("$PMTK319,1*24\r\n");
+         UART1_Write_Text("$PMTK413*34\r\n");
+         UART1_Write_Text("$PMTK513,1*28\r\n");
+         Delay_ms(1000);
+         U1MODE.UARTEN = 0;
+         
+         //GPS_init();                 // Inicializa el GPS
          DS3234_init();              // inicializa el RTC
          ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
          banInicializar = 0;         // Desactiva la bandera para salir del bucle
@@ -290,7 +299,6 @@ void Muestrear()
 
       banCiclo = 2; // Limpia la bandera de ciclo completo
 
-      // tramaCompleta[0] = contCiclos; // LLena el primer elemento de la tramaCompleta con el contador de ciclos
       tramaCompleta[0] = fuenteReloj; // LLena el primer elemento de la tramaCompleta con el identificador de fuente de reloj
       numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
       numSetsFIFO = (numFIFO) / 3; // Lee el numero de sets disponibles en el FIFO
@@ -302,6 +310,7 @@ void Muestrear()
          for (y = 0; y < 9; y++)
          {
             datosFIFO[y + (x * 9)] = datosLeidos[y]; // LLena la trama datosFIFO
+            //datosFIFO[y + (x * 9)] = numSetsFIFO;  // Prueba para comprobar el numero de sets leidos en la ultima muestra
          }
       }
 
@@ -337,7 +346,6 @@ void Muestrear()
       LedTest = 0;
    }
 
-   contCiclos++; // Incrementa el contador de ciclos
 }
 //****************************************************************************************************************************************
 
@@ -345,7 +353,7 @@ void Muestrear()
 
 ////////////////////////////////////////////////////////////// Interrupciones /////////////////////////////////////////////////////////////
 
-// Interrupcion SPI1
+// Interrupcion SPI1: RPi
 void spi_1() org IVT_ADDR_SPI1INTERRUPT
 {
 
@@ -391,7 +399,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    }
    if ((banInitGPS == 1) && (buffer == 0xF2))
    {
-      GPS_init();
+      //GPS_init();
       // Conmuta el LedTest para indicar que se inicializo el GPS:
       LedTest = 0;
       Delay_ms(150);
@@ -506,7 +514,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Interrupcion INT1
+// Interrupcion INT1: RTC-SQW
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
 
@@ -532,7 +540,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
 }
 
 //*****************************************************************************************************************************************
-// Interrupcion INT2
+// Interrupcion INT2: GPS-PPS
 void int_2() org IVT_ADDR_INT2INTERRUPT
 {
 
@@ -565,7 +573,7 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Interrupcion por desbordamiento del Timer1
+// Interrupcion Timer1: Lectura ADXL355
 void Timer1Int() org IVT_ADDR_T1INTERRUPT
 {
 
@@ -612,7 +620,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Timeout de 4*300ms para el UART1:
+// Interrupcion Timer2: Timeout de 4*300ms para el UART1:
 void Timer2Int() org IVT_ADDR_T2INTERRUPT
 {
 
@@ -636,7 +644,7 @@ void Timer2Int() org IVT_ADDR_T2INTERRUPT
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Interrupcion por desbordamiento del Timer3
+// Interrupcion Timer3: Sincronizacion SQW-PPS
 void Timer3Int() org IVT_ADDR_T3INTERRUPT
 {
    T3IF_bit = 0;
@@ -659,7 +667,7 @@ void Timer3Int() org IVT_ADDR_T3INTERRUPT
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Interrupcion UART1
+// Interrupcion UART1: Lectura GPS
 void urx_1() org IVT_ADDR_U1RXINTERRUPT
 {
    // Recupera el byte recibido en cada interrupcion:

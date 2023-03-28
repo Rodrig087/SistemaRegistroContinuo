@@ -24,8 +24,9 @@ Count=0
 Count=0
 ActiveImageIndex=-1
 [OPENED_FILES]
-Count=1
+Count=2
 File0=Acelerografo.c
+File1=..\Librerias firmware\TIEMPO_GPS.c
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]
@@ -33,13 +34,15 @@ Count=0
 [OTHER_FILES]
 Count=0
 [SEARCH_PATH]
-Count=3
+Count=4
 Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
-Path2=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path2=C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path3=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
 [HEADER_PATH]
-Count=1
+Count=2
 Path0=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\
+Path1=C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Librerias firmware\
 [HEADERS]
 Count=0
 [PLDS]
