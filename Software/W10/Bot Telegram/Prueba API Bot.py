@@ -1,3 +1,4 @@
+
 import logging
 from typing import Optional, Tuple
 
@@ -62,16 +63,18 @@ async def show_chats(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
 #*************************************************************************************************************
 def main() -> None:
     """Start the bot."""
-    # Create the Application and pass it your bot's token.
-    application = Application.builder().token("6208005709:AAGfEH4BmxypLKtCsnnAE_FkDuyPuixaV-I").build()
-    
-    application.add_handler(CommandHandler("show_chats", show_chats))
-    
-    # Run the bot until the user presses Ctrl-C
-    # We pass 'allowed_updates' handle *all* updates including `chat_member` updates
-    # To reset this, simply pass `allowed_updates=[]`
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-    #application.run_polling(allowed_updates=[])
+    try:
+        # Create the Application and pass it your bot's token.
+        application = Application.builder().token("6208005709:AAGfEH4BmxypLKtCsnnAE_FkDuyPuixaV-I").build()
+        
+        application.add_handler(CommandHandler("show_chats", show_chats))
+        
+        # Run the bot until the user presses Ctrl-C
+        # We pass 'allowed_updates' handle *all* updates including `chat_member` updates
+        # To reset this, simply pass `allowed_updates=[]`
+        application.run_polling(allowed_updates=Update.ALL_TYPES)
+    except Exception as e:
+        print(f"An error occurred: {e}")
     
 if __name__ == "__main__":
     main()
