@@ -1,6 +1,6 @@
-#line 1 "C:/Users/SebasRSA07/Documents/Milton/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
-#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
-#line 96 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 1 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
+#line 96 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/adxl355_spi.c"
 sbit CS_ADXL355 at LATA3_bit;
 unsigned short axisAddresses[] = { 0x08 ,  0x09 ,  0x0A ,  0x0B ,  0x0C ,  0x0D ,  0x0E ,  0x0F ,  0x10 };
 
@@ -93,7 +93,7 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
  Delay_us(5);
  return;
 }
-#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 
 
 
@@ -101,7 +101,7 @@ unsigned int ADXL355_read_FIFO(unsigned char *vectorFIFO){
 
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
 unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
-#line 27 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
+#line 27 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_gps.c"
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
 {
 
@@ -127,7 +127,7 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
  datoStringF[1] = tramaDatosGPS[11];
  tramaFecha[2] = atoi(ptrDatoStringF);
 
- fechaGPS = (tramaFecha[0] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[2]);
+ fechaGPS = (tramaFecha[2] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[0]);
 
  return fechaGPS;
 }
@@ -161,8 +161,8 @@ unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS)
  horaGPS = (tramaTiempo[0] * 3600) + (tramaTiempo[1] * 60) + (tramaTiempo[2]);
  return horaGPS;
 }
-#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
-#line 37 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
+#line 37 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rtc.c"
 sbit CS_DS3234 at LATA2_bit;
 
 
@@ -404,7 +404,7 @@ void AjustarTiempoSistema(unsigned long longHora, unsigned long longFecha, unsig
  tramaTiempoSistema[5] = segundo;
 
 }
-#line 1 "c:/users/sebasrsa07/documents/milton/git/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
+#line 1 "c:/users/milto/milton/rsa/git/registro continuo/sistemaregistrocontinuo/firmware/librerias firmware/tiempo_rpi.c"
 
 
 
@@ -434,7 +434,7 @@ unsigned long RecuperarHoraRPI(unsigned short *tramaTiempoRpi){
  return horaRPi;
 
 }
-#line 19 "C:/Users/SebasRSA07/Documents/Milton/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 19 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 sbit RP1 at LATA4_bit;
 sbit RP1_Direction at TRISA4_bit;
 sbit RP2 at LATB4_bit;
@@ -976,7 +976,7 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
 
  T3CON.TON = 1;
  TMR3 = 0;
-#line 572 "C:/Users/SebasRSA07/Documents/Milton/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 572 "C:/Users/milto/Milton/RSA/Git/Registro Continuo/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  }
 }
 

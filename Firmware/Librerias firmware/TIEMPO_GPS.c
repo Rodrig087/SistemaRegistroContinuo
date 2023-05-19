@@ -49,7 +49,7 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
      datoStringF[1] = tramaDatosGPS[11];
      tramaFecha[2] = atoi(ptrDatoStringF);
 
-     fechaGPS = (tramaFecha[0] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[2]); // 10000*dd + 100*mm + aa
+     fechaGPS = (tramaFecha[2] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[0]); // 10000*aa + 100*mm + dd
 
      return fechaGPS;
 }

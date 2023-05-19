@@ -411,8 +411,9 @@ _RecuperarFechaGPS:
 	MOV	[W14+20], W0
 	MOV	W1, [W0++]
 	MOV	W2, [W0--]
-;tiempo_gps.c,52 :: 		fechaGPS = (tramaFecha[0] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[2]); // 10000*dd + 100*mm + aa
-	MOV	[W14+24], W2
+;tiempo_gps.c,52 :: 		fechaGPS = (tramaFecha[2] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[0]); // 10000*aa + 100*mm + dd
+	MOV	[W14+24], W0
+	ADD	W0, #8, W2
 	MOV.D	[W2], W0
 	MOV	#10000, W2
 	MOV	#0, W3
@@ -429,8 +430,7 @@ _RecuperarFechaGPS:
 	MOV	[W14+22], W3
 	ADD	W2, W0, W4
 	ADDC	W3, W1, W5
-	MOV	[W14+24], W0
-	ADD	W0, #8, W2
+	MOV	[W14+24], W2
 	ADD	W4, [W2++], W0
 	ADDC	W5, [W2--], W1
 ;tiempo_gps.c,54 :: 		return fechaGPS;

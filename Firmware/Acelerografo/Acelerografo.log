@@ -1,6 +1,6 @@
-0	1	mikroCdsPIC.exe -MSF -DBG -pP33EP256MC202 -DL -SSA -O11111114 -fo80 -N"C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo\Acelerografo.mcpds" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\" -SP"C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo\" -SP"C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\" -IP"C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\" -IP"C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Librerias firmware\" "Acelerografo.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_CType.mcl" "__Lib_CString.mcl" "__Lib_CStdlib.mcl" "__Lib_Conversions.mcl" "__Lib_SPI_12.mcl" "__Lib_UART_12_p24_p33.mcl"	 
-warning: 0	1501	Specified search path does not exist: 'C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo'	 
-warning: 0	1502	Specified include path does not exist: 'C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware'	 
+0	1	mikroCdsPIC.exe -MSF -DBG -pP33EP256MC202 -DL -SSA -O11111114 -fo80 -N"C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\Acelerografo.mcpds" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\" -SP"C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\" -SP"C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\" -SP"C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo\" -IP"C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\" -IP"C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Librerias firmware\" "Acelerografo.c" "__Lib_Math.mcl" "__Lib_MathDouble.mcl" "__Lib_System.mcl" "__Lib_Delays.mcl" "__Lib_CType.mcl" "__Lib_CString.mcl" "__Lib_CStdlib.mcl" "__Lib_Conversions.mcl" "__Lib_SPI_12.mcl" "__Lib_UART_12_p24_p33.mcl"	 
+warning: 0	1501	Specified search path does not exist: 'C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo'	 
+warning: 0	1502	Specified include path does not exist: 'C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Librerias firmware'	 
 diagnostics: 0	121	Loading...	 
 diagnostics: 0	122	Compilation Started	adxl355_spi.c
 warning: 163	1503	Result is not defined in function: ''	adxl355_spi.c
@@ -35,6 +35,6 @@ hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes
 hint: 0	1144	Static RAM (bytes): 3046   Dynamic RAM (bytes): 25626	Static RAM (bytes): 3046   Dynamic RAM (bytes): 25626
 hint: 0	1144	Used ROM (bytes): 8870 (5%)  Free ROM (bytes): 167238 (95%)	Used ROM (bytes): 8870 (5%)  Free ROM (bytes): 167238 (95%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
-diagnostics: 0	128	Linked in 156 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 469 ms	 
-diagnostics: 0	103	Finished successfully: 28 mar. 2023, 11:57:45	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 171 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 468 ms	 
+diagnostics: 0	103	Finished successfully: 19 may. 2023, 14:38:38	Acelerografo.mcpds
