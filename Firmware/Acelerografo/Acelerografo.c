@@ -6,10 +6,10 @@ Configuracion: dsPIC33EP256MC202, XT=80MHz
 
 ////////////////////////////////////////////////////         Librerias         /////////////////////////////////////////////////////////////
 
-#include <ADXL355_SPI.c>
-#include <TIEMPO_GPS.c>
-#include <TIEMPO_RTC.c>
-#include <TIEMPO_RPI.c>
+#include "ADXL355_SPI.h"
+#include "TIEMPO_GPS.h"
+#include "TIEMPO_RPI.h"
+#include "TIEMPO_RTC.h"
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -25,53 +25,55 @@ sbit TEST_Direction at TRISB12_bit;
 
 unsigned char tramaGPS[70];
 unsigned char datosGPS[13];
-unsigned short tiempo[6];    // Vector de datos de tiempo del sistema
-unsigned short tiempoRPI[6]; // Vector para recuperar el tiempo enviado desde la RPi
+unsigned char tiempo[6];    // Vector de datos de tiempo del sistema
+unsigned char tiempoRPI[6]; // Vector para recuperar el tiempo enviado desde la RPi
 unsigned char datosLeidos[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 unsigned char datosFIFO[243];      // Vector para almacenar 27 muestras de 3 ejes del vector FIFO
 unsigned char tramaCompleta[2506] = {0}; // Vector para almacenar 10 vectores datosFIFO, 250 cabeceras de muestras y el vector tiempo
-unsigned short numFIFO, numSetsFIFO; // Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
-unsigned short contTimer1;           // Variable para contar el numero de veces que entra a la interrupcion por Timer 1
+unsigned char numFIFO, numSetsFIFO; // Variablea para almacenar el numero de muestras y sets recuperados del buffer FIFO
+unsigned char contTimer1;           // Variable para contar el numero de veces que entra a la interrupcion por Timer 1
 
 unsigned int i, x, y, i_gps, j;
-unsigned short buffer;
-unsigned short contMuestras;
-unsigned short contCiclos;
+unsigned char buffer;
+unsigned char contMuestras;
+unsigned char contCiclos;
 unsigned int contFIFO;
-short tasaMuestreo;
-short numTMR1;
+unsigned char tasaMuestreo;
+unsigned char numTMR1;
 
-unsigned short banTC, banTI, banTF; // Banderas de trama completa, inicio de trama y final de trama
-unsigned short banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS, banSyncReloj;
-unsigned short banMuestrear, banLeer, banConf;
-unsigned short banOperacion, tipoOperacion;
+unsigned char banTC, banTI, banTF; // Banderas de trama completa, inicio de trama y final de trama
+unsigned char banLec, banEsc, banCiclo, banInicio, banSetReloj, banSetGPS, banSyncReloj;
+unsigned char banMuestrear, banLeer, banConf;
+unsigned char banOperacion, tipoOperacion;
 
 unsigned char byteGPS, banGPSI, banTFGPS, banGPSC, stsGPS;
-unsigned short fuenteReloj; // Indiaca la fuente de reloj 0:RTC 1:GPS
-short confGPS[2];
+unsigned char fuenteReloj; // Indiaca la fuente de reloj 0:RTC 1:GPS
+unsigned char confGPS[2];
 unsigned long horaSistema, fechaSistema;
-unsigned short referenciaTiempo;
-unsigned short banInicializar;
-unsigned short contTimeout1;
-unsigned short banInitGPS;
-unsigned short contTimer3;
+unsigned char referenciaTiempo;
+unsigned char banInicializar;
+unsigned char contTimeout1;
+unsigned char banInitGPS;
+unsigned char contTimer3;
+
+// Variable de estado para rastrear la recepción de la trama SPI:
+//int estadoTrama;
+//enum EstadoRecepcion {EsperandoInicio, RecibiendoDatos, EsperandoFin};
+//estadoTrama = EsperandoInicio;
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 /////////////////////////////////////////////////////////  Declaracion de funciones  /////////////////////////////////////////////////////////
 void ConfiguracionPrincipal();
 void Muestrear();
-void InterrupcionP1(unsigned short operacion);
+void InterrupcionP1(unsigned char operacion);
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////      Main      ////////////////////////////////////////////////////////////////
 void main()
 {
 
-   // GPS_init(1,1);                                                             //Inicializa el GPS en modo configuracion y tipo de trama GPRMC
-   // DS3234_init();                     // inicializa el RTC
    tasaMuestreo = 1; // 1=250Hz, 2=125Hz, 4=62.5Hz, 8=31.25Hz
-   // ADXL355_init(tasaMuestreo);        // Inicializa el modulo ADXL con la tasa de muestreo requerida:
    numTMR1 = (tasaMuestreo * 10) - 1; // Calcula el numero de veces que tienen que desbordarse el TMR1 para cada tasa de muestreo
 
    banOperacion = 0;
@@ -120,7 +122,7 @@ void main()
 
    RP1 = 0;
    RP2 = 0;
-   LedTest = 1;
+   LedTest = 0;
 
    SPI1BUF = 0x00;
 
@@ -128,18 +130,19 @@ void main()
 
    while (1)
    {
+      /*
       if (banInicializar == 1)
       {
-         
          UART1_Write_Text("$PMTK220,1000*1F\r\n");
          UART1_Write_Text("$PMTK313,1*2E\r\n");
          UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
          UART1_Write_Text("$PMTK319,1*24\r\n");
          UART1_Write_Text("$PMTK413*34\r\n");
          UART1_Write_Text("$PMTK513,1*28\r\n");
+         while (!UART1_Tx_Idle());  // Espera hasta que la transmisión UART1 haya finalizado
          Delay_ms(1000);
          U1MODE.UARTEN = 0;
-         
+
          //GPS_init();                 // Inicializa el GPS
          DS3234_init();              // inicializa el RTC
          ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
@@ -156,9 +159,10 @@ void main()
          Delay_ms(150);
          LedTest = ~LedTest;
       }
-
+      */
       Delay_ms(1);
    }
+   
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -218,9 +222,6 @@ void ConfiguracionPrincipal()
    U1STAbits.URXISEL = 0x00;
    UART1_Init(9600); // Inicializa el UART1 con una velocidad de 9600 baudios
 
-   // Configuracion del acelerometro
-   ADXL355_write_byte(POWER_CTL, DRDY_OFF | STANDBY); // Coloco el ADXL en modo STANDBY para pausar las conversiones y limpiar el FIFO
-
    // Configuracion de la interrupcion externa INT1
    RPINR0 = 0x2F00;        // Asigna INT1 al RB15/RPI47 (SQW)
    INT1IE_bit = 1;         // Habilita la interrupcion externa INT1
@@ -258,7 +259,19 @@ void ConfiguracionPrincipal()
    IPC2bits.T3IP = 0x02; // Prioridad de la interrupcion por desbordamiento del TMR3
 
    Delay_ms(200); // Espera hasta que se estabilicen los cambios
-
+   
+   // Configuracion del RTC:
+   DS3234_init();              // inicializa el RTC
+   
+   Delay_ms(500);              // Espera hasta que se estabilicen los cambios del RTC
+   
+   // Configuracion del acelerometro:
+   ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
+   
+   //Configuracion del GPS:
+   GPS_init();
+   U1MODE.UARTEN = 0;
+   
    // Conmuta el ledTest para indicar que se termino la configuracion:
    LedTest = ~LedTest;
    Delay_ms(300);
@@ -266,14 +279,12 @@ void ConfiguracionPrincipal()
    Delay_ms(300);
    LedTest = ~LedTest;
 
-   // Activa la bandera para inicializar el RTC, el GPS y el ADXL
-   banInicializar = 1;
 }
 //****************************************************************************************************************************************
 
 //*****************************************************************************************************************************************
 // Funcion para realizar la interrupcion en la RPi
-void InterrupcionP1(unsigned short operacion)
+void InterrupcionP1(unsigned char operacion)
 {
    banOperacion = 0;          // Encera la bandera para permitir una nueva peticion de operacion
    tipoOperacion = operacion; // Carga en la variable el tipo de operacion requerido
@@ -289,15 +300,15 @@ void InterrupcionP1(unsigned short operacion)
 void Muestrear()
 {
 
-   if (banCiclo == 0)
+   if (banCiclo == 1)
    {
       ADXL355_write_byte(POWER_CTL, DRDY_OFF | MEASURING); // Coloca el ADXL en modo medicion
       T1CON.TON = 1;                                       // Enciende el Timer1
    }
-   else if (banCiclo == 1)
+   else if (banCiclo == 2)
    {
 
-      banCiclo = 2; // Limpia la bandera de ciclo completo
+      banCiclo = 3; // Limpia la bandera de ciclo completo
 
       tramaCompleta[0] = fuenteReloj; // LLena el primer elemento de la tramaCompleta con el identificador de fuente de reloj
       numFIFO = ADXL355_read_byte(FIFO_ENTRIES);
@@ -378,7 +389,13 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    // Rutina para inicio del muestreo (C:0xA1   F:0xF1):
    if ((banMuestrear == 0) && (buffer == 0xA1))
    {
-      banMuestrear = 1; // Cambia el estado de la bandera para que no inicie el muestreo mas de una vez de manera consecutiva
+      banMuestrear = 1;
+      banCiclo = 1;
+   }
+   if ((banMuestrear == 1) && (buffer != 0xA1) && (buffer != 0xF1))
+   {
+      banInicio = 1;  // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1
+      /*
       banCiclo = 0;
       contMuestras = 0;
       contCiclos = 0;
@@ -386,8 +403,11 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       numFIFO = 0;
       numSetsFIFO = 0;
       contTimer1 = 0;
-      // Bandera que permite el inicio del muestreo dentro de la interrupcion INT1:
-      banInicio = 1;
+      */
+   }
+   if ((banMuestrear == 1) && (buffer == 0xF1))
+   {
+      banMuestrear = 0;
    }
 
    // Rutina para inicializar el GPS:
@@ -439,7 +459,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    {
       banEsc = 1;
       j = 0;
-   }
+   } 
    if ((banEsc == 1) && (buffer != 0xA4) && (buffer != 0xF4))
    {
       tiempoRPI[j] = buffer;
@@ -450,12 +470,11 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       horaSistema = RecuperarHoraRPI(tiempoRPI);               // Recupera la hora de la RPi
       fechaSistema = RecuperarFechaRPI(tiempoRPI);             // Recupera la fecha de la RPi
       DS3234_setDate(horaSistema, fechaSistema);               // Configura la hora en el RTC
-      horaSistema = RecuperarHoraRTC();                        // Recupera la hora del RTC
-      fechaSistema = RecuperarFechaRTC();                      // Recupera la fecha del RTC
       AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
+      fuenteReloj = 0;                                         // Fuente de reloj = RPi
+      InterrupcionP1(0XB2);
       banEsc = 0;
       banSetReloj = 1;
-      InterrupcionP1(0XB2);
    }
 
    // Rutina para enviar la hora local a la RPi (C:0xA5   F:0xF5):
@@ -614,7 +633,7 @@ void Timer1Int() org IVT_ADDR_T1INTERRUPT
    if (contTimer1 == numTMR1)
    {                  // Verifica si se cumplio el numero de interrupciones por TMR1 para la tasa de muestreo seleccionada
       T1CON.TON = 0;  // Apaga el Timer1
-      banCiclo = 1;   // Activa la bandera que indica que se completo un ciclo de medicion
+      banCiclo = 2;   // Activa la bandera que indica que se completo un ciclo de medicion
       contTimer1 = 0; // Limpia el contador de interrupciones por Timer1
    }
 }

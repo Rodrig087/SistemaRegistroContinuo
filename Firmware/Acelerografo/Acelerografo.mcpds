@@ -16,17 +16,22 @@ Value=2000
 [EEPROM_DEFINITION]
 Value=
 [FILES]
-Count=1
+Count=5
 File0=Acelerografo.c
+File1=..\Librerias firmware\TIEMPO_RTC.c
+File2=..\Librerias firmware\TIEMPO_RPI.c
+File3=..\Librerias firmware\ADXL355_SPI.c
+File4=..\Librerias firmware\TIEMPO_GPS.c
 [BINARIES]
 Count=0
 [IMAGES]
 Count=0
 ActiveImageIndex=-1
 [OPENED_FILES]
-Count=2
+Count=3
 File0=Acelerografo.c
 File1=..\Librerias firmware\TIEMPO_GPS.c
+File2=..\Librerias firmware\TIEMPO_GPS.h
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]
@@ -34,17 +39,21 @@ Count=0
 [OTHER_FILES]
 Count=0
 [SEARCH_PATH]
-Count=4
+Count=6
 Path0=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\defs\
 Path1=C:\Users\Public\Documents\Mikroelektronika\mikroC PRO for dsPIC\uses\
-Path2=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
-Path3=C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path2=C:\Users\RSA-Milton\Documents\Git\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path3=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path4=C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Acelerografo\
+Path5=C:\Users\RSA-Milton\Documents\Git\SistemaRegistroContinuo\Firmware\Librerias firmware\
 [HEADER_PATH]
-Count=2
+Count=3
 Path0=C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware\
 Path1=C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Librerias firmware\
+Path2=C:\Users\RSA-Milton\Documents\Git\SistemaRegistroContinuo\Firmware\Librerias firmware\
 [HEADERS]
-Count=0
+Count=1
+File0=..\Librerias firmware\TIEMPO_RTC.h
 [PLDS]
 Count=0
 [Useses]
@@ -57,5 +66,6 @@ File4=Conversions
 File5=C_String
 [EXPANDED NODES]
 Node1=Sources
-Node2=Output Files
-Count=2
+Node2=Header Files
+Node3=Output Files
+Count=3

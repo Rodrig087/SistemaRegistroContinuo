@@ -9,18 +9,18 @@ main
 			_Multiply_32x32
 			_Modulus_32x32
 			_Divide_32x32
-		ADXL355_write_byte
-			SPI2_Write
-				SPI2_Read
-	UART1_Write_Text
-		UART1_Write
-	DS3234_init
-		SPI2_Init_Advanced
-		DS3234_write_byte
-			SPI2_Write
-		SPI2_Init
-	ADXL355_init
-		ADXL355_write_byte
+		DS3234_init
+			SPI2_Init_Advanced
+			DS3234_write_byte
+				SPI2_Write
+					SPI2_Read
+			SPI2_Init
+		ADXL355_init
+			ADXL355_write_byte
+				SPI2_Write
+		GPS_init
+			UART1_Write_Text
+				UART1_Write
 int_2
 int_1
 	Muestrear
@@ -71,10 +71,10 @@ spi_1
 		SPI2_Init
 		_Divide_32x32
 		_Modulus_32x32
-	RecuperarHoraRTC
-	RecuperarFechaRTC
 	AjustarTiempoSistema
 	InterrupcionP1
+	RecuperarHoraRTC
+	RecuperarFechaRTC
 Timer3Int
 	DS3234_setDate
 	InterrupcionP1

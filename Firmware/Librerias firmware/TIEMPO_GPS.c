@@ -1,14 +1,10 @@
 // Libreria para el manejo del tiempo del GPS
 
-/////////////////////////////////////////// Definicion de funciones ///////////////////////////////////////////
-
-//void GPS_init();
-unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS);
-unsigned long RecuperarHoraGPS(unsigned char *tramaDatosGPS);
+#include "TIEMPO_GPS.h"
 
 ///////////////////////////////////////////        Funciones        ///////////////////////////////////////////
 
-/*
+
 // Funcion para configurar el GPS
 void GPS_init()
 {
@@ -19,9 +15,9 @@ void GPS_init()
      UART1_Write_Text("$PMTK413*34\r\n");
      UART1_Write_Text("$PMTK513,1*28\r\n");
      Delay_ms(1000);
-     U1MODE.UARTEN = 0;
+
 }
-*/
+
 
 // Funcion para tomar la fecha del GPS
 unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
@@ -34,22 +30,23 @@ unsigned long RecuperarFechaGPS(unsigned char *tramaDatosGPS)
      datoStringF[2] = '\0';
      tramaFecha[3] = '\0';
 
-     // Dia
-     datoStringF[0] = tramaDatosGPS[6];
-     datoStringF[1] = tramaDatosGPS[7];
+     // Anio
+     datoStringF[0] = tramaDatosGPS[10];
+     datoStringF[1] = tramaDatosGPS[11];
      tramaFecha[0] = atoi(ptrDatoStringF);
-
+     
      // Mes
      datoStringF[0] = tramaDatosGPS[8];
      datoStringF[1] = tramaDatosGPS[9];
      tramaFecha[1] = atoi(ptrDatoStringF);
-
-     // Anio
-     datoStringF[0] = tramaDatosGPS[10];
-     datoStringF[1] = tramaDatosGPS[11];
+     
+     // Dia
+     datoStringF[0] = tramaDatosGPS[6];
+     datoStringF[1] = tramaDatosGPS[7];
      tramaFecha[2] = atoi(ptrDatoStringF);
 
-     fechaGPS = (tramaFecha[2] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[0]); // 10000*aa + 100*mm + dd
+
+     fechaGPS = (tramaFecha[0] * 10000) + (tramaFecha[1] * 100) + (tramaFecha[2]); // 10000*aa + 100*mm + dd
 
      return fechaGPS;
 }
