@@ -90,7 +90,10 @@ def parametros_():
                reserva_2)           #Canal 22 'Reserva 2'
 
 
-def obtenerTraza(nombreCanal,num_canal, data, anio, mes, dia, horas, minutos, segundos, microsegundos):#Depurado
+def obtenerTraza(nombreCanal,num_canal, data, anio, mes, dia, horas, minutos, segundos, microsegundos, segundos_faltantes=None):
+    
+    print('obteniedo traza:', num_canal)
+    
     # Define todas las caracteristicas de la traza
     parametros=parametros_()
     nombreRed=parametros[19]
@@ -115,9 +118,49 @@ def obtenerTraza(nombreCanal,num_canal, data, anio, mes, dia, horas, minutos, se
              'mseed': {'dataquality': calidad}}
     # Establece el tiempo
     stats['starttime'] = UTCDateTime(anio, mes, dia, horas, minutos, segundos, microsegundos)    
+    
     # Crea la traza con los datos las caracteristicas
-    traza = Trace(data = data, header = stats)
+    #traza = Trace(data = data, header = stats)
+    
+    # Crea la traza con los datos y las características
+    if segundos_faltantes is not None:
+        
+        segundo_inicio = (horas*3600)+(minutos*60)+segundos
+        muestras_por_segundo = int(fsample)
+        lista_ceros = np.zeros(muestras_por_segundo, dtype=np.int32)
+        npts_completo = len(data) + int(len(segundos_faltantes) * muestras_por_segundo)
+        
+        data_completo = np.zeros(npts_completo, dtype=np.int32)  
+        data_completo = data.copy()
+        
+        stats['npts'] = npts_completo
+        print('NTPS completo: ', npts_completo)
+            
+        for segundo_faltante in segundos_faltantes:
+            
+            tiempo_muestra_faltante = int(segundo_faltante-segundo_inicio)
+            #print(tiempo_muestra_faltante)
+            indice_muestra_faltante = tiempo_muestra_faltante * muestras_por_segundo
+            #print(indice_muestra_faltante)
+            #print(data_completo[(indice_muestra_faltante-10):(indice_muestra_faltante+260)])
+            data_completo = np.insert(data_completo, indice_muestra_faltante, lista_ceros)
+            #print(data_completo[(indice_muestra_faltante-10):(indice_muestra_faltante+260)])
+        
+        '''
+        print('Inicio')
+        print(data_completo[(indice_muestra_faltante-1010):(indice_muestra_faltante-750)])
+        print('Fin')
+        print(data_completo[(indice_muestra_faltante):(indice_muestra_faltante+260)])
+        '''
+        print('Len data_completo: ', len(data_completo))
+        
+        traza = Trace(data=data_completo, header=stats)    
+        
+    else:
+        traza = Trace(data=data, header=stats)
+    
     return traza
+    #return data_completo
 
 
 def lectura_archivo(archivo): #archivo 
@@ -125,6 +168,10 @@ def lectura_archivo(archivo): #archivo
     bandera =1
     contador=0
     avance=0
+    
+    segundo_anterior = None  # Para almacenar el segundo anterior
+    segundos_faltantes = []  # Para almacenar los segundos faltantes
+    
     f = open(archivo, "rb")
     while bandera:
         tramaDatos = np.fromfile(f, np.int8, 2506)
@@ -134,6 +181,13 @@ def lectura_archivo(archivo): #archivo
             minuto = tramaDatos[2504]
             segundo = tramaDatos[2505]
             n_segundo=hora*3600+minuto*60+segundo
+            
+            if segundo_anterior is not None and n_segundo != segundo_anterior + 1:
+                segundos_faltantes = list(range(segundo_anterior + 1, n_segundo))
+                #print(f"Se saltaron los segundos: {segundos_faltantes}")
+            
+            segundo_anterior = n_segundo
+            
         else:
             bandera=0
             break
@@ -150,9 +204,13 @@ def lectura_archivo(archivo): #archivo
                     xValue = -1 * (((~xValue) + 1) & 0x7FFFF)
                 datos[j].append(int(xValue))
     f.close
-    datos_np = np.asarray(datos)        
-    return (datos_np)  
+    datos_np = np.asarray(datos)    
 
+    if segundos_faltantes:
+        print("Segundos faltantes:", segundos_faltantes)
+    
+    #return (datos_np)  
+    return datos_np, segundos_faltantes if segundos_faltantes else None
 
 def verificacion_archivo(archivo):
     f = open(archivo, "rb")
@@ -198,7 +256,7 @@ def nombre_mseed(nombre_,fecha_):
     return fileName
     
     
-def conversion_mseed_digital(fileName,fecha_,data_np):
+def conversion_mseed_digital(fileName,fecha_, data_np, segundos_faltantes):
     # Nombre del archivo en funcion del tiempo de inicio
     anio=fecha_[0][0]
     mes=fecha_[0][1]
@@ -211,26 +269,37 @@ def conversion_mseed_digital(fileName,fecha_,data_np):
 
     #fileName=self.directorio_registros+fileName
     
+    print("Convirtiendo archivo...")
+    
+    #trazaCH1 = obtenerTraza(nombre_,1, data_np[0],(2000 + anio), mes, dia, horas, minutos, segundos, 0, segundos_faltantes)
+    #trazaCH3 = obtenerTraza(nombre_,3, data_np[2],(2000 + anio), mes, dia, horas, minutos, segundos, 0, segundos_faltantes)    
+    
+    
     # Una vez que se tiene los datos, llama al metodo para obtener la traza
     # Todos los parametros que recibe se detallan en el metodo (mas abajo)
-    trazaCH1 = obtenerTraza(nombre_,1, data_np[0],(2000 + anio), mes, dia, horas, minutos, segundos, 0)
-    trazaCH2 = obtenerTraza(nombre_,2, data_np[1],(2000 + anio), mes, dia, horas, minutos, segundos, 0)        
-    trazaCH3 = obtenerTraza(nombre_,3, data_np[2],(2000 + anio), mes, dia, horas, minutos, segundos, 0)
+    trazaCH1 = obtenerTraza(nombre_,1, data_np[0],(2000 + anio), mes, dia, horas, minutos, segundos, 0, segundos_faltantes)
+    trazaCH2 = obtenerTraza(nombre_,2, data_np[1],(2000 + anio), mes, dia, horas, minutos, segundos, 0, segundos_faltantes)        
+    trazaCH3 = obtenerTraza(nombre_,3, data_np[2],(2000 + anio), mes, dia, horas, minutos, segundos, 0, segundos_faltantes)
     # Crea un objeto Stream con la traza
     #stData = Stream(traces=[trazaCH1])
     # Si se desea varias trazas, esto seria para cuando se tiene 3 canales
     stData = Stream(traces=[trazaCH1, trazaCH2, trazaCH3])
     
     stData.write(fileName, format = 'MSEED', encoding = 'STEIM1', reclen = 512)
-
+    
 
 parametros=parametros_()
 nombre=parametros[1]
 fecha_=verificacion_archivo(archivo_binario)
 nombre_= parametros[1]+'_20'
 n_mseed=nombre_mseed(nombre_,fecha_)
-datos_np=lectura_archivo(archivo_binario)
-conversion_mseed_digital(n_mseed,fecha_,datos_np)
+datos_np, segundos_faltantes  = lectura_archivo(archivo_binario)
+conversion_mseed_digital(n_mseed,fecha_, datos_np, segundos_faltantes)
+
 
 print(n_mseed)
 
+if segundos_faltantes is None:
+    print("No hay segundos faltantes.")
+else:
+    print("Segundos faltantes:", segundos_faltantes)

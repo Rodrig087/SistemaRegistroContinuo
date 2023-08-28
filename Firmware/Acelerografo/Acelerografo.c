@@ -130,36 +130,6 @@ void main()
 
    while (1)
    {
-      /*
-      if (banInicializar == 1)
-      {
-         UART1_Write_Text("$PMTK220,1000*1F\r\n");
-         UART1_Write_Text("$PMTK313,1*2E\r\n");
-         UART1_Write_Text("$PMTK314,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0*29\r\n");
-         UART1_Write_Text("$PMTK319,1*24\r\n");
-         UART1_Write_Text("$PMTK413*34\r\n");
-         UART1_Write_Text("$PMTK513,1*28\r\n");
-         while (!UART1_Tx_Idle());  // Espera hasta que la transmisión UART1 haya finalizado
-         Delay_ms(1000);
-         U1MODE.UARTEN = 0;
-
-         //GPS_init();                 // Inicializa el GPS
-         DS3234_init();              // inicializa el RTC
-         ADXL355_init(tasaMuestreo); // Inicializa el modulo ADXL con la tasa de muestreo requerida
-         banInicializar = 0;         // Desactiva la bandera para salir del bucle
-
-         // Conmuta el ledTest para indicar que se termino de inicializar
-         LedTest = ~LedTest;
-         Delay_ms(150);
-         LedTest = ~LedTest;
-         Delay_ms(150);
-         LedTest = ~LedTest;
-         Delay_ms(150);
-         LedTest = ~LedTest;
-         Delay_ms(150);
-         LedTest = ~LedTest;
-      }
-      */
       Delay_ms(1);
    }
    
@@ -533,6 +503,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+/*
 // Interrupcion INT1: RTC-SQW
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
@@ -559,6 +530,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
 }
 
 //*****************************************************************************************************************************************
+
 // Interrupcion INT2: GPS-PPS
 void int_2() org IVT_ADDR_INT2INTERRUPT
 {
@@ -577,7 +549,6 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
       T3CON.TON = 1;
       TMR3 = 0;
 
-      /*
       // Realiza el retraso necesario para sincronizar el RTC con el PPS (Consultar Datasheet del DS3234)
       Delay_ms(500);
       DS3234_setDate(horaSistema, fechaSistema); // Configura la hora en el RTC con la hora recuperada de la RPi
@@ -587,9 +558,38 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
 
       // Envia la hora local a la RPi:
       InterrupcionP1(0xB2);
-      */
+
    }
 }
+*/
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Modificacion fuente reloj
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Interrupcion INT1: RTC-SQW
+void int_1() org IVT_ADDR_INT1INTERRUPT
+{
+   INT1IF_bit = 0; // Limpia la bandera de interrupcion externa INT1
+}
+// Interrupcion INT2: GPS-PPS
+void int_2() org IVT_ADDR_INT2INTERRUPT
+{
+   INT2IF_bit = 0;
+   if (banSetReloj == 1)
+   {
+      LedTest = ~LedTest;
+      horaSistema++; // Incrementa el reloj del sistema
+      if (horaSistema == 86400)
+      {
+         horaSistema = 0; //(24*3600)+(0*60)+(0) = 86400
+      }
+      if (banInicio == 1)
+      {
+         Muestrear();
+      }
+   }
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interrupcion Timer1: Lectura ADXL355

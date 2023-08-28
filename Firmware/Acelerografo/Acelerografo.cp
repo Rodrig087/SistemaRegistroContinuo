@@ -157,7 +157,6 @@ void main()
 
  while (1)
  {
-#line 163 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  Delay_ms(1);
  }
 
@@ -393,7 +392,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  if ((banMuestrear == 1) && (buffer != 0xA1) && (buffer != 0xF1))
  {
  banInicio = 1;
-#line 407 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 377 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
  }
  if ((banMuestrear == 1) && (buffer == 0xF1))
  {
@@ -520,55 +519,30 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  }
 
 }
-
-
-
-
+#line 570 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
-
  INT1IF_bit = 0;
+}
 
+void int_2() org IVT_ADDR_INT2INTERRUPT
+{
+ INT2IF_bit = 0;
  if (banSetReloj == 1)
  {
  LedTest = ~LedTest;
  horaSistema++;
-
-
  if (horaSistema == 86400)
  {
  horaSistema = 0;
  }
-
  if (banInicio == 1)
  {
-
  Muestrear();
  }
  }
 }
 
-
-
-void int_2() org IVT_ADDR_INT2INTERRUPT
-{
-
- INT2IF_bit = 0;
-
- if (banSyncReloj == 1)
- {
-
-
- LedTest = ~LedTest;
- horaSistema = horaSistema + 2;
-
-
-
- T3CON.TON = 1;
- TMR3 = 0;
-#line 591 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
- }
-}
 
 
 

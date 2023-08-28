@@ -22,7 +22,6 @@ main
 			UART1_Write_Text
 				UART1_Write
 int_2
-int_1
 	Muestrear
 		ADXL355_write_byte
 		ADXL355_read_byte
@@ -35,6 +34,7 @@ int_1
 			_Divide_32x32
 			_Modulus_32x32
 		InterrupcionP1
+int_1
 urx_1
 	RecuperarHoraRTC
 		SPI2_Init_Advanced
