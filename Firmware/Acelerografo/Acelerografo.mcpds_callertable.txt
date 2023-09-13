@@ -22,6 +22,7 @@ main
 			UART1_Write_Text
 				UART1_Write
 int_2
+int_1
 	Muestrear
 		ADXL355_write_byte
 		ADXL355_read_byte
@@ -34,7 +35,6 @@ int_2
 			_Divide_32x32
 			_Modulus_32x32
 		InterrupcionP1
-int_1
 urx_1
 	RecuperarHoraRTC
 		SPI2_Init_Advanced
@@ -64,6 +64,11 @@ spi_1
 		_Multiply_32x32
 	RecuperarFechaRPI
 		_Multiply_32x32
+	RecuperarHoraRTC
+	RecuperarFechaRTC
+	AjustarTiempoSistema
+	InterrupcionP1
+Timer3Int
 	DS3234_setDate
 		SPI2_Init_Advanced
 		Dec2Bcd
@@ -71,12 +76,6 @@ spi_1
 		SPI2_Init
 		_Divide_32x32
 		_Modulus_32x32
-	AjustarTiempoSistema
-	InterrupcionP1
-	RecuperarHoraRTC
-	RecuperarFechaRTC
-Timer3Int
-	DS3234_setDate
 	InterrupcionP1
 Timer2Int
 	RecuperarHoraRTC

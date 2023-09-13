@@ -28,10 +28,8 @@ Count=0
 Count=0
 ActiveImageIndex=-1
 [OPENED_FILES]
-Count=3
+Count=1
 File0=Acelerografo.c
-File1=..\Librerias firmware\TIEMPO_GPS.c
-File2=..\Librerias firmware\TIEMPO_GPS.h
 [EEPROM]
 Count=0
 [ACTIVE_COMMENTS_FILES]

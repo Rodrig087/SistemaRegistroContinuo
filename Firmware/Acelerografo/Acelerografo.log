@@ -4,7 +4,6 @@ warning: 0	1501	Specified search path does not exist: 'C:\Users\SebasRSA07\Docum
 warning: 0	1502	Specified include path does not exist: 'C:\Users\milto\Milton\RSA\Git\Registro Continuo\SistemaRegistroContinuo\Firmware\Librerias firmware'	 
 warning: 0	1502	Specified include path does not exist: 'C:\Users\SebasRSA07\Documents\Milton\Git\SistemaRegistroContinuo\Firmware\Librerias firmware'	 
 diagnostics: 0	121	Loading...	 
-hint: 53	1354	 warning: "/*" within comment     //*****************************************************************************************************************************************	C:\Users\RSA-Milton\Documents\Git\SistemaRegistroContinuo\Firmware\Acelerografo\Acelerografo.c
 diagnostics: 0	122	Compilation Started	adxl355_spi.h
 hint: 0	1004	interrupt handler (spi_1 at 0x0028)	Acelerografo.c
 hint: 0	1004	interrupt handler (int_1 at 0x003C)	Acelerografo.c
@@ -41,11 +40,11 @@ diagnostics: 0	122	Compilation Started	tiempo_gps.h
 diagnostics: 82	123	Compiled Successfully	TIEMPO_GPS.c
 hint: 27	1164	Variable 'fechaGPS' has been eliminated by optimizer	TIEMPO_GPS.c
 hint: 59	1164	Variable 'horaGPS' has been eliminated by optimizer	TIEMPO_GPS.c
-diagnostics: 0	127	All files Compiled in 562 ms	 
+diagnostics: 0	127	All files Compiled in 375 ms	 
 hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)
 hint: 0	1144	Static RAM (bytes): 3046   Dynamic RAM (bytes): 25626	Static RAM (bytes): 3046   Dynamic RAM (bytes): 25626
-hint: 0	1144	Used ROM (bytes): 8770 (5%)  Free ROM (bytes): 167338 (95%)	Used ROM (bytes): 8770 (5%)  Free ROM (bytes): 167338 (95%)
+hint: 0	1144	Used ROM (bytes): 8764 (5%)  Free ROM (bytes): 167344 (95%)	Used ROM (bytes): 8764 (5%)  Free ROM (bytes): 167344 (95%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
 diagnostics: 0	128	Linked in 219 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 969 ms	 
-diagnostics: 0	103	Finished successfully: 16 ago. 2023, 11:27:17	Acelerografo.mcpds
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 766 ms	 
+diagnostics: 0	103	Finished successfully: 13 sep. 2023, 15:32:31	Acelerografo.mcpds

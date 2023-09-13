@@ -458,12 +458,13 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  {
  horaSistema = RecuperarHoraRPI(tiempoRPI);
  fechaSistema = RecuperarFechaRPI(tiempoRPI);
- DS3234_setDate(horaSistema, fechaSistema);
- AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
  fuenteReloj = 0;
- InterrupcionP1(0XB2);
+#line 452 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+ T3CON.TON = 1;
+ TMR3 = 0;
+
  banEsc = 0;
- banSetReloj = 1;
+
  }
 
 
@@ -519,33 +520,53 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  }
 
 }
-#line 570 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
+
+
+
+
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
- INT1IF_bit = 0;
-}
 
-void int_2() org IVT_ADDR_INT2INTERRUPT
-{
- INT2IF_bit = 0;
+ INT1IF_bit = 0;
+
  if (banSetReloj == 1)
  {
  LedTest = ~LedTest;
  horaSistema++;
+
  if (horaSistema == 86400)
  {
  horaSistema = 0;
  }
+
  if (banInicio == 1)
  {
+
  Muestrear();
  }
  }
 }
 
 
+void int_2() org IVT_ADDR_INT2INTERRUPT
+{
 
+ INT2IF_bit = 0;
 
+ if (banSyncReloj == 1)
+ {
+
+ LedTest = ~LedTest;
+
+ horaSistema = horaSistema + 1;
+
+ T3CON.TON = 1;
+ TMR3 = 0;
+ }
+}
+#line 596 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 void Timer1Int() org IVT_ADDR_T1INTERRUPT
 {
 

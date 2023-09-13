@@ -439,12 +439,21 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
    {
       horaSistema = RecuperarHoraRPI(tiempoRPI);               // Recupera la hora de la RPi
       fechaSistema = RecuperarFechaRPI(tiempoRPI);             // Recupera la fecha de la RPi
+      fuenteReloj = 0;                                         // Fuente de reloj = RPi
+      
+      /*//Metodo directo de configuracion del RTC:
       DS3234_setDate(horaSistema, fechaSistema);               // Configura la hora en el RTC
       AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-      fuenteReloj = 0;                                         // Fuente de reloj = RPi
       InterrupcionP1(0XB2);
-      banEsc = 0;
       banSetReloj = 1;
+      */
+      
+      //Prueba: Configuracion del RTC aplicando un retardo de 500ms:
+      T3CON.TON = 1;
+      TMR3 = 0;
+
+      banEsc = 0;
+
    }
 
    // Rutina para enviar la hora local a la RPi (C:0xA5   F:0xF5):
@@ -503,7 +512,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-/*
+// Inicio fuente de reloj
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interrupcion INT1: RTC-SQW
 void int_1() org IVT_ADDR_INT1INTERRUPT
 {
@@ -514,7 +524,6 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
    {
       LedTest = ~LedTest;
       horaSistema++; // Incrementa el reloj del sistema
-      // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
       //  Reinicia el reloj al llegar a las 24:00:00 horas
       if (horaSistema == 86400)
       {
@@ -528,9 +537,7 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
       }
    }
 }
-
 //*****************************************************************************************************************************************
-
 // Interrupcion INT2: GPS-PPS
 void int_2() org IVT_ADDR_INT2INTERRUPT
 {
@@ -540,31 +547,21 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
    if (banSyncReloj == 1)
    {
       // Cumple en este turno las tareas del pulso SQW:
-      // AjustarTiempoSistema(horaSistema, fechaSistema, tiempo);
       LedTest = ~LedTest;
-      horaSistema = horaSistema + 2; // Incrementa el reloj del sistema en 2 segundos
-
+      //horaSistema = horaSistema + 2; // Incrementa el reloj del sistema en 2 segundos
+      horaSistema = horaSistema + 1; // Correccion 230901: Incrementa el reloj del sistema en 1 segundo
       // Inicia el Timer3 de 500ms:
-      //   Inicia el Timeout 1:
       T3CON.TON = 1;
       TMR3 = 0;
-
-      // Realiza el retraso necesario para sincronizar el RTC con el PPS (Consultar Datasheet del DS3234)
-      Delay_ms(500);
-      DS3234_setDate(horaSistema, fechaSistema); // Configura la hora en el RTC con la hora recuperada de la RPi
-
-      banSyncReloj = 0;
-      banSetReloj = 1; // Activa esta bandera para continuar trabajando con el pulso SQW
-
-      // Envia la hora local a la RPi:
-      InterrupcionP1(0xB2);
-
    }
 }
-*/
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Modificacion fuente reloj
+// Fin fuente de reloj
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+/*
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Inicio modificacion fuente reloj: Utilizado para hacer pruebas de sincronizacion
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interrupcion INT1: RTC-SQW
 void int_1() org IVT_ADDR_INT1INTERRUPT
@@ -590,6 +587,9 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
    }
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// Fin modificacion fuente reloj
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+*/
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // Interrupcion Timer1: Lectura ADXL355
