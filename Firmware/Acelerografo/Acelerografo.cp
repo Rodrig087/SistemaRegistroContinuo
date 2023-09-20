@@ -459,7 +459,8 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
  horaSistema = RecuperarHoraRPI(tiempoRPI);
  fechaSistema = RecuperarFechaRPI(tiempoRPI);
  fuenteReloj = 0;
-#line 452 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+
+
  T3CON.TON = 1;
  TMR3 = 0;
 
@@ -540,10 +541,8 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
  {
  horaSistema = 0;
  }
-
  if (banInicio == 1)
  {
-
  Muestrear();
  }
  }
@@ -566,7 +565,7 @@ void int_2() org IVT_ADDR_INT2INTERRUPT
  TMR3 = 0;
  }
 }
-#line 596 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
+#line 587 "C:/Users/RSA-Milton/Documents/Git/SistemaRegistroContinuo/Firmware/Acelerografo/Acelerografo.c"
 void Timer1Int() org IVT_ADDR_T1INTERRUPT
 {
 

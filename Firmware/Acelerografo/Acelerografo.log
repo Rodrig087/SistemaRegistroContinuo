@@ -12,7 +12,7 @@ hint: 0	1004	interrupt handler (Timer1Int at 0x001A)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer2Int at 0x0022)	Acelerografo.c
 hint: 0	1004	interrupt handler (Timer3Int at 0x0024)	Acelerografo.c
 hint: 0	1004	interrupt handler (urx_1 at 0x002A)	Acelerografo.c
-diagnostics: 800	123	Compiled Successfully	Acelerografo.c
+diagnostics: 791	123	Compiled Successfully	Acelerografo.c
 warning: 131	1519	Logical expression is always: 'False'	Acelerografo.c
 diagnostics: 0	122	Compilation Started	tiempo_rtc.h
 hint: 72	1163	Variable 'valueSet' has been declared, but not used	TIEMPO_RTC.c
@@ -40,11 +40,11 @@ diagnostics: 0	122	Compilation Started	tiempo_gps.h
 diagnostics: 82	123	Compiled Successfully	TIEMPO_GPS.c
 hint: 27	1164	Variable 'fechaGPS' has been eliminated by optimizer	TIEMPO_GPS.c
 hint: 59	1164	Variable 'horaGPS' has been eliminated by optimizer	TIEMPO_GPS.c
-diagnostics: 0	127	All files Compiled in 375 ms	 
+diagnostics: 0	127	All files Compiled in 500 ms	 
 hint: 0	1144	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)	Used RX (bytes): 32 (100%)   Free RX (bytes): 0 (0%)
 hint: 0	1144	Static RAM (bytes): 3046   Dynamic RAM (bytes): 25626	Static RAM (bytes): 3046   Dynamic RAM (bytes): 25626
 hint: 0	1144	Used ROM (bytes): 8764 (5%)  Free ROM (bytes): 167344 (95%)	Used ROM (bytes): 8764 (5%)  Free ROM (bytes): 167344 (95%)
 diagnostics: 0	125	Project Linked Successfully	Acelerografo.mcpds
-diagnostics: 0	128	Linked in 219 ms	 
-diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 766 ms	 
-diagnostics: 0	103	Finished successfully: 13 sep. 2023, 15:32:31	Acelerografo.mcpds
+diagnostics: 0	128	Linked in 281 ms	 
+diagnostics: 0	129	Project 'Acelerografo.mcpds' completed: 1016 ms	 
+diagnostics: 0	103	Finished successfully: 14 sep. 2023, 10:52:54	Acelerografo.mcpds

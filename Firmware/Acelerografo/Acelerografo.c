@@ -441,14 +441,7 @@ void spi_1() org IVT_ADDR_SPI1INTERRUPT
       fechaSistema = RecuperarFechaRPI(tiempoRPI);             // Recupera la fecha de la RPi
       fuenteReloj = 0;                                         // Fuente de reloj = RPi
       
-      /*//Metodo directo de configuracion del RTC:
-      DS3234_setDate(horaSistema, fechaSistema);               // Configura la hora en el RTC
-      AjustarTiempoSistema(horaSistema, fechaSistema, tiempo); // Actualiza los datos de la trama tiempo con la hora y fecha recuperadas
-      InterrupcionP1(0XB2);
-      banSetReloj = 1;
-      */
-      
-      //Prueba: Configuracion del RTC aplicando un retardo de 500ms:
+      //Configuracion del RTC aplicando un retardo de 500ms:
       T3CON.TON = 1;
       TMR3 = 0;
 
@@ -529,10 +522,8 @@ void int_1() org IVT_ADDR_INT1INTERRUPT
       {
          horaSistema = 0; //(24*3600)+(0*60)+(0) = 86400
       }
-
       if (banInicio == 1)
       {
-         // LedTest = ~LedTest;
          Muestrear();
       }
    }
